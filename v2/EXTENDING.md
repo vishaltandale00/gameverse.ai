@@ -18,6 +18,9 @@ standing in for decisions, no word lists over the idea, no per-game cases; nothi
 `conflicts`, and as they apply `engage`, `loop` and `mode` (with `mode.bot` naming a registered bot), `drives`,
 `spaces` / `provides.content` / `provides.extent`, `needs.content`, `locomotion` / `medium`, `interactions`, `adapts`.
 A rule enforced in code but not declared is a defect; a missing declaration fails the checks, it is never assumed.
+Controls: a verb whose action takes a value declares it in `card.actionSpace` (enum, axis, or `choice` with `of`); a loop
+whose verbs depend on the instance declares `card.loop.verbsOf(config, doc)`; a space declares `card.frame`; a renderer
+or camera declares `card.projection` per view; a UI primitive declares `card.interactions` and `card.controls`.
 
 **Checks it must pass:**
 - its own test meeting KERNEL_API.md §8: preflight a document using it; exercise it through `rt.step`, effects and
@@ -54,8 +57,10 @@ document). The gap layer writes a missing adapter through the same experiment �
 `modeOnly: true`); a loop's card names it in `card.mode.bot`, and the gate plays exactly the bots a document's modes
 name.
 
-**It plays only through the controls a person uses** (ARCHITECTURE.md §6.3): held move axes and the loop's verbs as
-inputs to `rt.step`, as `v2/web/player.js` drives the input primitive. `rt.options` are hints; it reads the world
+**It plays only through the controls a person uses** (ARCHITECTURE.md §6.3): `ctx.make` gives controlled worlds
+(`v2/verify/controls.js`): every `rt.step(intent)` is turned into the key, axis and UI presses a person makes through
+the host document's bindings and sampled exactly as `v2/web/player.js` samples devices; a verb no control issues throws
+`controls_missing`, and an option's `apply` macro is never run. It plays every seed it is given (one run per seed). `rt.options` are hints; it reads the world
 through space and service APIs and never writes state. It is deterministic for a document and seed.
 
 **Checks:** `tests/v2-p-modes-bots.test.js` (the mode's minimal document: `select` picks it, it wins, it replays) and,
@@ -83,7 +88,9 @@ live (a new check is added there, with its code), run over every discovered temp
 | preflight | the document preflights | `preflight_failed` (cause: the preflight code) |
 | composition | the static composition check has no failure | `composition_failed` |
 | loop | the loop check has no problem | `loop_problem` (cause: the loop code) |
-| gate | `verifyDocument` with the playtest budget finds it viable | `gate_not_viable` |
+| gate | `verifyDocument` (on the host document: `v2/web/host-doc.js`) with the playtest budget finds it viable | `gate_not_viable` |
+| controls | every loop verb of the host document has a control (a key, an axis, or a mounted UI primitive's `card.controls`); each direction pressed through `v2/verify/controls.js` moves the player the way the mounted renderer's `card.projection` shows the view (`v2/verify/directions.js`) | `controls_missing` `projection_undeclared` `direction_mismatch` `direction_inert` |
+| features | every loop primitive exists, is controllable and works when its controls are pressed from reached states (`v2/verify/features.js`; the table is in the evidence) | `feature_missing` `feature_content_empty` `feature_uncontrolled` `feature_inert` (`feature_unreached` is a warning) |
 | bots | every bot its loops name is the one the gate plays, wins with status `won` on world seeds 1-3 and replays | `bot_unnamed` `bot_selection_mismatch` `bot_failed` `bot_not_won` `replay_mismatch` |
 
 A failing static stage stops the check before anything simulates.

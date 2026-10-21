@@ -109,6 +109,7 @@ A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `prov
 | `occupancy` | `occupant cellsInRange moveCost coverAt` |
 | `los` | `los visibleFrom` |
 
+- **Frame.** Every space card declares `card.frame` (`{up, handed}`: the up axis or null for a plane seen from above, and the handedness; null without geometry), read through `primitives/engine/runtime-lib-frame.js` (`spaceFrame`, `turnSign`). Turning right is clockwise seen from above in every frame; verbs acting on a cell without naming one act on the faced cell from above and below the feet only from the side (`items-lib.js actionCellAt`).
 - **Anchors.** `api.anchor` says what `e.at` means:
   - `'center'`: the centre of the body box, y up (continuous spaces: tilemap, arena2d, physics2d, track, voxel, mesh3d);
   - `'cell'`: the grid space: integer positions are cell centres, so the body box is centred on `e.at` as for `'center'` (a cell spans `[at - 0.5, at + 0.5)`);
@@ -152,7 +153,7 @@ Graphics primitives install only when `!rt.headless`. The browser host (`v2/web/
 - interpolates with `alpha`;
 - never writes `rt.state`.
 
-UI primitives layer DOM in `.gv-overlay` and send choices through `view.act`. `engine.input.actions` owns the device → verb mapping and sets `view.input`. Renderers read model specs from `content.models` (catalog §5.2) and draw everything procedurally, with no external assets; reuse `v2/art/*`.
+UI primitives layer DOM in `.gv-overlay` and send choices through `view.act`; each declares `card.interactions` (the interactions it gives a person controls for) and `card.controls` (`verbs` it sends; `choice: true` for graphics.ui.choices, which issues every choice verb no other mounted UI names; `options: true` for a UI that sends a listed option's actions). Renderers and cameras declare `card.projection` per view (`{kind: 'plane', right, up}` or `{kind: 'chase', forward, right}` over the space's axes). The host mounts `v2/web/host-doc.js` `hostDocument(doc)`: the document plus its default input and UI; the gate verifies the same document. `engine.input.actions` owns the device → verb mapping and sets `view.input`. Renderers read model specs from `content.models` (catalog §5.2) and draw everything procedurally, with no external assets; reuse `v2/art/*`.
 
 ## 7. Workstreams and file ownership
 
