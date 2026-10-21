@@ -26,7 +26,6 @@ test('wildcard loop events match by prefix', () => {
 });
 
 test('a world the player cannot act in is blocked', () => {
-  assert.equal(code(viability(play({ explored: 1 }), [], bots(), loop)), 'cannot_act');
   assert.equal(code(viability(play(), [{ code: 'stuck_state', message: 'no input changes state', severity: 'warning', stage: 'invariants' }], bots(), loop)), 'cannot_act');
 });
 

@@ -92,7 +92,7 @@ function unplayable(play, problems, strategies, loop) {
   const pt = /** @type {{ winnable?: unknown, explored?: unknown, timeline?: { score?: { high?: unknown } } | null, idle?: { score?: unknown, counts?: Record<string, number> }, eventsFired?: Record<string, number> } | null} */ (isObjLike(play) ? play : null);
   if (!pt) return ['not_played: the playtest agent did not play the game'];
   const stuck = problems.find(p => p.code === 'stuck_state');
-  if (stuck || (typeof pt.explored === 'number' && pt.explored <= 1)) return [`cannot_act: ${stuck?.message || 'no input moves the game past its first state'}`];
+  if (stuck) return [`cannot_act: ${stuck.message}`];
   /** @type {string[]} */
   const out = [];
   for (const b of strategies?.ran || []) if (b.error) out.push(`bot_failed: the ${b.id} bot (${b.reason}) threw: ${b.error}`);

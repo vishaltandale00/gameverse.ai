@@ -16,7 +16,7 @@ import { loadCatalogue, defaultsOf, spaceVariants, satisfying } from '../v2/plan
 import { preflight } from '../v2/kernel/document.js';
 import { createWorld } from '../v2/kernel/world.js';
 import { spaceConformance } from '../v2/kernel/testing.js';
-import { verifyDocument } from '../v2/planner/verify-adapter.js';
+import { verifyDocument, viability } from '../v2/planner/verify-adapter.js';
 import { firstPlayable, replayCheck } from '../v2/planner/first-playable.js';
 import { withDefaultInput } from '../v2/web/input-defaults.js';
 import { withDefaultGraphics } from '../v2/primitives/graphics/ui-defaults.js';
@@ -25,7 +25,9 @@ import { verify } from '../v2/verify/index.js';
 
 const { registry, logic } = await loadCatalogue();
 const prims = registry.ids().map(i => registry.get(i));
-const ENGINE = registry.ids().filter(id => id.startsWith('engine.') && !id.startsWith('engine.generate.'));
+// Adapters (card.adapts) project one concept onto another: they exist only bound to a pair, configured by it, so they
+// have no standalone defaults; tests/v2-p-adapt-*.test.js run them on real pairs.
+const ENGINE = registry.ids().filter(id => id.startsWith('engine.') && !id.startsWith('engine.generate.') && !registry.get(id).card?.adapts);
 const isSpace = id => id.startsWith('engine.space.');
 
 const HEAD = { schema: 'gameverse.v2.game/0.2', id: 'ev', title: 'Engine validation', seed: 7 };
@@ -176,7 +178,9 @@ for (const id of ENGINE) for (const name of hostsOf(id)) {
     assert.ok(fp.ok, JSON.stringify(fp.errors));
     assert.deepEqual(fp.removed.map(r => `${r.use}: ${r.why}`), [], 'first playable isolated a primitive');
     const v = await verifyDocument(fp.doc, registry, logic, { budgetMs: 200, maxStates: 500, playtestMs: 150 });
-    assert.notEqual(v.viable, false, v.viability);
+    // These are engine test worlds, not games (no win by design): they must not crash; the game gate is tested elsewhere.
+    const crash = viability(v.playtest, v.problems);
+    assert.equal(crash.viable, true, crash.viability);
     const make = () => createWorld(fp.doc, registry, logic, { seed: 7 });
     assert.ok(make().player(), 'the player exists');
     assert.ok(canAct(make), 'the player can act: options, or some input changes the state');
