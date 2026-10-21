@@ -35,6 +35,24 @@ export function buildLogic(registry, Logic) {
   return logic;
 }
 
+/**
+ * A copy of JSON game state (snapshot and restore): plain objects and arrays copied member by member, numbers (NaN and
+ * Infinity included), strings, booleans and null as they are. State is JSON (KERNEL_API.md), so this is the whole copy;
+ * a value that is not plain JSON data (a primitive keeping a Map in state) is copied by structuredClone as before.
+ * Searches snapshot and restore on every lookahead, and this is several times faster than structuredClone on JSON.
+ * @param {unknown} v @returns {unknown}
+ */
+export function cloneState(v) {
+  if (typeof v !== 'object' || v === null) return v;
+  if (Array.isArray(v)) { const n = v.length, out = new Array(n); for (let i = 0; i < n; i++) out[i] = cloneState(v[i]); return out; }
+  const proto = Object.getPrototypeOf(v);
+  if (proto !== Object.prototype && proto !== null) return structuredClone(v);
+  /** @type {Record<string, unknown>} */
+  const out = {};
+  for (const k of Object.keys(v)) out[k] = cloneState(/** @type {Record<string, unknown>} */ (v)[k]);
+  return out;
+}
+
 /** doc must be the normalized document returned by preflight(). */
 /**
  * view (browser only, when headless is false) is supplied by the host page:
@@ -205,10 +223,10 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
       (normalizedDoc.graphics || []).slice(before.graphics).forEach((g, i) => install(g, `graphics[${before.graphics + i}]`));
       rt.emit('content_added', { zones: added.zones.length, beats: added.beats.length, systems: added.systems.length });
     },
-    snapshot: () => structuredClone(state),
+    snapshot: () => /** @type {State} */ (cloneState(state)),
     restore(snapshot) {
       for (const k of Object.keys(state)) delete /** @type {Record<string, any>} */ (state)[k];
-      Object.assign(state, structuredClone(snapshot));
+      Object.assign(state, cloneState(snapshot));
       for (const fn of restorers) fn(rt);
     },
   };
