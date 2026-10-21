@@ -21,7 +21,7 @@ import { createWriters } from '../planner/writer.js';
 import { createDecisions } from '../planner/decisions.js';
 import { loadOpenAIKey } from '../planner/openai.js';
 import { verifyDocument } from '../planner/verify-adapter.js';
-import { census } from '../planner/census.js';
+import { census, kindViewPreserved } from '../planner/census.js';
 import { catalogueForDoc } from '../experiments/primitive.js';
 import { memoryCtx } from './kernel-bench.mjs';
 
@@ -98,6 +98,8 @@ export async function runGenerationBench({ ideas = IDEAS, offline = false, env =
         ok: true, title: out.doc.title, ms: Math.round(performance.now() - t), timings: out.timings,
         outline: out.outline, mechanics: out.selection.mechanics.map(m => ({ id: m.id, importance: m.importance, primitives: m.primitives })),
         spaces: out.doc.spaces.map(s => s.use), systems: (out.doc.systems || []).map(s => s.use), gaps: out.selection.gaps.map(g => `${g.kind}: ${g.description}`).slice(0, 8),
+        decomposition: { views: out.decomposition.views, spaces: out.decomposition.spaces.map(x => x.kind), source: out.decomposition.source },
+        kindView: kindViewPreserved(out.decomposition, out.doc, cat.registry),
         census: census(out.doc, cat.registry, cat.logic), outlineCensus: fp ? census(fp, cat.registry, cat.logic, { boot: 0 }) : null,
         play: await playReport(out.doc, cat.registry, cat.logic, { playtestMs }),
         detail: { proposed: out.detail.proposed, accepted: out.detail.accepted, rejected: out.detail.rejected.map(r => r.reason) },
@@ -145,7 +147,7 @@ export async function runGenerationBench({ ideas = IDEAS, offline = false, env =
 export function row(g) {
   if (!g.ok) return `${g.id} | FAIL (${g.failedStage}): ${String(g.reason).slice(0, 90)}`;
   const c = g.census, p = g.play;
-  return [g.id, 'ok', `arch ${c.archetypesReal}/${c.archetypes} real, ${c.archetypesPlaced} placed`, `spawns ${c.spawnRulesNonPlayer}+${c.spawnEffects}fx`, `rt ents ${c.runtime?.entities ?? '-'}`, `items ${c.items}`, `chars ${c.characters}`,
+  return [g.id, 'ok', `kind/view ${g.kindView?.ok ? 'kept' : `LOST (${(g.kindView?.problems || []).join('; ')})`}`, `arch ${c.archetypesReal}/${c.archetypes} real, ${c.archetypesPlaced} placed`, `spawns ${c.spawnRulesNonPlayer}+${c.spawnEffects}fx`, `rt ents ${c.runtime?.entities ?? '-'}`, `items ${c.items}`, `chars ${c.characters}`,
     `quests ${c.questsRead}/${c.quests}`, `dlg ${c.dialogueRead}/${c.dialogue}`, `zones ${c.zonesDistinct}/${c.zones} distinct`, `play: ${p.crashes ? `CRASH ${p.crashCodes.join(',')}` : 'no crash'}, explored ${p.explored}, ending ${p.ending || 'none'}`,
     `total ${Math.round((g.timings?.totalMs ?? g.ms) / 1000)}s`].join(' | ');
 }

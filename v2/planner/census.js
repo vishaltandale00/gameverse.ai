@@ -155,3 +155,22 @@ export function census(doc, registry, logic = null, { boot = 30 } = {}) {
   }
   return out;
 }
+
+/** The idea's primary view: the first decomposed view that is not a pure UI overlay. */
+export const primaryView = decomposition => (decomposition?.views || []).find(v => v !== 'ui') || (decomposition?.views || [])[0] || null;
+
+/**
+ * Whether a document is still the kind of game the decomposition asked for (the genre and view survive
+ * every stage): its primary view, its primary space and every base locomotion primitive must support
+ * the idea's primary view. -> { ok, view, docView, space, movement: [ids], problems: [text] }
+ */
+export function kindViewPreserved(decomposition, doc, registry) {
+  const want = primaryView(decomposition), problems = [];
+  const supports = id => { const v = registry.get(id)?.card.views || []; return !want || v.includes(want) || v.includes('any'); };
+  const space = doc.spaces?.[0]?.use || null;
+  const movement = (doc.systems || []).map(s => s.use).filter(id => registry.get(id)?.card.locomotion === 'base');
+  if (want && doc.views?.primary !== want) problems.push(`view ${doc.views?.primary ?? 'none'} instead of ${want}`);
+  if (space && !supports(space)) problems.push(`space ${space} has no ${want} view`);
+  for (const id of movement) if (!supports(id)) problems.push(`movement ${id} has no ${want} view`);
+  return { ok: !problems.length, view: want, docView: doc.views?.primary ?? null, space, movement, problems };
+}
