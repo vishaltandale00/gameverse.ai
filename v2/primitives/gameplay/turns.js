@@ -120,6 +120,21 @@ export default {
     if (config.overwatchAction && !config.actions.some(a => a.id === config.overwatchAction && a.target === 'unit')) errors.push(err('turns_overwatch', 'with.overwatchAction', `overwatchAction '${config.overwatchAction}' must be a unit-target action`));
     return errors;
   },
+  /**
+   * Solver progress: units of non-player sides worn down or fallen, minus half the player's own losses
+   * (each unit counts 1 when fallen, its lost hp fraction while standing); +100 when a player side won.
+   */
+  progress(rt, config) {
+    const s = rt.state.prim[ID]; if (!s?.units) return 0;
+    const ctrl = new Map((config.sides || []).map(x => [x.id, x.control ?? 'ai']));
+    let v = 0;
+    for (const [id, u] of Object.entries(s.units)) {
+      const e = rt.entity(id), h = hpOf(e), lost = u.fallen || !e ? 1 : u.downed ? 0.9 : h.max > 0 ? 1 - h.frac : 0;
+      v += ctrl.get(u.side) === 'player' ? -0.5 * lost : lost;
+    }
+    if (s.winner && ctrl.get(s.winner) === 'player') v += 100;
+    return v;
+  },
   install(rt, config) {
     config = { ...config, actions: config.actions.map(a => withDefaults(ACTION_FIELDS, a)), sides: config.sides.map(x => withDefaults(SIDE_FIELDS, x)), phases: config.phases.map(x => withDefaults(PHASE_FIELDS, x)) };
     const ACT = new Map(config.actions.map(a => [a.id, a]));
@@ -160,7 +175,9 @@ export default {
       if (!s.active) return true;
       const standing = config.sides.filter(x => unitsOf(s, x.id).length);
       for (const x of config.sides) if (!standing.includes(x) && !s.defeated?.[x.id] && Object.values(s.units).some(u => u.side === x.id)) { (s.defeated ??= {})[x.id] = true; rt.emitTyped('side_defeated', x.id, { side: x.id }); }
-      if (config.sides.length > 1 && standing.length <= 1 && Object.keys(s.units).length) { stop(s, standing[0]?.id ?? null); return true; }
+      // A battle needs two sides that have fielded units: a side whose units have not arrived yet (spawned after the start) is not beaten.
+      const fielded = config.sides.filter(x => Object.values(s.units).some(u => u.side === x.id)).length;
+      if (config.sides.length > 1 && standing.length <= 1 && fielded >= 2) { stop(s, standing[0]?.id ?? null); return true; }
       if (config.sides.length === 1 && !standing.length && Object.keys(s.units).length) { stop(s, null); return true; }
       return false;
     }
