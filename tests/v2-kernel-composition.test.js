@@ -91,10 +91,10 @@ test('a registered adapter turns the incompatible pair into compatible-via-adapt
   const r = verdictOf(withCourse, on('engine.space.mesh3d', ['gameplay.race']));
   assert.equal(r.verdict, 'compatible-via-adapter', r.reason);
   assert.deepEqual(r.adapters, ['engine.adapt.mesh3d.course']);
-  // Capability adapters: a platformer on a graph space needs gravity.
+  // Capability adapters: a platformer on a graph space needs gravity; the registered projection adapter provides it.
   const before = verdictOf(declared, on('engine.space.graph', ['gameplay.move.platformer']));
-  assert.equal(before.verdict, 'incompatible-needs-adapter');
-  assert.deepEqual(before.signature.card.adapts.provides.capabilities, ['gravity']);
+  assert.equal(before.verdict, 'compatible-via-adapter', before.reason);
+  assert.ok(before.adapters.includes('engine.adapt.projection'));
   const withPlane = withDeclarations(registry, DECLARED, [planeAdapter]);
   const after = verdictOf(withPlane, on('engine.space.graph', ['gameplay.move.platformer']));
   assert.equal(after.verdict, 'compatible-via-adapter', after.reason);
@@ -215,10 +215,11 @@ test('mode: unregistered bot, unmapped core mechanic and unsupported interaction
 
 test('mode: a mode designed for another space needs an adapter for what the chosen space lacks', () => {
   const mode = { space: 'engine.space.track' };
+  // The registered projection adapter lays the mode's space onto a region of the chosen one.
   const r = verdictOf(withMode(mode), sel('engine.space.mesh3d'));
-  assert.equal(r.verdict, 'incompatible-needs-adapter', r.reason);
-  const lacking = r.signature.card.adapts.provides.capabilities;
-  assert.ok(lacking.length && lacking.every(c => !registry.get('engine.space.mesh3d').card.provides.capabilities.includes(c)));
+  assert.equal(r.verdict, 'compatible-via-adapter', r.reason);
+  assert.ok(r.adapters.includes('engine.adapt.projection'));
+  const lacking = registry.get('engine.space.track').card.provides.capabilities.filter(c => !registry.get('engine.space.mesh3d').card.provides.capabilities.includes(c));
   const adapter = { id: 'engine.adapt.mesh3d.track', card: { intent: 'Stub: track dynamics on mesh3d.', params: {}, provides: {}, requires: {},
     adapts: { provides: { capabilities: lacking }, from: { spaces: ['engine.space.mesh3d'] }, projection: 'a spline course over the terrain' } } };
   const via = verdictOf(withMode(mode, [adapter]), sel('engine.space.mesh3d'));
