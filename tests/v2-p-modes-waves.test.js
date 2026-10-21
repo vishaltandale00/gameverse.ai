@@ -81,10 +81,14 @@ test('waves: start_waves, deterministic replay', () => {
 
 test('waves: preflight rejects bad configs with stable codes', () => {
   const registry = new Registry(P), logic = buildLogic(registry, Logic);
-  const codes = w => new Set(preflight(wavesDoc(w), registry, logic).errors.map(e => e.code));
+  const errorsOf = w => preflight(wavesDoc(w), registry, logic).errors, codes = w => new Set(errorsOf(w).map(e => e.code));
   const a = codes({});
   assert.ok(a.has('waves_empty'));
-  const b = codes({ waves: [{ spawn: [{ archetype: 'ghoul', lane: 'mid', entry: 'loop', pattern: 'blob' }, { archetype: 'drone', lane: 'top', at: [1, 1, 0] }] }, { spawn: [] }], generate: { count: 2, archetypes: [] } });
-  for (const c of ['ref_unknown', 'waves_lane_unknown', 'waves_entry_unknown', 'param_option', 'waves_spawn_place', 'param_range', 'waves_generate']) assert.ok(b.has(c), c);
+  const bad = { waves: [{ spawn: [{ archetype: 'ghoul', lane: 'mid', entry: 'loop', pattern: 'blob' }, { archetype: 'drone', lane: 'top', at: [1, 1, 0] }] }, { spawn: [] }], generate: { count: 2, archetypes: [] } };
+  const b = codes(bad);
+  for (const c of ['ref_unknown', 'param_option', 'waves_spawn_place', 'param_range', 'waves_generate']) assert.ok(b.has(c), c);
+  // Lanes and entry paths are reference kinds the card defines (wave_lane, wave_entry): an unknown one is ref_unknown at its field.
+  const refs = new Set(errorsOf(bad).filter(e => e.code === 'ref_unknown').map(e => e.path.replace(/^systems\[\d+\]\.with\./, '')));
+  for (const p of ['waves[0].spawn[0].lane', 'waves[0].spawn[0].entry']) assert.ok(refs.has(p), p);
   assert.ok(preflight(wavesDoc({ waves: [{ spawn: [{ archetype: 'drone' }] }] }), registry, logic).ok);
 });

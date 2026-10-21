@@ -5,6 +5,7 @@
 // (components.time.rule = 'immune', or listed) keep their own timeline; an
 // optional echo replays the player's undone movement forward after the rewind
 // (Braid's shadow). Charges and a cooldown limit use.
+import { ENTITY_KINDS } from '../../kernel/params.js';
 import { err, runBound, matchesAny, sortedEntities, has } from './modes-lib-util.js';
 
 const ID = 'gameplay.rewind';
@@ -22,7 +23,7 @@ export default {
       vars: { type: 'list', of: { type: 'string' }, default: ['*'], effect: "vars restored on rewind ('*' = all)" },
       flags: { type: 'boolean', default: true },
       cells: { type: 'boolean', default: false, effect: 'undo cell edits (editCells spaces)' },
-      immune: { type: 'list', of: { type: 'string' }, default: [], effect: 'ids/archetypes/tags that ignore rewinds (also components.time.rule = immune)' },
+      immune: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [], effect: 'ids/archetypes/tags that ignore rewinds (also components.time.rule = immune)' },
       echo: { type: 'ref', to: 'archetype', effect: 'after a rewind, spawn this to replay the undone player movement' },
       charges: { type: 'integer', default: 0, min: 0, max: 999, effect: 'rewinds allowed (0 = unlimited)' },
       cooldownSec: { type: 'number', default: 0, min: 0, max: 600, unit: 's' },
@@ -31,6 +32,11 @@ export default {
     provides: { events: ['rewind_start', 'rewind_end', 'rewind_empty', 'echo_spawned', 'echo_done'], vars: ['rewind.sec', 'rewind.charges', 'rewind.active'], actions: ['rewind'] },
     requires: {},
     reads: [],
+    components: { time: { type: 'object', effect: 'how this entity takes a rewind', fields: { rule: { type: 'string', options: ['immune'], effect: 'immune: keeps its own timeline through rewinds' } } } },
+    rules: {
+      rewind_speed: { fields: ['speed', 'maxSec', 'sampleEvery'], message: 'speed is at most the history length in samples, maxSec × 60 / sampleEvery', example: { maxSec: 0.5, sampleEvery: 60 } },
+      rewind_vars: { fields: ['vars'], message: "vars is ['*'] (every var) or a list of var names without '*'", example: { vars: ['*', 'score'] } },
+    },
   },
   validate(config) {
     const errors = [];

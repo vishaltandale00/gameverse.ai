@@ -21,7 +21,7 @@ export default {
     views: ['any'],
     params: {
       levels: { type: 'integer', default: 5, min: 1, max: 6, effect: 'max stars' },
-      crimes: { type: 'object', open: true, default: {}, effect: 'crime kind → heat (1 = one star)' },
+      crimes: { type: 'object', default: {}, values: { type: 'number', min: 0, effect: 'heat (1 = one star)' }, effect: 'crime kind → heat (1 = one star)' },
       crimeEvents: { type: 'list', default: [], of: { type: 'object', fields: { event: { type: 'string', required: true }, kind: { type: 'string', required: true }, byPlayer: { type: 'boolean', default: true }, when: { type: 'predicate' } } }, effect: 'events that count as crimes (defeated → murder...)' },
       witnessRange: n(30, { min: 0, effect: 'how far witnesses see crimes' }),
       reportSec: n(2, { min: 0, unit: 's', effect: 'civilian delay before a report reaches the law (kill the witness to stop it)' }),
@@ -43,6 +43,11 @@ export default {
     provides: { vars: ['wanted', 'wanted.heat'], events: ['crime', 'crime:*', 'witness', 'crime_reported', 'wanted_changed', 'busted', 'escaped', 'bribed', 'bribe_failed', 'law_spawned'] },
     requires: { capabilities: ['position', 'distance'], primitives: ['gameplay.ai.brain'] },
     reads: ['content.archetypes'],
+    rules: {
+      wanted_spawn_distance: { fields: ['spawnDistance'], message: 'spawnDistance is [min, max] with min ≤ max' },
+      wanted_crime_unknown: { fields: ['crimeEvents[].kind', 'crimes'], message: 'each crimeEvents kind is a key of crimes (its heat)' },
+      wanted_response_level: { fields: ['response[].level', 'levels'], message: 'a response level is at most levels (the max stars)' },
+    },
   },
   logic(logic) {
     logic.effect('report_crime', { run: (e, rt, c) => crime(rt, e.kind, { at: e.at, who: rt.resolve(e.who, c)?.id ?? 'player', witnessed: e.witnessed }) });
@@ -54,10 +59,9 @@ export default {
   },
   validate(config, doc) {
     const errors = [];
-    if (config.spawnDistance[0] > config.spawnDistance[1]) errors.push({ code: 'param_range', path: 'spawnDistance', message: 'min above max' });
-    for (const [k, v] of Object.entries(config.crimes)) if (!Number.isFinite(v) || v < 0) errors.push({ code: 'wanted_crime_heat', path: `crimes.${k}`, message: 'heat must be a number ≥ 0' });
+    if (config.spawnDistance[0] > config.spawnDistance[1]) errors.push({ code: 'wanted_spawn_distance', path: 'spawnDistance', message: 'min above max' });
     config.crimeEvents.forEach((c, i) => { if (!(c.kind in config.crimes)) errors.push({ code: 'wanted_crime_unknown', path: `crimeEvents[${i}].kind`, message: `crime '${c.kind}' has no heat in crimes` }); });
-    config.response.forEach((r, i) => { if (r.level > config.levels) errors.push({ code: 'param_range', path: `response[${i}].level`, message: `level above max stars ${config.levels}` }); });
+    config.response.forEach((r, i) => { if (r.level > config.levels) errors.push({ code: 'wanted_response_level', path: `response[${i}].level`, message: `level above max stars ${config.levels}` }); });
     return errors;
   },
   install(rt, config) {

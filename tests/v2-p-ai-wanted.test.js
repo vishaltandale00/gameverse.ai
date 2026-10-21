@@ -94,8 +94,10 @@ test('wanted replays deterministically', () => {
 test('preflight rejects bad wanted configs with stable codes', () => {
   const { registry, logic } = catalogue([testSpace]);
   const bad = doc({ levels: 3, crimes: { arson: -1 }, crimeEvents: [{ event: 'defeated', kind: 'jaywalking' }], spawnDistance: [50, 10], response: [{ level: 5, archetype: 'cop' }, { level: 1, archetype: 'tank' }], safeZones: ['nowhere'] });
-  const codes = preflight(bad, registry, logic).errors.map(e => e.code);
-  for (const c of ['wanted_crime_heat', 'wanted_crime_unknown', 'param_range', 'ref_unknown']) assert.ok(codes.includes(c), c);
+  const errors = preflight(bad, registry, logic).errors, codes = errors.map(e => e.code);
+  for (const c of ['wanted_crime_unknown', 'wanted_spawn_distance', 'wanted_response_level', 'ref_unknown']) assert.ok(codes.includes(c), c);
+  // A crime's heat is the declared shape of crimes' values (≥ 0), checked as a param.
+  assert.ok(errors.some(e => e.code === 'param_range' && e.path.endsWith('.with.crimes.arson')), 'negative heat');
   const noBrain = doc(); noBrain.systems = noBrain.systems.filter(s => s.use === 'gameplay.wanted');
   assert.ok(preflight(noBrain, registry, logic).errors.some(e => e.code === 'requires_unmet'));
 });

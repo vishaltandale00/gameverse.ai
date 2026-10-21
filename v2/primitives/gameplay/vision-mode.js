@@ -22,6 +22,8 @@ export default {
       drain: { type: 'object', fields: { resource: { type: 'string', required: true }, perSec: { type: 'number', default: 5, min: 0 } }, effect: 'resource drained while active; empty ends the mode' },
       scanEvery: { type: 'number', default: 0.25, min: 0.02, max: 5, unit: 's' },
     },
+    components: { vision: { type: 'object', effect: 'revealed by the vision mode', fields: { tags: { type: 'list', of: { type: 'string' }, effect: 'tags it is revealed by' } } } },
+    rules: { vision_tags_duplicate: { fields: ['tags'], message: 'tags names each tag once' } },
     provides: { events: ['scan', 'scanned', 'scanned:*', 'vision_on', 'vision_off'], vars: ['vision.active', 'vision.revealed'], services: ['vision'], actions: ['sense'] },
   },
   logic(logic) {
