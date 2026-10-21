@@ -210,11 +210,12 @@ export function mazeWriter({ steps = { lose: ['gameplay.death'] } } = {}) {
   // The outline's small forms: the scaffold's zones named, coins scattered over every zone (the collect win counts them).
   const outline = req => {
     const name = String(req.schema?.name || '');
+    const zone = req.schema?.schema?.properties?.spawns?.items?.properties?.zone;
     const zones = req.schema?.schema?.properties?.spaces?.properties?.level?.properties?.zones?.items?.properties?.id?.enum
-      ?? req.schema?.schema?.properties?.spawns?.items?.properties?.zone?.anyOf?.[0]?.enum;
+      ?? zone?.anyOf?.[0]?.enum ?? zone?.enum;
     if (name.endsWith('_frame') && zones) return JSON.stringify({ title: 'Coin Maze', logline: 'Collect every coin.', premise: 'A maze scattered with coins. Collect them all.', spaces: { level: { zones: zones.map(id => ({ id, name: id.replace(/_/g, ' '), description: `the ${id}` })) } }, player: { archetype: 'hero', zone: zones[0] }, endings: [{ id: 'victory', title: 'Every coin', text: 'The maze is clear.', outcome: 'won' }] });
-    if (name.endsWith('_cast') && zones) return JSON.stringify({ archetypes: [{ id: 'coin', kind: 'pickup', name: 'Coin', components: { collectible: 'coins', other_json: null } }],
-      spawns: zones.map((zone, i) => ({ id: `coins_${i}`, archetype: 'coin', zone, at_json: null, min: 2, max: 2, respawnSec: 0, when_json: null })), items: [], characters: [] });
+    if (name.endsWith('_cast') && zones) return JSON.stringify(formAnswer(req.schema.schema, { archetypes: [{ id: 'coin', kind: 'pickup', name: 'Coin', components: { collectible: { counter: 'coins' } } }],
+      spawns: zones.map((zone, i) => ({ id: `coins_${i}`, archetype: 'coin', zone, count: [2, 2], respawnSec: 0 })), items: [], characters: [] }));
     return null;
   };
   return fakeWriter([req => stepPick(req, { title: 'Coin Maze', name: 'coin maze' }) ?? decompose(req) ?? buildAnswer(req, { space: ['engine.space.grid'], picks: { collect: ['gameplay.move.grid'] }, steps }) ?? outline(req) ?? '{}']);

@@ -177,7 +177,7 @@ test('Pac-Man × haunted library: the setting brings no content section, so the 
   assert.ok(party.from.includes('content.species'), JSON.stringify(party));
   // The whole create run publishes, with no skin instance and no placeholder section.
   // The scripted model's cast for the idea: tomes to collect (the collect win counts them), in every zone of the maze.
-  const { versions } = await create(PAC, { extra: [{ id: 'tome', kind: 'pickup', components: { name: 'Tome', collectible: 'win' } }], spawn: 'tome' });
+  const { versions } = await create(PAC, { extra: [{ id: 'tome', kind: 'pickup', components: { name: 'Tome', collectible: { counter: 'win' } } }], spawn: 'tome' });
   assert.equal(versions.length, 1);
   const doc = versions[0].doc;
   assert.ok(!doc.systems.some(s => s.use === SKIN));

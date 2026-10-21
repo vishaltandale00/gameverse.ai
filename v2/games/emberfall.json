@@ -3652,7 +3652,7 @@
    {
     "id": "meditation_shrine",
     "kind": "prop",
-    "components": {"model":"meditation_shrine","interact":{"prompt":"Meditate","range":2.6},"checkpoint":true,"rest":{}}
+    "components": {"model":"meditation_shrine","interact":{"prompt":"Meditate","range":2.6},"checkpoint":{},"rest":{}}
    },
    {"id":"seal_stone","kind":"prop","components":{"model":"seal_stone","interact":{"prompt":"Study","range":3},"mechanism":"seal_stone"}},
    {
@@ -3663,7 +3663,7 @@
    {
     "id": "chest_rare",
     "kind": "prop",
-    "components": {"model":"chest","container":{"slots":8,"table":"loot_chest_rare"},"interact":{"prompt":"Open","range":2.2},"lock":"wardens_seal_ring"}
+    "components": {"model":"chest","container":{"slots":8,"table":"loot_chest_rare"},"interact":{"prompt":"Open","range":2.2},"lock":{"key":"wardens_seal_ring"}}
    },
    {
     "id": "forage_plant",

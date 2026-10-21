@@ -3463,7 +3463,7 @@
     "components": {"model":"chest","container":{"slots":12,"table":"loot_chest_mine"},"interact":{"prompt":"Open","range":2.6}}
    },
    {"id":"vending","kind":"prop","components":{"model":"vending","interact":{"prompt":"Buy","range":2.4},"shop":"vending"}},
-   {"id":"bed","kind":"prop","components":{"model":"bed","interact":{"prompt":"Sleep","range":2.6},"rest":{},"checkpoint":true}},
+   {"id":"bed","kind":"prop","components":{"model":"bed","interact":{"prompt":"Sleep","range":2.6},"rest":{},"checkpoint":{}}},
    {"id":"barricade","kind":"prop","components":{"model":"barricade","obstacle":true}},
    {"id":"vault_door","kind":"prop","components":{"model":"vault_door","interact":{"prompt":"Open","range":3},"mechanism":"vault_door"}},
    {"id":"first_ledger","kind":"prop","components":{"model":"ledger","interact":{"prompt":"Take","range":2.4}}},

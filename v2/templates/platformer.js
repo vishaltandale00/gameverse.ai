@@ -49,7 +49,7 @@ export default {
           ai: { brain: [{ do: 'patrol', range: 4, pause: [0.2, 0.8] }], speed: 2, perception: { sight: 0, fov: 360, memory: 0 } } } },
         { id: 'coin', name: 'Coin', kind: 'pickup', components: { collectible: { counter: 'coins', points: 10 }, body: { size: [0.6, 0.6] } } },
         { id: 'checkpoint_flag', name: 'Checkpoint flag', kind: 'prop', components: { checkpoint: { touch: true }, body: { size: [0.6, 2] } } },
-        { id: 'goal_flag', name: 'Goal flag', kind: 'prop', components: { goal: true, body: { size: [1, 3] } } },
+        { id: 'goal_flag', name: 'Goal flag', kind: 'prop', components: { goal: {}, body: { size: [1, 3] } } },
       ],
       blocks: [
         { id: 'stone', name: 'Stone', solid: true }, { id: 'ground', name: 'Ground', solid: true }, { id: 'brick', name: 'Brick', solid: true },

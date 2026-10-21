@@ -2685,9 +2685,9 @@
     "kind": "npc",
     "components": {"model":"ashveil","health":{"max":20},"interact":{"prompt":"Talk","range":2.2},"faction":"cinderfolk","ai":{"brain":[{"do":"sit"}]}}
    },
-   {"id":"bench","kind":"prop","components":{"model":"bench","interact":{"prompt":"Rest","range":1.6},"checkpoint":true}},
+   {"id":"bench","kind":"prop","components":{"model":"bench","interact":{"prompt":"Rest","range":1.6},"checkpoint":{}}},
    {"id":"caged_moth","kind":"prop","components":{"model":"caged_moth","interact":{"prompt":"Free","range":1.4},"mechanism":"moth_cage"}},
-   {"id":"lore_tablet","kind":"prop","components":{"model":"tablet","interact":{"prompt":"Read","range":1.4},"collectible":"tablets"}},
+   {"id":"lore_tablet","kind":"prop","components":{"model":"tablet","interact":{"prompt":"Read","range":1.4},"collectible":{"counter":"tablets"}}},
    {"id":"map_fragment","kind":"pickup","components":{"model":"pickup","item":"map_fragment"}},
    {"id":"ash_pickup","kind":"pickup","components":{"model":"pickup","item":"ash_pouch","magnet":3}},
    {"id":"great_lantern","kind":"prop","components":{"model":"lantern_great","interact":{"prompt":"Kindle","range":3}}}
