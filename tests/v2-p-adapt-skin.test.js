@@ -75,8 +75,8 @@ test('(e) explicit pairs, keyed targets and existing fields', () => {
 
 test('(e) preflight rejects bad skins with stable codes', () => {
   const codes = maps => preflight(doc(maps), registry, logic).errors.map(e => e.code);
-  assert.ok(codes([{ from: 'content.monsters', to: 'content.archetypes' }]).includes('skin_source_empty'));
+  assert.ok(codes([{ from: 'content.monsters', to: 'content.archetypes' }]).includes('ref_unknown'));
   assert.ok(codes([{ from: 'content.species', to: 'content.archetypes', pairs: [{ from: 'dragon', to: 'piece_dragon' }] }]).includes('skin_pair_unknown'));
-  assert.ok(codes([{ from: 'species', to: 'content.archetypes' }]).includes('skin_section'));
+  assert.ok(codes([{ from: 'species', to: 'content.archetypes' }]).includes('ref_unknown'));
   assert.ok(preflight(doc(PIECES), registry, logic).warnings.some(w => w.code === 'skin_unapplied'), 'an unapplied skin is reported');
 });

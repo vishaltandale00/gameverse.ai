@@ -17,6 +17,7 @@
 // source entry a target stands for. planner/adapters.js applySkins(doc, registry) applies every skin of a
 // document before preflight.
 import { checkFields } from '../../kernel/params.js';
+import { ID_PATTERN } from '../../kernel/sections.js';
 
 const ID = 'engine.adapt.skin';
 const isObj = v => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
@@ -32,11 +33,11 @@ const merge = (a, b) => { if (!isObj(a) || !isObj(b)) return a === undefined ? s
 const entriesOf = v => (Array.isArray(v) ? v.filter(x => isObj(x) && typeof x.id === 'string') : isObj(v) ? Object.entries(v).filter(([, x]) => isObj(x)).map(([id, x]) => ({ ...x, id })) : []);
 
 const MAP = { type: 'object', fields: {
-  from: { type: 'string', required: true, effect: 'source section path (the concept whose content is used), e.g. content.species' },
-  to: { type: 'string', required: true, effect: "target section path (the slots another primitive's contract reads), e.g. content.archetypes" },
-  pairs: { type: 'list', default: [], of: { type: 'object', fields: { from: { type: 'string', required: true }, to: { type: 'string', required: true }, with: { type: 'json', effect: 'extra target fields for this pair' } } }, effect: 'source id -> target id (default: every source entry)' },
+  from: { type: 'ref', to: 'section', required: true, effect: 'source section path (the concept whose content is used), e.g. content.species' },
+  to: { type: 'ref', to: 'section', required: true, effect: "target section path (the slots another primitive's contract reads), e.g. content.archetypes" },
+  pairs: { type: 'list', default: [], of: { type: 'object', fields: { from: { type: 'string', required: true, effect: 'an id of the source section' }, to: { type: 'string', pattern: ID_PATTERN, required: true, effect: 'the target id' }, with: { type: 'json', effect: 'extra target fields for this pair' } } }, effect: 'source id -> target id (default: every source entry)' },
   prefix: { type: 'string', default: '', effect: 'target id prefix when pairs are derived' },
-  fields: { type: 'object', open: true, default: {}, effect: "target path <- source path ('$id' = the source id)" },
+  fields: { type: 'object', values: { type: 'string', effect: "a source path, or '$id'" }, default: {}, effect: "target path <- source path ('$id' = the source id)" },
   template: { type: 'json', default: {}, effect: 'base of every target entry' },
   mark: { type: 'string', effect: "target path recording {from, id} of the source (default 'components.skin' for archetypes, else none)" },
 } };
@@ -78,7 +79,11 @@ export default {
     params: PARAMS,
     provides: { services: ['skin'] },
     requires: {},
-    components: { skin: { type: 'object', fields: { from: { type: 'string' }, id: { type: 'string' } }, effect: 'the source entry a skinned archetype stands for (owned by engine.adapt.skin)' } },
+    components: { skin: { type: 'object', fields: { from: { type: 'ref', to: 'section', effect: 'the source section' }, id: { type: 'string', effect: 'the id of the source entry' } }, effect: 'the source entry a skinned archetype stands for (owned by engine.adapt.skin)' } },
+    rules: {
+      skin_source_empty: { fields: ['maps[].from'], message: 'the source section has entries with ids (a list of { id } or an id-keyed object)', example: { doc: { plot: { notes: ['a line', 'another'] }, systems: [{ use: ID, with: { maps: [{ from: 'plot.notes', to: 'content.archetypes' }] } }] } } },
+      skin_pair_unknown: { fields: ['maps[].pairs[].from', 'maps[].from'], message: 'a pair names an entry of the source section', example: { doc: { systems: [{ use: ID, with: { maps: [{ from: 'content.archetypes', to: 'content.archetypes', pairs: [{ from: 'dragon', to: 'piece_dragon' }] }] } }] } } },
+    },
     adapts: {
       provides: { capabilities: [], content: [], services: ['skin'] },
       from: {},
@@ -90,8 +95,6 @@ export default {
   validate(config, doc, ctx) {
     const errors = [];
     config.maps.forEach((m, i) => {
-      if (!/^(content|plot)\.[A-Za-z0-9_]+$/.test(m.from)) errors.push({ code: 'skin_section', path: `with.maps[${i}].from`, message: `'${m.from}' is not a content or plot section` });
-      if (!/^(content|plot)\.[A-Za-z0-9_]+$/.test(m.to)) errors.push({ code: 'skin_section', path: `with.maps[${i}].to`, message: `'${m.to}' is not a content or plot section` });
       const src = entriesOf(getPath(doc, m.from));
       if (!src.length) { errors.push({ code: 'skin_source_empty', path: `with.maps[${i}].from`, message: `${m.from} has no entries to skin with` }); return; }
       m.pairs.forEach((p, j) => { if (!src.some(s => s.id === p.from)) errors.push({ code: 'skin_pair_unknown', path: `with.maps[${i}].pairs[${j}].from`, message: `${m.from} has no '${p.from}'`, hint: `ids: ${src.map(s => s.id).slice(0, 12).join(', ')}` }); });

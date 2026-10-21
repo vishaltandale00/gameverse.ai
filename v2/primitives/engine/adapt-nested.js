@@ -22,9 +22,11 @@
 //    opponent's. With fates, `do` runs once for each defeated participant ('$loser', with '$winner' the first one
 //    that keeps its place), and `take` moves the winner into the place of the participant it defeated.
 import { bindRoles, runBound, err, sortedEntities } from '../gameplay/modes-lib-util.js';
+import { ID_PATTERN } from '../../kernel/sections.js';
 
 const ID = 'engine.adapt.nested';
-const SLUG = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+/** A rule example: a document whose systems are an inner loop and one encounter over it (a fragment replacing the host's systems). */
+const encounter = with_ => ({ doc: { systems: [{ use: 'gameplay.move.walk' }, { use: ID, with: { on: 'collide', inner: ['gameplay.move.walk'], outcomes: [{ on: 'win' }], ...with_ } }] } });
 const FATES = ['keeps', 'defeated'];
 const getPath = (obj, path) => String(path).split('.').filter(Boolean).reduce((o, k) => (o == null ? undefined : o[k]), obj);
 /** Write value at a dotted path ('0.foe.0.species') of a JSON tree; false when the path does not exist. */
@@ -41,10 +43,10 @@ export default {
     intent: 'Nested encounter adapter: an outer event (a capture, touching an enemy, entering a door) starts another loop (a creature battle, a turn battle, a race, a minigame) in a sub-space or overlay with the participants carried in; the outer loop is held meanwhile, and the inner outcome comes back as outer effects.',
     views: ['any'],
     params: {
-      id: { type: 'string', default: 'nested', effect: 'encounter id (events nested_start:<id> / nested_end:<id>)' },
+      id: { type: 'string', pattern: ID_PATTERN, default: 'nested', effect: 'encounter id (events nested_start:<id> / nested_end:<id>)' },
       on: { type: 'string', required: true, effect: 'outer event that triggers the encounter' },
       when: { type: 'predicate', effect: 'trigger only when this holds (roles bound: $attacker...)' },
-      roles: { type: 'object', open: true, default: {}, effect: "role -> trigger event data field holding an entity id ('player' for the player); default: every data field naming an entity" },
+      roles: { type: 'object', values: { type: 'string', effect: "a trigger event data field, or 'player'" }, default: {}, effect: "role -> trigger event data field holding an entity id ('player' for the player); default: every data field naming an entity" },
       inner: { type: 'list', of: { type: 'string' }, min: 1, required: true, effect: 'primitive ids of the inner loop (in this document)' },
       space: { type: 'ref', to: 'space', effect: 'inner sub-space carried participants move into' },
       carry: { type: 'list', default: [], of: { type: 'object', fields: { role: { type: 'string', required: true }, at: { type: 'json' }, zone: { type: 'ref', to: 'zone' }, back: { type: 'boolean', default: true } } }, effect: 'participants moved into the inner space and (back) returned afterwards' },
@@ -70,6 +72,13 @@ export default {
     },
     provides: { events: ['nested_start', 'nested_start:*', 'nested_end', 'nested_end:*'], vars: ['nested.active'] },
     requires: {},
+    rules: {
+      nested_inner_unknown: { fields: ['inner'], message: 'inner names registered primitives this document uses (in systems or graphics)' },
+      nested_space: { fields: ['carry', 'space'], message: 'carrying participants needs the inner space (space)', example: encounter({ carry: [{ role: 'player' }] }) },
+      nested_role_unknown: { fields: ['carry[].role', 'fill[].role', 'roles'], message: "a role is a key of roles (any role when roles is empty) or 'player'", example: encounter({ roles: { attacker: 'who' }, space: 'pitch', carry: [{ role: 'defender' }] }) },
+      nested_fill_path: { fields: ['fill[].path', 'start'], message: 'a fill path is an existing field of start (a placeholder value there)', example: encounter({ fill: [{ path: '0.foe', role: 'player', field: 'archetype' }] }) },
+      nested_duplicate: { fields: ['id'], message: 'nested encounters of a document have distinct ids', example: { doc: { systems: [{ use: 'gameplay.move.walk' }, { use: ID, with: { on: 'collide', inner: ['gameplay.move.walk'], outcomes: [{ on: 'win' }] } }, { use: ID, with: { on: 'collide', inner: ['gameplay.move.walk'], outcomes: [{ on: 'win' }] } }] } } },
+    },
     adapts: {
       provides: { capabilities: [], content: [], services: [] },
       from: {},
@@ -83,7 +92,6 @@ export default {
   },
   validate(config, doc, ctx, inst) {
     const errors = [], used = new Set([...(doc.systems || []), ...(doc.graphics || [])].map(s => s?.use));
-    if (!SLUG.test(config.id || '')) errors.push(err('nested_id', 'with.id', 'id must be a lowercase slug'));
     config.inner.forEach((id, i) => {
       if (!ctx.registry.get(id)) errors.push(err('nested_inner_unknown', `with.inner[${i}]`, `'${id}' is not a registered primitive`));
       else if (!used.has(id)) errors.push(err('nested_inner_unknown', `with.inner[${i}]`, `'${id}' is not in this document`, `add { "use": "${id}" } to systems (the inner loop must not start by itself)`));
