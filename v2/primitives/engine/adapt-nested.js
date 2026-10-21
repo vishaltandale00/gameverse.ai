@@ -14,11 +14,18 @@
 //    (freeze: whatever else moves them), and a modal admits only the inner loop's verbs (its cards'
 //    provides.actions, or `verbs`);
 //  - outcomes: the first inner event (`on`, with optional `when`) that matches ends the encounter and runs its
-//    outer effects (`do`), e.g. battle_end:win -> kill '$defender', battle_end:lose -> kill '$attacker'.
+//    outer effects (`do`), e.g. battle_end:win -> kill '$defender', battle_end:lose -> kill '$attacker';
+//  - fates: what an outcome means for each participant, from the inner loop's declaration (card.loop.outcome): each
+//    inner side ('player': the side the player plays, 'opponent': the other) keeps its place or is defeated. A role is
+//    on the player's side when it is the player, or a member of the outer loop's player groups (`player`: the
+//    component field holding a participant's group and the groups the player controls); every other role is the
+//    opponent's. With fates, `do` runs once for each defeated participant ('$loser', with '$winner' the first one
+//    that keeps its place), and `take` moves the winner into the place of the participant it defeated.
 import { bindRoles, runBound, err, sortedEntities } from '../gameplay/modes-lib-util.js';
 
 const ID = 'engine.adapt.nested';
 const SLUG = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+const FATES = ['keeps', 'defeated'];
 const getPath = (obj, path) => String(path).split('.').filter(Boolean).reduce((o, k) => (o == null ? undefined : o[k]), obj);
 /** Write value at a dotted path ('0.foe.0.species') of a JSON tree; false when the path does not exist. */
 function setPath(obj, path, value) {
@@ -49,8 +56,12 @@ export default {
       } }, effect: "participant data written into the start effects (the defender's species into the foe)" },
       outcomes: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
         on: { type: 'string', required: true, effect: 'inner event that ends the encounter' }, when: { type: 'predicate' },
-        result: { type: 'string', default: 'done' }, do: { type: 'effects', default: [], effect: 'outer effects (roles bound)' },
+        result: { type: 'string', default: 'done' }, do: { type: 'effects', default: [], effect: 'outer effects (roles bound; with fates, once per defeated participant as $loser)' },
+        fates: { type: 'object', fields: { player: { type: 'string', options: FATES }, opponent: { type: 'string', options: FATES } }, effect: "each inner side's fate for this result (the inner card's card.loop.outcome)" },
       } }, effect: 'inner outcome -> outer effects; the first match ends the encounter' },
+      player: { type: 'object', fields: { component: { type: 'string', required: true }, field: { type: 'string', required: true }, is: { type: 'list', of: { type: 'string' }, default: [] } },
+        effect: "the outer participants on the player's side: entities whose components[component][field] is one of `is` (the player always is)" },
+      take: { type: 'boolean', default: false, effect: 'the winner takes the place of the participant it defeated in the outer space' },
       hold: { type: 'list', of: { type: 'string' }, default: [], effect: 'outer primitives whose systems are held while inside (default: every other mode primitive in the document)' },
       freeze: { type: 'boolean', default: true, effect: 'hold outer entities too (those not carried and not in the inner space)' },
       modal: { type: 'boolean', default: true, effect: 'while inside, only the inner loop verbs are accepted' },
@@ -158,8 +169,29 @@ export default {
       for (const id of a.carried) { const e = rt.entity(id), r = a.ret[id]; if (e && r?.back && r.space && e.space !== r.space) rt.moveToSpace(e, r.space, r.at, r.zone || undefined); }
       rt.state.vars['nested.active'] = 0;
       rt.emitTyped('nested_end', config.id, { result: o.result, roles: a.roles });
-      runBound(rt, o.do, a.roles);
+      if (o.fates) settle(o, a.roles); else runBound(rt, o.do, a.roles);
       runBound(rt, config.onEnd, a.roles);
+    }
+    /** The inner side a participant played: the player's when it is the player or in one of the outer player groups. */
+    function sideOf(id) {
+      const e = rt.entity(id); if (!e) return null;
+      if (e.id === rt.player()?.id) return 'player';
+      const p = config.player, v = p ? e.components?.[p.component]?.[p.field] : undefined;
+      return p && typeof v === 'string' && p.is.includes(v) ? 'player' : 'opponent';
+    }
+    /** Apply an outcome's fates: `do` once per defeated participant ($loser), the winner taking its place with `take`. */
+    function settle(o, roles) {
+      const ids = [...new Set(Object.values(roles))].filter(id => rt.entity(id));
+      const fate = id => o.fates[sideOf(id)];
+      const losers = ids.filter(id => fate(id) === 'defeated'), winner = ids.find(id => fate(id) === 'keeps');
+      for (const loser of losers) {
+        const e = rt.entity(loser), place = e ? { space: e.space, at: structuredClone(e.at), zone: e.zone } : null;
+        runBound(rt, o.do, { ...roles, loser, ...(winner ? { winner } : {}) });
+        const w = winner ? rt.entity(winner) : null;
+        if (!config.take || !w || !place?.space || place.at == null) continue;
+        if (w.space !== place.space) rt.moveToSpace(w, place.space, place.at, place.zone || undefined);
+        else rt.space(place.space).setPos(w, place.at, rt);
+      }
     }
 
     rt.on(config.on, data => {

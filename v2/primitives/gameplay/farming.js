@@ -14,7 +14,7 @@ const ABOVE = [0, 1, 0];
 export default {
   id: 'gameplay.farming',
   card: {
-    loop: { verbs: ['till', 'plant', 'water', 'harvest'], progress: ['tilled', 'planted', 'watered', 'harvested'], win: { when: { count: 'harvested', gte: '$target' } } },
+    loop: { verbs: ['till', 'plant', 'water', 'harvest'], progress: ['tilled', 'planted', 'watered', 'harvested'], win: { when: { count: 'harvested', gte: '$target' }, reads: { event: 'harvested', by: { actions: ['harvest'] } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "crops", "min": 2, "why": "farming needs crops: each names its produce item (and seed item) from content.items", "example": [{"item": "turnip", "seed": "turnip_seed", "days": 3}]},

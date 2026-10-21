@@ -13,9 +13,19 @@
 //             ending a plot ending section wins (the story);
 //             scope  'encounter' when the win resolves one encounter (a battle) rather than the game (default 'game');
 //             applies { param, field?, is }: the win exists only when the instance config matches (the preset makes it);
-//             reads  the state the win condition tests (planner/loop-check.js): { component, of: opponents|player } | { event } | { var }
-//                    (a `when` template's count or var is its read when none is declared);
+//             reads  the state the win condition tests (planner/loop-check.js): { component, of: opponents|player } | { event } | { var },
+//                    with `from` (the primitive whose code writes it, when not this one or the component's owner) and
+//                    `by` (what changes it: { actions: player verbs that do, directly or through the effects the document
+//                    gives them; effects; events its code runs on; movement: the player's body touching or passing });
+//                    every loop end declares it, checked against the code (tests/v2-p-loop-reads.test.js);
 //   lose?:    the same, for defeat;
+//   outcome?: how this loop's result maps onto the participants of an encounter that runs it as an inner loop
+//             (engine.adapt.nested): { sides: ['player', 'opponent'?], results: { <result>: { param, player, opponent? } } }
+//             sides    the loop's sides an encounter result is about: 'player' is the side the player plays, 'opponent'
+//                      the side it plays against;
+//             results  each way the loop ends: `param` the effects param (of this card, or of its card.mode.via host;
+//                      'list.field' for every entry of a list param) run when it ends that way, and each side's fate:
+//                      'keeps' (stays in play) or 'defeated' (out of play in the outer loop);
 //   needs?:   { content: [document sections], participants: param | null };
 // }
 // card.mode is the richer form of the same declaration on primitives that own a whole loop (interaction, opponent,
@@ -23,11 +33,16 @@
 import { isObj, isList, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
-/** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, applies?: { param: string, field?: string, is: unknown }, reads?: { component?: string, of?: string, event?: string, var?: string } }} LoopEnd */
+/** What changes the state a loop end reads. @typedef {{ actions?: string[], effects?: string[], events?: string[], movement?: boolean }} ReadsBy */
+/** @typedef {{ component?: string, of?: string, event?: string, var?: string, from?: string, by?: ReadsBy }} EndReads */
+/** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, applies?: { param: string, field?: string, is: unknown }, reads?: EndReads }} LoopEnd */
+/** A side's fate when an inner loop ends one way. @typedef {'keeps' | 'defeated'} Fate */
+/** @typedef {{ param: string, player: Fate, opponent?: Fate }} OutcomeResult */
+/** @typedef {{ sides: string[], results: Record<string, OutcomeResult> }} LoopOutcome */
 /**
  * A primitive's loop declaration (card.loop merged over card.mode).
  * @typedef {{ verbs: string[], progress: string[], win: LoopEnd | null, lose: LoopEnd | null, needs: { content: string[], participants: unknown },
- *   interaction: string | null, opponent: string | null, space: Array<string | string[]>, via: string | null, bot: string | null, wraps: boolean }} Loop
+ *   interaction: string | null, opponent: string | null, space: Array<string | string[]>, via: string | null, bot: string | null, wraps: boolean, outcome: LoopOutcome | null }} Loop
  */
 /** @typedef {{ use: string, path: string, loop: Loop }} LoopPrimitive */
 /** @typedef {LoopEnd & { use: string, path: string }} PlacedEnd */
@@ -66,7 +81,26 @@ export function cardLoop(card) {
     interaction, opponent: typeof (own?.opponent ?? mode?.opponent) === 'string' ? String(own?.opponent ?? mode?.opponent) : null,
     space: /** @type {Array<string | string[]>} */ (space.filter(x => typeof x === 'string' || (isList(x) && x.every(c => typeof c === 'string')))),
     via: typeof mode?.via === 'string' ? mode.via : null, bot: typeof mode?.bot === 'string' ? mode.bot : null, wraps: Boolean(mode?.wraps),
+    outcome: outcomeOf(own?.outcome),
   };
+}
+
+const FATES = ['keeps', 'defeated'];
+/**
+ * A loop's declared encounter outcome (card.loop.outcome), or null when it declares none or a malformed one.
+ * @param {unknown} o @returns {LoopOutcome | null}
+ */
+export function outcomeOf(o) {
+  if (!isObj(o) || !isObj(o.results)) return null;
+  const sides = strs(o.sides);
+  if (!sides.includes('player') || sides.some(x => x !== 'player' && x !== 'opponent')) return null;
+  /** @type {Record<string, OutcomeResult>} */
+  const results = {};
+  for (const [k, r] of Object.entries(o.results)) {
+    if (!isObj(r) || typeof r.param !== 'string' || !sides.every(x => FATES.includes(String(r[x])))) return null;
+    results[k] = /** @type {OutcomeResult} */ ({ param: r.param, ...Object.fromEntries(sides.map(x => [x, r[x]])) });
+  }
+  return Object.keys(results).length ? { sides, results } : null;
 }
 
 /** Does a loop end end the game (rather than one encounter)? @param {LoopEnd | null | undefined} e */

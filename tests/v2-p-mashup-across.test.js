@@ -69,13 +69,23 @@ test('the preset adds the matching adapters with params filled from declarations
   assert.equal(p.ok, true, JSON.stringify(p.errors));
   assert.deepEqual(p.gaps, []);
   // nested: the joined loop (the creature battle) is entered on the outer turn loop's declared progress event, and its
-  // declared win and lose emit the outcomes the adapter maps back.
+  // declared encounter outcome (card.loop.outcome) emits the results the adapter maps back, each with its sides' fates.
   const nested = p.doc.systems.find(s => s.use === 'engine.adapt.nested');
   assert.deepEqual(nested.with.inner, ['gameplay.creature.battle']);
   assert.ok(registry.get('gameplay.turns').card.loop.progress.includes(nested.with.on), nested.with.on);
-  assert.deepEqual(nested.with.outcomes.map(o => o.result), ['won', 'lost']);
+  const declared = registry.get('gameplay.creature.battle').card.loop.outcome.results;
+  assert.deepEqual(nested.with.outcomes.map(o => o.result), Object.keys(declared));
   const battle = p.doc.systems.find(s => s.use === 'gameplay.creature.battle');
-  for (const o of nested.with.outcomes) assert.ok([...battle.with.onWin, ...battle.with.onLose].some(e => e.do === 'emit' && e.event === o.on), o.on);
+  for (const o of nested.with.outcomes) {
+    const r = declared[o.result];
+    assert.ok(battle.with[r.param].some(e => e.do === 'emit' && e.event === o.on), o.on);
+    assert.deepEqual(o.fates, { player: r.player, opponent: r.opponent });
+    // A side defeated in the battle is taken out of play on the board the way the document declares (combat.health: kill).
+    assert.deepEqual(o.do, Object.values(o.fates).includes('defeated') ? [{ do: 'kill', who: '$loser' }] : [], o.result);
+  }
+  // The player's side on the board: the turn loop's player-controlled sides, read from the pieces' turns.side.
+  const turns = p.doc.systems.find(s => s.use === 'gameplay.turns');
+  assert.deepEqual(nested.with.player, { component: 'turns', field: 'side', is: turns.with.sides.filter(x => x.control === 'player').map(x => x.id) });
   // skin: the joined concept's content fills the turn loop's pieces.
   assert.deepEqual(p.doc.systems.find(s => s.use === 'engine.adapt.skin').with.maps.map(m => [m.from, m.to]), [['content.species', 'content.archetypes']]);
   // The game it composes is the outer loop's: the turns win owns the game, the structure passes, the document preflights.

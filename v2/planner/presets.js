@@ -352,6 +352,100 @@ export function configureSkins(doc, st, decomposition, selection, registry) {
   return maps.map(m => ({ from: m.from, to: m.to }));
 }
 
+/** A nested encounter outcome (engine.adapt.nested with.outcomes[]). @typedef {{ on: string, result: string, fates: Record<string, string>, do: unknown[] }} EncounterOutcome */
+/**
+ * A nested encounter's outcomes, from what its inner loops declare (card.loop.outcome): each result's effects param
+ * (on the inner instance, or on the host it plays through, card.mode.via; each entry of a 'list.field' param) emits
+ * `<id>_<result>`, which ends the encounter with that result and its sides' fates. The outer effects (`do`, run for
+ * each defeated participant) are written once the document is final (configureEncounters). Mutates `systems` (the
+ * emits). An inner loop that declares no outcome, or whose list param has no entries yet, is reported, never guessed.
+ * @param {RegistryLike} registry @param {SystemInstance[]} systems @param {{ id: string, inner: string[] }} spec
+ * @returns {{ outcomes: EncounterOutcome[], problems: string[] }}
+ */
+export function encounterOutcomes(registry, systems, { id, inner }) {
+  /** @type {EncounterOutcome[]} */
+  const outcomes = [];
+  /** @type {string[]} */
+  const problems = [];
+  for (const u of inner) {
+    const card = registry.get(u)?.card, loop = cardLoop(card), o = loop?.outcome;
+    if (!o) { problems.push(`${u} declares no encounter outcome (card.loop.outcome)`); continue; }
+    for (const [result, r] of Object.entries(o.results)) {
+      const [p, field] = r.param.split('.');
+      const host = card?.params?.[p] ? u : loop?.via;
+      const inst = systems.find(s => s.use === host);
+      if (!inst || !host) { problems.push(`${u}: the ${result} param ${r.param} is on ${host || 'no primitive'}, which the document does not run`); continue; }
+      const on = `${id}_${result}`, emit = { do: 'emit', event: on };
+      const emits = (/** @type {unknown} */ v) => [...list(v), ...(list(v).some(e => prop(e, 'do') === 'emit' && prop(e, 'event') === on) ? [] : [emit])];
+      const w = inst.with = { ...(inst.with || {}) };
+      if (field) {
+        const entries = objects(w[p]);
+        if (!entries.length) { problems.push(`${u}: its ${result} runs through ${host} with.${p} entries, which are not written yet`); continue; }
+        w[p] = entries.map(x => ({ ...x, [field]: emits(x[field]) }));
+      } else w[p] = emits(w[p]);
+      outcomes.push({ on, result, fates: Object.fromEntries(o.sides.map(side => [side, /** @type {Record<string, string>} */ (/** @type {unknown} */ (r))[side]])), do: [] });
+    }
+  }
+  return { outcomes, problems };
+}
+
+/**
+ * How the document takes an encounter's defeated participant out of play: the effect a primitive it runs declares for
+ * a component (card.defeats: { component: effect }), the component the outer loop reads of its participants
+ * (win.reads / lose.reads) first; with no such read, the document's only declared one. -> effects ('$loser' bound) or
+ * null when none (or no single one) is declared.
+ * @param {unknown} doc @param {RegistryLike} registry @param {string | null} outer @returns {unknown[] | null}
+ */
+export function encounterDefeat(doc, registry, outer) {
+  const pairs = list(prop(doc, 'systems')).map(s => registry.get(String(prop(s, 'use')))?.card).flatMap(c => Object.entries(isObj(c?.defeats) ? c.defeats : {}).filter(([, e]) => isStr(e)));
+  const l = outer ? cardLoop(registry.get(outer)?.card) : null;
+  const read = [readsOf(l?.win)?.component, readsOf(l?.lose)?.component].find(isStr);
+  const pick = read ? pairs.find(([c]) => c === read) : new Set(pairs.map(([c, e]) => `${c}:${e}`)).size === 1 ? pairs[0] : undefined;
+  return pick ? [{ do: pick[1], who: '$loser' }] : null;
+}
+
+/**
+ * The outer participants on the player's side of an encounter: the outer loop's groups the player is seated in
+ * (card.engage.join.where) and the component field holding each participant's group (content.js participantsOf).
+ * -> null when the outer loop seats no groups (then only the player is on the player's side).
+ * @param {unknown} doc @param {RegistryLike} registry @param {string | null} outer
+ */
+export function encounterPlayer(doc, registry, outer) {
+  const P = participantsOf(doc, registry).find(p => p.use === outer);
+  if (!P || !P.field) return null;
+  const card = registry.get(P.use)?.card, join = prop(card?.engage, 'join'), where = prop(join, 'param') === P.param ? prop(join, 'where') : null;
+  if (!isObj(where)) return null;
+  const inst = list(prop(doc, 'systems')).find(s => prop(s, 'use') === P.use);
+  const fields = prop(prop(card?.params?.[P.param], 'of'), 'fields');
+  const entries = objects(prop(prop(inst, 'with'), P.param) ?? card?.params?.[P.param]?.default);
+  const is = entries.filter(g => Object.entries(where).every(([k, v]) => (g[k] ?? prop(prop(fields, k), 'default')) === v)).map(g => String(g.id));
+  return { component: P.component, field: P.field, is };
+}
+
+/**
+ * Nested encounters' outer effects, once the document's structure is final: each outcome that defeats a side runs the
+ * document's defeat effect on '$loser' (encounterDefeat), and the encounter knows the player's side (encounterPlayer).
+ * Mutates `doc`; -> what cannot be derived.
+ * @param {any} doc @param {RegistryLike} registry @param {Array<{ id: string, outer: string | null }>} encounters @returns {string[]}
+ */
+export function configureEncounters(doc, registry, encounters) {
+  /** @type {string[]} */
+  const problems = [];
+  for (const { id, outer } of encounters) {
+    const inst = (doc.systems || []).find((/** @type {any} */ s) => registry.get(s?.use)?.card.adapts?.relation === 'nested' && s.with?.id === id);
+    if (!inst) continue;
+    const player = encounterPlayer(doc, registry, outer);
+    const defeat = encounterDefeat(doc, registry, outer);
+    const outcomes = objects(inst.with.outcomes).map(o => {
+      if (!Object.values(isObj(o.fates) ? o.fates : {}).includes('defeated')) return o;
+      if (!defeat) { problems.push(`the ${id} encounter's ${o.result} defeats a participant, and no primitive of the document declares how (card.defeats${outer ? ` for what ${outer} reads` : ''})`); return o; }
+      return { ...o, do: structuredClone(defeat) };
+    });
+    inst.with = { ...inst.with, outcomes, ...(player ? { player } : {}) };
+  }
+  return problems;
+}
+
 /** A fix the structural loop repair made. @typedef {{ code: string, path: string, what: string }} LoopFix */
 /** The value of component C a card declares: its archetypes contract examples, then what it gives the player (card.engage.player). @param {unknown} card @param {string} C */
 const componentExample = (card, C) => {
@@ -604,10 +698,12 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   for (const n of nested) { const own = systems.find(s => s.use === n.use); if (own) own.with = { ...(own.with || {}), [n.param]: n.space }; }
   // Mashup relations across concepts: the adapter that declares each one (card.adapts.relation) joins, its params
   // filled from declarations. nested: the joined side's loops are entered on the outer loop's declared progress event
-  // (one that names its subject: a typed `event:*` it provides) and their declared win and lose (effects params) emit
-  // the outcomes the adapter maps back; skin: its maps (configureSkins, below); union: a region of the space kind the
+  // (one that names its subject: a typed `event:*` it provides), their declared encounter outcomes (card.loop.outcome)
+  // emit the results the adapter maps back, each side's fate becoming outer effects (configureEncounters); skin: its maps (configureSkins, below); union: a region of the space kind the
   // joined loop declares, projected by the adapter's own adapt() hook, when no chosen space is that kind (otherwise
   // both loops already run in one space). What cannot be derived is a gap, never a guess.
+  /** @type {Array<{ id: string, outer: string | null }>} */
+  const encounters = [];
   const loopsOf = (/** @type {string[]} */ ids) => [...new Set(ids.flatMap(id => (selection.mechanics || []).find(x => x.id === id)?.primitives || []).filter(id => st.systems.includes(id) && cardLoop(registry.get(id)?.card)))];
   for (const m of decomposition.core?.mashup || []) {
     const use = adaptersFor(registry, m.relation)[0];
@@ -623,19 +719,14 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
       const hostCard = host ? registry.get(host)?.card : null;
       const progress = cardLoop(hostCard)?.progress || [];
       const on = progress.find(e => (hostCard?.provides?.events || []).includes(`${e}:*`)) || progress[0] || null;
-      /** @type {Array<{ on: string, result: string, do: unknown[] }>} */
-      const outcomes = [];
-      for (const [side, result] of /** @type {const} */ ([['win', 'won'], ['lose', 'lost']])) for (const u of inner) {
-        const p = cardLoop(registry.get(u)?.card)?.[side]?.param;
-        const own = systems.find(s => s.use === u);
-        if (!own || !isStr(p) || registry.get(u)?.card.params?.[p]?.type !== 'effects') continue;
-        const event = `${id}_${result}`;
-        own.with = { ...(own.with || {}), [p]: [...list(own.with?.[p]), { do: 'emit', event }] };
-        if (!outcomes.some(o => o.on === event)) outcomes.push({ on: event, result, do: [] });
-      }
-      if (!on || !outcomes.length) { gap(`the nested encounter needs ${!on ? `an outer loop progress event to start it (${host || 'no outer loop'} declares none)` : `the inner loop's declared win or lose as effects (${inner.join(', ')})`}`); continue; }
+      // The inner loops' declared encounter outcomes (card.loop.outcome) end it; their fates become outer effects
+      // once the document is final (configureEncounters).
+      const { outcomes, problems } = encounterOutcomes(registry, systems, { id, inner });
+      for (const why of problems) gap(why);
+      if (!on || !outcomes.length) { gap(`the nested encounter needs ${!on ? `an outer loop progress event to start it (${host || 'no outer loop'} declares none)` : `an encounter outcome its inner loops declare (${inner.join(', ')})`}`); continue; }
       const space = nested.find(n => inner.includes(n.use))?.space;
       systems.push({ use, with: { id, inner, on, outcomes, ...(space ? { space } : {}) } });
+      encounters.push({ id, outer: host });
     } else if (m.relation === 'skin') {
       if (systems.some(s => s.use === use)) continue;
       systems.push({ use, with: {} });
@@ -683,6 +774,9 @@ export function preset({ decomposition, selection, registry, logic, seed, prompt
   // The loops' structure passes the static loop check (loop-check.js) from the declarations: participants, the
   // components the win reads, an action that changes it, the win and lose wired. What cannot be derived is reported.
   const looped = repairLoop(seated.doc, registry, { logic, core: st.core });
+  // Nested encounters' outcomes act on the outer participants: the defeated side is taken out of play the way the
+  // final document declares (card.defeats), the player's side known from the outer loop's seated groups.
+  for (const why of configureEncounters(looped.doc, registry, encounters)) gaps.push({ mechanic: 'mashup', description: `needs: ${why}`, importance: 'core', kind: 'adapter', why });
   // Every primitive of the collection is kept: repair fixes fields and reports what it cannot fix.
   const keep = new Set((looped.doc.systems || []).map((/** @type {SystemInstance} */ s) => s.use));
   let repaired = repairDocument(looped.doc, { registry, logic, protect: keep });

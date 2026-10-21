@@ -19,7 +19,7 @@ export default {
   card: {
     loop: { verbs: ['select', 'order', 'produce', 'rally'], progress: ['unit_produced', 'gathered', 'building_complete', 'unit_attack'] },
     // RTS mode: the player's faction against AI factions; won when only the player's faction stands.
-    mode: { loop: 'rts', interaction: 'cursor-board', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.tilemap', ['position']], needs: { content: ['content.archetypes'], participants: 'factions' }, win: { param: 'onVictory' }, lose: { param: 'onDefeat' }, bot: 'turn-board' },
+    mode: { loop: 'rts', interaction: 'cursor-board', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.tilemap', ['position']], needs: { content: ['content.archetypes'], participants: 'factions' }, win: { param: 'onVictory', reads: { event: 'faction_defeated', by: { actions: ['order', 'produce'] } } }, lose: { param: 'onDefeat', reads: { event: 'faction_defeated', by: { actions: ['order', 'produce'] } } }, bot: 'turn-board' },
     intent: 'Real-time strategy: factions and resources, unit selection and orders (move, attack, attack-move, gather, build, stop, hold, patrol, queued), worker gathering loops, production queues with rally points and supply, construction, auto-targeting, fog of war over line of sight, a simple AI opponent, and faction defeat.',
     views: ['td', 'iso'],
     params: {

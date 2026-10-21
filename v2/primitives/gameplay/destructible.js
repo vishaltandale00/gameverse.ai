@@ -27,7 +27,7 @@ const MATERIAL_SCHEMA = { type: 'object', open: true, fields: { hp: { type: 'num
 export default {
   id: ID,
   card: {
-    loop: { verbs: [], progress: ['destroyed', 'cracked', 'cell_broken'], win: { when: { count: 'destroyed', gte: '$target' } } },
+    loop: { verbs: [], progress: ['destroyed', 'cracked', 'cell_broken'], win: { when: { count: 'destroyed', gte: '$target' }, reads: { event: 'destroyed', by: { effects: ['detonate', 'shatter'], events: ['contact', 'explosion', 'destructible_request'] } } } },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { destructible: { type: 'object', fields: { material: { type: 'string', required: true, effect: 'a materials key: wood, stone, glass, tnt...' }, hp: { type: 'number', min: 0 }, scale: { type: 'number', min: 0 } }, effect: 'breaks from impacts and blasts' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

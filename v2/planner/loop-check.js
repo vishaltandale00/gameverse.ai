@@ -10,7 +10,8 @@
 //   affecting     some declared player verb or action can change the state its win reads (win.reads, or what a
 //                 `when` template counts): an effect in its own action params owned by the primitive that owns the
 //                 component, a primitive with player verbs that requires that owner, or a player-driven provider of
-//                 the event or var the win counts;
+//                 the event or var the win counts; a win that declares no reads is an error (loop_win_reads_undeclared):
+//                 whether play can reach it is unknown;
 //   wiring        the win of the loop that owns the game's win is wired to a won ending (an end_game effect in its
 //                 declared param, its `end` boolean, a `when` ending with its evaluator in the document, or a won
 //                 story ending), and its declared lose (and the core loops' losses) to a lost one.
@@ -32,7 +33,8 @@ import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 /**
  * The state a loop's win (or lose) reads: a component of its opponents (or the player, or every participant), an
  * event count or a var. Declared as win.reads; a `when` template's count/var is its read when none is declared.
- * @typedef {{ component?: string, of?: string, event?: string, var?: string }} LoopReads
+ * `from`: the primitive whose code writes it (when not this one or the component's owner); `by`: what changes it.
+ * @typedef {{ component?: string, of?: string, event?: string, var?: string, from?: string, by?: import('./loop.js').ReadsBy }} LoopReads
  */
 /**
  * What a problem says is missing, as data for repair and re-planning. `pending`: the list param whose entries (content
@@ -76,8 +78,16 @@ export function readsOf(end) {
   if (isObj(r)) {
     /** @type {LoopReads} */
     const out = {};
-    for (const k of /** @type {const} */ (['component', 'of', 'event', 'var'])) if (isStr(r[k])) out[k] = String(r[k]);
-    return Object.keys(out).length ? out : null;
+    for (const k of /** @type {const} */ (['component', 'of', 'event', 'var', 'from'])) if (isStr(r[k])) out[k] = String(r[k]);
+    if (isObj(r.by)) {
+      const by = r.by;
+      /** @type {import('./loop.js').ReadsBy} */
+      const b = {};
+      for (const k of /** @type {const} */ (['actions', 'effects', 'events'])) if (Array.isArray(by[k])) b[k] = by[k].filter(isStr).map(String);
+      if (by.movement === true) b.movement = true;
+      out.by = b;
+    }
+    return out.component || out.event || out.var ? out : null;
   }
   const w = end.when;
   if (isObj(w) && isStr(w.count)) return { event: w.count };
@@ -264,7 +274,7 @@ export function loopReport(doc, registry, { logic = null, core = null } = {}) {
     if (l !== owner) continue;
     // The state the win reads, and whether play can change it.
     if (!reads) {
-      if (l.loop.win && (isStr(l.loop.win.param) || isStr(l.loop.win.end))) push(LOOP_CODES.reads, l, `${l.path}`, 'its win declares no `reads` (the state the win condition tests), so whether play can reach it is not checked', 'declare card.loop.win.reads (or mode.win.reads): { component, of } | { event } | { var }', { kind: 'reads' }, 'warning');
+      if (l.loop.win) push(LOOP_CODES.reads, l, `${l.path}`, 'its win declares no `reads` (the state the win condition tests), so whether play can reach it cannot be checked', 'declare card.loop.win.reads (or mode.win.reads): { component, of } | { event } | { var }, with `by` (the verbs, effects or events that change it)', { kind: 'reads' });
     } else if (reads.component) {
       const C = reads.component, owners = ownersOf(registry, C);
       if (!owners.some(o => used.has(o))) push(LOOP_CODES.owner, l, 'systems', `its win reads the "${C}" component, which no primitive of the document runs (owners: ${owners.join(', ') || 'none registered'})`, `add ${owners[0] || `a primitive that owns components.${C}`}`, { kind: 'owner', component: C, owners });
@@ -339,7 +349,8 @@ function changesComponent(doc, registry, logic, l, C, used) {
  * Does a player-driven primitive of the document produce the event (or var)? A provider is driven by the player
  * through its own player verbs, the player's movement (a primitive with card.locomotion and verbs) when it needs
  * space capabilities (touching, passing), a primitive with player verbs that requires it, an effect it owns written
- * in the document's data, or an event its config names that a driven primitive provides.
+ * in the document's data, the document's data it plays out (a section of its card.reads the document has written:
+ * story beats whose triggers play satisfies), or an event its config names that a driven primitive provides.
  * -> true (driven), 'idle' (provided, but nothing drives it yet: content to write), false (nothing provides it).
  * @param {unknown} doc @param {RegistryLike} registry @param {LogicLike} logic @param {'event' | 'var'} what @param {string} name @param {Set<unknown>} used
  * @returns {true | 'idle' | false}
@@ -362,6 +373,7 @@ function changesSignal(doc, registry, logic, what, name, used) {
     if (mover && (c.requires?.capabilities || []).length) return true;
     if (cards.some(o => (cardLoop(o)?.verbs || []).length && (o?.requires?.primitives || []).some(r => satisfies(c.id, r)))) return true;
     if (dataEffects.includes(c.id)) return true;
+    if ((c.reads || []).some((/** @type {string} */ r) => written(prop(doc, r.split('.')[0]), r.split('.').slice(1)))) return true;
     // The events its config names (rules it runs on) come from a driven primitive.
     const named = new Set(JSON.stringify(insts.filter(s => s.use === c.id).map(s => s.with)).match(/"[a-z][a-z0-9_]*(?::[A-Za-z0-9_*-]+)?"/g)?.map(x => x.slice(1, -1)) || []);
     return cards.some(o => o !== c && [...named].some(n => emits(o, n)) && driven(o));
@@ -369,6 +381,12 @@ function changesSignal(doc, registry, logic, what, name, used) {
   const providers = cards.filter(provides);
   if (providers.some(driven)) return true;
   return providers.length ? 'idle' : false;
+}
+
+/** Is a document section (a path under a top-level key) written: a non-empty list or object? @param {unknown} v @param {string[]} path @returns {boolean} */
+function written(v, path) {
+  const x = path.reduce((/** @type {unknown} */ o, k) => prop(o, k), v);
+  return Array.isArray(x) ? x.length > 0 : isObj(x) && Object.keys(x).length > 0;
 }
 
 /** Problems as one line each (failure reports, model feedback). @param {LoopProblem[]} problems */

@@ -14,7 +14,7 @@ const RESPAWN = ['checkpoint', 'hospital', 'zone', 'start', 'here', 'none'];
 export default {
   id: KEY,
   card: {
-    loop: { verbs: [], progress: ['respawned', 'extra_life'], lose: { param: 'gameOver' } },
+    loop: { verbs: [], progress: ['respawned', 'extra_life'], lose: { param: 'gameOver', reads: { var: 'lives', by: { events: ['died'] } } } },
     intent: 'Player death rules: lives and extra lives at score thresholds, respawn at checkpoint/hospital/zone/start with a delay and invulnerability, penalties (drop currency into a corpse to retrieve, lose XP or items), and game over.',
     views: ['any'],
     params: {

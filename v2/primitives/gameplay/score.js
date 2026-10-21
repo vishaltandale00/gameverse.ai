@@ -17,7 +17,7 @@ const KINDS = ['geometric', 'step', 'linear'];
 export default {
   id: KEY,
   card: {
-    loop: { verbs: [], progress: ['scored', 'combo', 'chain'], win: { when: { var: 'score', gte: '$target' } } },
+    loop: { verbs: [], progress: ['scored', 'combo', 'chain'], win: { when: { var: 'score', gte: '$target' }, reads: { var: 'score', by: { effects: ['add_score'] } } } },
     intent: 'Scoring: points by event, chain/combo multipliers (maze eat chain 200·2^n, shmup chain 1+chain/6 up to 8), near-miss bonuses, zone multipliers, time bonus, stars, and high score; owns the add_score {amount, reason?, who?} effect and the score var.',
     views: ['any'],
     params: {

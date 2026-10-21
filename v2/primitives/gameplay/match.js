@@ -226,7 +226,7 @@ export default {
   card: {
     loop: { verbs: ['swap'], progress: ['matched', 'cascade'] },
     // Match-board mode: swaps under a move limit; the score (or a stage goal) wins, running out of moves loses.
-    mode: { loop: 'match-board', interaction: 'cursor-board', opponent: 'clock', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { when: { var: 'score', gte: '$target' } }, lose: { param: 'onOutOfMoves' }, bot: 'greedy' },
+    mode: { loop: 'match-board', interaction: 'cursor-board', opponent: 'clock', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { when: { var: 'score', gte: '$target' }, reads: { var: 'score', by: { actions: ['swap'] } } }, lose: { param: 'onOutOfMoves', reads: { var: 'match.moves', by: { actions: ['swap'] } } }, bot: 'greedy' },
     intent: 'Matching rules on a board in any editCells space: match-3 swaps with L/T groups, striped/area/colour-bomb specials and combos, jelly, blockers, items and reshuffles; or puyo-style group pops and Dr-Mario virus lines resolved after falling pieces land, with cascades and chain scoring.',
     views: ['board', 'td', 'side'],
     params: {

@@ -16,7 +16,7 @@ const parse = v => (typeof v === 'string' ? { recipe: v, count: 1 } : { recipe: 
 export default {
   id: 'gameplay.crafting',
   card: {
-    loop: { verbs: ['craft', 'combine'], progress: ['crafted', 'recipe_learned'], win: { when: { count: 'crafted', gte: '$target' } } },
+    loop: { verbs: ['craft', 'combine'], progress: ['crafted', 'recipe_learned'], win: { when: { count: 'crafted', gte: '$target' }, reads: { event: 'crafted', by: { actions: ['craft', 'combine'], effects: ['craft'] } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "section", "at": "content.recipes", "min": 2, "why": "crafting needs recipes", "example": {"id": "torch", "inputs": [{"item": "stick", "count": 1}, {"item": "resin", "count": 1}], "output": {"item": "torch_item", "count": 2}}},

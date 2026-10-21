@@ -13,13 +13,15 @@ const PHASES = ['waiting', 'intro', 'fight', 'ko', 'round_end', 'match_end'];
 export default {
   id: ID,
   card: {
-    loop: { verbs: [], progress: ['ko', 'round_end', 'match_end'] },
+    loop: { verbs: [], progress: ['ko', 'round_end', 'match_end'],
+      // As an encounter: the first fighter (the player's) wins or loses the match; a draw leaves both.
+      outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onWin', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onLose', player: 'defeated', opponent: 'keeps' }, draw: { param: 'onDraw', player: 'keeps', opponent: 'keeps' } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "fighters", "min": 2, "why": "a match needs the player and an opponent (entity ids or archetypes)", "example": ["player", "rival"]},
     ],
     // Versus mode: rounds against AI fighters, won on the match result.
-    mode: { loop: 'versus', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.arena2d', ['position', 'distance', 'overlap']], needs: { content: ['content.archetypes'], participants: 'fighters' }, win: { param: 'onWin', end: 'endGame' }, lose: { param: 'onLose', end: 'endGame' }, bot: 'versus' },
+    mode: { loop: 'versus', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.arena2d', ['position', 'distance', 'overlap']], needs: { content: ['content.archetypes'], participants: 'fighters' }, win: { param: 'onWin', end: 'endGame', reads: { component: 'health', of: 'opponents', by: { effects: ['damage'] } } }, lose: { param: 'onLose', end: 'endGame', reads: { component: 'health', of: 'player', by: { effects: ['damage'] } } }, bot: 'versus' },
     intent: 'Versus match rules: round intro, round timer, KO (health or a predicate), double KO, time over decided by health, perfect rounds, best-of-N rounds with draws, or stock mode with respawns; match result effects and scoring. Fighting, arena and duel games of any space use it.',
     views: ['any'],
     params: {
