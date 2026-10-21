@@ -296,6 +296,8 @@ export interface State {
   rng: number; modal: any; vars: Record<string, any>; flags: Record<string, any>; counts: Record<string, number>;
   events: Array<{ name: string; [k: string]: any }>; entities: Record<string, Entity>; nextId: number;
   spaces: Record<string, any>; prim: Record<string, any>;
+  /** Systems held by rt.hold: holder -> owners whose systems are skipped (absent when nothing is held). */
+  held?: Record<string, string[]>;
 }
 export interface Input { actions?: Record<string, any>; axes?: Record<string, number[]>; held?: Record<string, boolean>; [k: string]: any }
 export interface Option { label: string; actions?: Record<string, any>; steps?: number; apply?(rt: Runtime): void; [k: string]: any }
@@ -351,6 +353,9 @@ export interface Runtime {
   defer(fn: (rt: Runtime) => void): void;
   openModal(owner: string, opts?: { actions?: string[]; kind?: string }): void;
   closeModal(owner?: string): void;
+  /** Hold: skip the systems registered by `owners` until release(by) (nested loops hold the outer loop). State: state.held. */
+  hold(by: string, owners: string[]): void;
+  release(by: string): void;
   readonly modal: { owner: string; kind: string; actions: string[] } | null;
   hasService(name: string): boolean;
   archetype(id: string): { id: string; components?: Record<string, any>; [k: string]: any } | undefined;
