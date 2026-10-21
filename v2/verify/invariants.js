@@ -86,7 +86,9 @@ export function checkInvariants(doc, registry, logic, { seed, steps = 120, budge
   // Inputs are inert when there are no options and every input macro leaves the same state as idling.
   {
     const probe = make(seed), snap = probe.snapshot(), flat = () => stateHash({ ...probe.state, events: [], counts: {} });
+    // Options opened by the first step (a dialogue or menu a start beat opens) count as something to do.
     let moved = probe.availableOptions().length > 0, idle = null;
+    if (!moved) { try { probe.step({}); moved = probe.state.status === 'playing' && probe.availableOptions().length > 0; } catch { /* reported above */ } probe.restore(snap); }
     for (const m of moved ? [] : inputMacros(probe)) {
       probe.restore(snap);
       try { hold(probe, m.input, 10); } catch { /* reported above */ }

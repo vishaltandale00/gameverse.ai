@@ -36,7 +36,8 @@ export function boardOf(rt, name = null) {
   if (rt.hasService(svc)) { const s = rt.service(svc); return { w: s.w, h: s.h, get: (x, y) => s.get(x, y), source: svc }; }
   for (const id of rt.spaces()) {
     const api = rt.space(id);
-    if (typeof api.getCell === 'function' && Array.isArray(api.size)) return { w: api.size[0], h: api.size[1], get: (x, y) => api.getCell([x, y, 0]), source: `space:${id}` };
+    // Only a finite 2D board: unbounded worlds (voxel size [Infinity, H, Infinity]) would make readBoard loop forever.
+    if (typeof api.getCell === 'function' && Array.isArray(api.size) && api.size.slice(0, 2).every(n => Number.isFinite(n) && n > 0) && api.size[0] * api.size[1] <= 1 << 16) return { w: api.size[0], h: api.size[1], get: (x, y) => api.getCell([x, y, 0]), source: `space:${id}` };
   }
   return null;
 }
