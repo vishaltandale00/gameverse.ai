@@ -15,7 +15,7 @@
 import { DOC_SCHEMA } from '../kernel/document.js';
 import { OBJECTIVES } from '../primitives/plot/story-objectives.js';
 import { isGraphics, isSpace, isGenerator } from './catalog.js';
-import { contractsFor, referenceOf, idsAt, ZONES } from './content.js';
+import { contractsFor, referenceOf, idsAt, ZONES, SECTIONS } from './content.js';
 import { isObj, isList, isStr, list, strings, obj as asObject, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
@@ -213,6 +213,8 @@ export function outlineForm({ registry, skeleton, selection = null }) {
       const at = referenceOf(registry, spec);
       if (!at) return null;
       if (at === ZONES) return zoneIds.length && zoneIds.length <= MAX_ENUM ? zoneIds : null;
+      // A section path (an adapter's source/target) is one of the document's own sections, never an id inside one.
+      if (at === SECTIONS) { const paths = [...new Set(idsAt(skeleton, SECTIONS))]; return paths.length ? paths : null; }
       if (groupOfSlot(slotOfSection(at)) === groupOfSlot(slot)) return null;
       const ids = [...new Set(idsAt(skeleton, at))];
       if (!ids.length || ids.length > MAX_ENUM) return null;
@@ -240,12 +242,21 @@ export function outlineForm({ registry, skeleton, selection = null }) {
   }
   props.spaces = obj(spaceProps, 'every space of the game, by id');
 
-  // Systems: one slot per chosen primitive, with its real params.
+  // Systems: one slot per chosen primitive, with its real params. An adapter (card.adapts) whose every required param
+  // the preset wrote (a skin's maps from the mashup and the contracts) is structure: it has no slot, and the document
+  // keeps the preset's configuration. One that still needs content (a nested encounter's trigger) keeps its slot.
   /** @type {Record<string, JsonSchema>} */
   const sysProps = {};
   /** @type {Record<string, FieldsCodec>} */
   const sysCodecs = {};
+  const configured = (/** @type {string} */ id) => {
+    const card = registry.get(id)?.card;
+    if (!card?.adapts) return false;
+    const need = Object.entries(card.params || {}).filter(([, s]) => s.required).map(([k]) => k);
+    return (skeleton.systems || []).some(s => s.use === id && isObj(s.with) && Object.keys(s.with).length > 0 && need.every(k => s.with?.[k] !== undefined));
+  };
   for (const id of systems) {
+    if (configured(id)) continue;
     const card = /** @type {RegisteredPrimitive} */ (registry.get(id)).card;
     const slot = paramsSlot(card, { skip: spawnParams(card), refs: refsFor('systems') });
     sysProps[formKey(id)] = obj({ with: slot.schema }, `${id}: ${String(card.intent || '').slice(0, 300)}`);
@@ -573,7 +584,8 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   const skelSys = new Map((skeleton.systems || []).map(s => [s.use, s]));
   for (const id of systems) {
     const slot = prop(f.systems, formKey(id)) ?? prop(f.systems, id), codec = sysCodecs[id];
-    const decoded = decode(prop(slot, 'with'), codec), w = isObj(decoded) ? decoded : {};
+    // A primitive without a slot (an adapter the preset configured) takes nothing from the model's reply.
+    const decoded = codec ? decode(prop(slot, 'with'), codec) : undefined, w = isObj(decoded) ? decoded : {};
     const tune = prop(prop(slot, 'with'), 'tune_json');
     if (codec?.tune && typeof tune === 'string') { const t = parseJson(tune); if (isObj(t)) for (const [k, v] of Object.entries(t)) if (w[k] === undefined && registry.get(id)?.card.params?.[k]) w[k] = v; }
     /** @type {Partial<Instance>} */

@@ -24,6 +24,8 @@
 // example); placeContent(doc) deterministically places archetypes that exist but nothing puts in the world.
 import { placements, spawnRules, spawnEffects } from './census.js';
 import { spawnerId } from './engage.js';
+import { cardLoop } from './loop.js';
+import { spaceExtent } from './world.js';
 import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -194,15 +196,18 @@ export function unreadReaders(doc, registry) {
  * @returns {{ doc: T, added: Placement[] }}
  */
 export function placeContent(input, registry, { contracts = null } = {}) {
+  // Participants first: who takes part, on which side, is structure (placeParticipants); the rest goes zone by zone.
+  const seated = placeParticipants(input, registry);
+  input = seated.doc;
   const needs = (contracts || contractsFor(registry, usedIds(input))).filter(c => c.need === 'archetypes' && c.placed);
   const sid = spawnerId(registry);
-  if (!needs.length || !sid) return { doc: input, added: [] };
+  if (!needs.length || !sid) return { doc: input, added: seated.added };
   const copy = structuredClone(input);
-  if (!isObj(copy)) return { doc: input, added: [] };
+  if (!isObj(copy)) return { doc: input, added: seated.added };
   /** @type {Record<string, unknown>} */
   const doc = copy;
   /** @type {Placement[]} */
-  const added = [];
+  const added = [...seated.added];
   const counts = placementCounts(doc, registry);
   const space = list(doc.spaces)[0];
   const zones = list(prop(space, 'zones')).map(z => prop(z, 'id'));
@@ -249,6 +254,139 @@ export function placeContent(input, registry, { contracts = null } = {}) {
   return added.length ? { doc: /** @type {T} */ (/** @type {unknown} */ (doc)), added } : { doc: input, added };
 }
 
+// ---------- participants: who takes part, on which side, and where they start ----------
+// A loop that declares its participants (card.loop / card.mode needs.participants) as a list param of groups
+// ({ id }: sides, teams, factions) and the archetypes it plays with (its archetypes contract's component, e.g.
+// turns {side}) is seated by code, never by the model: every such archetype is placed for its group, a group the
+// archetypes name none of fields the rest (mirrored armies), each group at its own edge of the space's cells (or
+// in its own zone). The model themes the pieces; it does not decide where they stand.
+/** Spawn rule ids participant placement owns. */
+export const SEAT = 'seat_';
+/**
+ * One loop's participant declaration as a document instance has it.
+ * @typedef {{ use: string, path: string, param: string, groups: Array<{ id: string, members: string[] }>, component: string, field: string | null,
+ *   members: string | null, placed: number, space: Record<string, unknown> | null }} Participants
+ */
+/**
+ * The component field that names a participant's group: a string field of the component whose name is the
+ * group param's singular or whose declaration names the param ("the sides[] id this unit fights for").
+ * @param {unknown} card @param {string} component @param {string} param @returns {string | null}
+ */
+export function groupField(card, component, param) {
+  const fields = prop(prop(prop(card, 'components'), component), 'fields');
+  if (!isObj(fields)) return null;
+  const one = param.replace(/s$/, ''), named = new RegExp(`\\b(${param}|${one})\\b`, 'i');
+  const hit = Object.entries(fields).find(([k, f]) => prop(f, 'type') === 'string' && (k === one || named.test(String(prop(f, 'effect') || ''))));
+  return hit ? hit[0] : null;
+}
+/**
+ * Every loop of a document that declares group participants and the archetypes they are made of.
+ * @param {unknown} doc @param {RegistryLike} registry @returns {Participants[]}
+ */
+export function participantsOf(doc, registry) {
+  /** @type {Participants[]} */
+  const out = [];
+  const spaces = objects(prop(doc, 'spaces'));
+  list(prop(doc, 'systems')).forEach((s, i) => {
+    const use = prop(s, 'use'); if (!isStr(use)) return;
+    const card = registry.get(use)?.card, param = cardLoop(card)?.needs.participants;
+    if (!card || !isStr(param)) return;
+    const given = prop(prop(s, 'with'), param), groups = objects(given !== undefined ? given : card.params?.[param]?.default).filter(g => isStr(g.id))
+      .map(g => ({ id: String(g.id), members: list(g.members).filter(isStr) }));
+    const contract = contractsOf(registry, use).find(c => c.need === 'archetypes' && c.component);
+    if (!groups.length || !contract?.component) return;
+    const join = prop(card.engage, 'join');
+    const sid = prop(s, 'space') ?? spaces[0]?.id;
+    out.push({ use, path: `systems[${i}]`, param, groups, component: contract.component, field: groupField(card, contract.component, param),
+      members: prop(join, 'param') === param && isStr(prop(join, 'field')) ? String(prop(join, 'field')) : null, placed: contract.placed || 0, space: spaces.find(x => x.id === sid) || null });
+  });
+  return out;
+}
+/**
+ * Cells of one group's band at the edge of [x0, y0, x1, y1): group 0 the far row, 1 the near row, 2 and 3 the side
+ * columns (a fifth group starts a band further in), lines from the edge inward, each from its middle out.
+ * @param {number} g @param {number[]} area @param {number} n @param {Set<string>} taken @returns {number[][]}
+ */
+function band(g, area, n, taken) {
+  const [x0, y0, x1, y1] = area.map(Math.floor), W = x1 - x0, H = y1 - y0, side = g % 4, ring = Math.floor(g / 4);
+  const rows = side < 2, len = rows ? W : H, depth = Math.max(1, Math.floor((rows ? H : W) / 2));
+  const order = Array.from({ length: len }, (_, i) => i).sort((a, b) => Math.abs(a - (len - 1) / 2) - Math.abs(b - (len - 1) / 2) || a - b);
+  /** @type {number[][]} */
+  const cells = [];
+  for (let r = ring * depth; r < depth * (ring + 1) && cells.length < n; r++) for (const i of order) {
+    if (cells.length >= n) break;
+    const line = side === 0 ? y1 - 1 - r : side === 1 ? y0 + r : side === 2 ? x0 + r : x1 - 1 - r;
+    const at = rows ? [x0 + i, line] : [line, y0 + i];
+    if (at[0] < x0 || at[1] < y0 || at[0] >= x1 || at[1] >= y1 || taken.has(at.join())) continue;
+    taken.add(at.join()); cells.push(at);
+  }
+  return cells;
+}
+/**
+ * Seat every loop's participants (participantsOf): their archetypes placed for their groups by spawn rules the
+ * placement owns (ids `seat_...`); rules others wrote for those archetypes are replaced. A group's archetypes are
+ * the ones whose group field (or the group's members) names it; a group named by none takes the archetypes no group
+ * claims (their distinct group values matched to such groups in order when they line up), else all of them, with
+ * the group field set on its entities. Each group gets at least its archetypes once and its share of the contract's
+ * `placed`. Cells on a cell space without enough zones, else one zone per group. Idempotent; input untouched.
+ * @template T @param {T} input @param {RegistryLike} registry @returns {{ doc: T, added: Placement[] }}
+ */
+export function placeParticipants(input, registry) {
+  const sid = spawnerId(registry);
+  const loops = sid ? participantsOf(input, registry) : [];
+  if (!loops.length) return { doc: input, added: [] };
+  const doc = /** @type {Record<string, any>} */ (structuredClone(input));
+  /** @type {Placement[]} */
+  const added = [];
+  /** @type {Record<string, unknown>[]} */
+  const rules = [];
+  /** @type {Set<string>} */
+  const seated = new Set();
+  const playerAt = prop(doc.player, 'at');
+  for (const L of loops) {
+    const pieces = archetypesWith(doc, { need: 'archetypes', component: L.component });
+    const space = L.space;
+    if (!pieces.length || !space) continue;
+    const value = (/** @type {Record<string, unknown>} */ a) => (L.field ? prop(prop(a.components, L.component), L.field) : undefined);
+    const claims = (/** @type {Record<string, unknown>} */ a, /** @type {{ id: string, members: string[] }} */ g) => value(a) === g.id || g.members.includes(String(a.id));
+    /** @type {Map<string, Record<string, unknown>[]>} */
+    const of = new Map(L.groups.map(g => [g.id, pieces.filter(a => claims(a, g))]));
+    const free = pieces.filter(a => !L.groups.some(g => claims(a, g)));
+    const empty = L.groups.filter(g => !(of.get(g.id) || []).length);
+    const values = [...new Set(free.map(value).filter(isStr))];
+    empty.forEach((g, j) => of.set(g.id, values.length === empty.length && free.every(a => isStr(value(a))) ? free.filter(a => value(a) === values[j]) : free.length ? free : pieces));
+    const zones = objects(space.zones).filter(z => isStr(z.id));
+    const cellSpace = (registry.get(String(space.use))?.card.needs?.content || []).includes('cells');
+    const area = cellSpace ? spaceExtent(registry, space) : null;
+    if (zones.length < L.groups.length && !area) continue;
+    const taken = new Set(Array.isArray(playerAt) ? [playerAt.slice(0, 2).map(Number).join()] : []);
+    for (const r of rules) if (Array.isArray(r.at)) taken.add(r.at.join());
+    L.groups.forEach((g, gi) => {
+      const mine = of.get(g.id) || [];
+      const n = Math.max(mine.length, Math.ceil(L.placed / L.groups.length));
+      const cells = zones.length >= L.groups.length ? null : band(gi, /** @type {number[]} */ (area), n, taken);
+      for (let k = 0; k < (cells ? cells.length : n); k++) {
+        const a = mine[k % mine.length], comp = prop(a.components, L.component);
+        const id = `${SEAT}${g.id}_${a.id}_${k + 1}`.slice(0, 60);
+        const own = L.field && value(a) !== g.id ? { components: { [L.component]: { ...(isObj(comp) ? comp : {}), [L.field]: g.id } } } : {};
+        rules.push({ id, archetype: a.id, space: space.id, ...(cells ? { at: cells[k] } : { zone: zones[gi].id }), unique: true, activation: 'always', respawnSec: 0, ...own });
+        added.push({ rule: id, archetype: a.id, zone: cells ? null : zones[gi].id, count: 1, contract: `${L.use}#participants:${L.param}` });
+        seated.add(String(a.id));
+        // Without a group field, the group lists its entities (the loop's members field).
+        if (!L.field && L.members) { const inst = list(doc.systems)[Number(L.path.slice(8, -1))], grp = list(prop(prop(inst, 'with'), L.param)).find(x => prop(x, 'id') === g.id); if (isObj(grp)) { const m = list(grp[L.members]); if (!m.includes(id)) grp[L.members] = [...m, id]; } }
+      }
+    });
+  }
+  if (!rules.length) return { doc: input, added: [] };
+  doc.systems = Array.isArray(doc.systems) ? doc.systems : [];
+  let spawner = doc.systems.find((/** @type {unknown} */ s) => prop(s, 'use') === sid);
+  if (!isObj(spawner)) { spawner = { use: sid, with: { rules: [] } }; doc.systems.unshift(spawner); }
+  spawner.with = isObj(spawner.with) ? spawner.with : {};
+  // Participant placement is code's: earlier seats and any other rule for a seated archetype make way.
+  spawner.with.rules = [...list(spawner.with.rules).filter(r => !String(prop(r, 'id')).startsWith(SEAT) && !seated.has(String(prop(r, 'archetype')))), ...rules];
+  return { doc: /** @type {T} */ (doc), added };
+}
+
 /** Problems as model-facing text, grouped (each with the shape to add). @param {Array<{ code: string, path: string, message: string, hint?: string }>} problems @param {number} [limit] */
 export function describeContent(problems, limit = 12) {
   return problems.slice(0, limit).map(p => `- [${p.code}] ${p.path}: ${p.message}${p.hint ? `\n    ${p.hint}` : ''}`).join('\n');
@@ -270,10 +408,14 @@ export function contractText(contracts) {
 // offer these ids as enums and repair re-points or reports against them; nothing here names a primitive.
 /** The pseudo-section a zone reference draws from. */
 export const ZONES = 'zones';
+/** The pseudo-section a section-path field draws from: the document's own content/plot section paths. */
+export const SECTIONS = 'sections';
 /** @type {Record<string, string>} */
 const KIND_AT = { character: 'plot.characters', quest: 'plot.quests', ending: 'plot.endings', dialogue: 'plot.dialogue', item: 'content.items', recipe: 'content.recipes', archetype: 'content.archetypes', block: 'content.blocks', model: 'content.models' };
 /** @param {unknown} effect @returns {string | null} the document section a declaration's text names */
 const namedSection = effect => /\b((?:content|plot)\.[a-zA-Z]+)\b/.exec(String(effect || ''))?.[1] || null;
+/** A declaration whose values are section paths ("source section path, e.g. content.species"), not ids in that section. @param {unknown} effect */
+const pathOfSection = effect => /\bsection paths?\b/i.test(String(effect || ''));
 /** @param {unknown} spec */
 const free = spec => isObj(spec) && spec.type === 'string' && !(Array.isArray(spec.options) && spec.options.length);
 
@@ -292,7 +434,7 @@ export function sectionOfKind(registry, kind) {
 export function referenceOf(registry, spec) {
   if (!isObj(spec)) return null;
   if (spec.type === 'ref' && isStr(spec.to)) return spec.to === 'zone' ? ZONES : sectionOfKind(registry, spec.to);
-  if (free(spec)) return namedSection(spec.effect);
+  if (free(spec)) return pathOfSection(spec.effect) ? SECTIONS : namedSection(spec.effect);
   if (spec.type === 'list' && isObj(spec.of)) return referenceOf(registry, spec.of) || (free(spec.of) ? namedSection(spec.effect) : null);
   return null;
 }
@@ -300,9 +442,16 @@ export function referenceOf(registry, spec) {
 /** The ids at a section of a (draft) document (list entries' ids or strings, or an id-keyed object's keys), or its zone ids. @param {unknown} doc @param {string} section @returns {string[]} */
 export function idsAt(doc, section) {
   if (section === ZONES) return list(prop(doc, 'spaces')).flatMap(s => list(prop(s, 'zones')).map(z => prop(z, 'id'))).filter(isStr);
+  if (section === SECTIONS) return sectionPaths(doc);
   const v = at(doc, section);
   if (Array.isArray(v)) return v.map(x => (isStr(x) ? x : prop(x, 'id'))).filter(isStr).filter(Boolean);
   return isObj(v) ? Object.keys(v) : [];
+}
+
+/** The document's content and plot sections that hold entries (a list or an id-keyed object), as paths. @param {unknown} doc @returns {string[]} */
+export function sectionPaths(doc) {
+  return ['content', 'plot'].flatMap(root => Object.entries(isObj(prop(doc, root)) ? /** @type {Record<string, unknown>} */ (prop(doc, root)) : {})
+    .filter(([k, v]) => /^[A-Za-z0-9_]+$/.test(k) && size(v) > 0 && (Array.isArray(v) || isObj(v))).map(([k]) => `${root}.${k}`));
 }
 
 /**
