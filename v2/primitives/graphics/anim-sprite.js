@@ -6,6 +6,7 @@
 // names and tunes squash/stretch, afterimage trails and run lean.
 import { hubOf } from './flat-stage.js';
 import { STATES } from './flat-models.js';
+import { modelsData } from './model-lib.js';
 
 export default {
   id: 'graphics.anim.sprite',
@@ -13,15 +14,13 @@ export default {
     intent: 'Maps entity presentation states (idle, run, jump, fall, land, dash, attack, hurt, die, wallslide, crouch, block) to sprite animations, with squash and stretch on takeoff and landing, afterimage trails and forward lean.',
     views: ['side', 'td'],
     params: {
-      map: { type: 'object', default: {}, open: true, effect: 'state → animation name in the model (e.g. wallslide → wall)' },
+      map: { type: 'object', default: {}, fields: Object.fromEntries(STATES.map(s => [s, { type: 'string', effect: `the model's animation for ${s}` }])), effect: 'state → animation name in the model (e.g. wallslide → wall)' },
       squash: { type: 'boolean', default: true, effect: 'stretch on takeoff, squash on landing (damped spring)' },
       trail: { type: 'list', default: ['dash'], of: { type: 'string', options: STATES }, effect: 'states that leave fading afterimages' },
       lean: { type: 'number', default: 1, min: 0, max: 3, effect: 'forward lean while running and dashing' },
     },
     reads: ['content.models'],
-  },
-  validate(config) {
-    return Object.keys(config.map).filter(k => !STATES.includes(k)).map(k => ({ code: 'flat_anim_state', path: `map.${k}`, message: `unknown state '${k}'`, hint: `states: ${STATES.join(', ')}` }));
+    data: { 'content.models': modelsData(['kind', 'anims']) },
   },
   install(rt, config) {
     if (rt.headless || !rt.view) return;

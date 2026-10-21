@@ -16,7 +16,7 @@ export default {
       clips: { type: 'list', default: [], effect: 'authored clips', of: { type: 'object', fields: {
         id: { type: 'string', required: true }, rig: { type: 'string', options: ['humanoid', 'quadruped', 'custom'], default: 'humanoid' },
         dur: { type: 'number', required: true, min: 0.05, max: 30, unit: 's' }, loop: { type: 'boolean', default: false },
-        keys: { type: 'json', required: true, effect: '{ bone: [[t, rx, ry, rz], ...] } radians, offsets from rest; $root: [[t, x, y, z]]' },
+        keys: { type: 'object', required: true, values: { type: 'list', of: { type: 'list', of: { type: 'number' }, min: 4, max: 4 } }, effect: '{ bone: [[t, rx, ry, rz], ...] } radians, offsets from rest; $root: [[t, x, y, z]]' },
         events: { type: 'list', default: [], of: { type: 'object', fields: { t: { type: 'number', required: true, min: 0 }, event: { type: 'string', required: true } } } },
       } } },
       triggers: { type: 'list', default: [], effect: 'extra gameplay event -> clip bindings', of: { type: 'object', fields: {
@@ -24,14 +24,22 @@ export default {
       } } },
     },
     provides: {},
+    rules: {
+      clip_unknown: { fields: ['presets'], message: `each preset is a library clip (${PRESETS.humanoid.join(', ')}; quadruped: ${PRESETS.quadruped.join(', ')}) or a name containing one's keyword` },
+      clip_keys: { fields: ['clips[].keys', 'clips[].dur'], message: 'each key [t, rx, ry, rz] has 0 <= t <= the clip dur',
+        example: { doc: { graphics: [{ use: 'graphics.anim.clips', with: { clips: [{ id: 'wave', dur: 1, keys: { armR: [[0, 0, 0, 0], [2, 0, 1, 0]] } }] } }] } } },
+      clip_event_time: { fields: ['clips[].events[].t', 'clips[].dur'], message: 'an event time t is at most the clip dur',
+        example: { doc: { graphics: [{ use: 'graphics.anim.clips', with: { clips: [{ id: 'wave', dur: 1, keys: { armR: [[0, 0, 0, 0]] }, events: [{ t: 2, event: 'hit' }] }] } }] } } },
+    },
   },
   validate(config) {
     const errs = [];
     config.presets.forEach((name, i) => { if (!resolvePreset(name, 'humanoid') && !resolvePreset(name, 'quadruped')) errs.push({ code: 'clip_unknown', path: `presets[${i}]`, message: `no preset or keyword match for '${name}'`, hint: `presets: ${PRESETS.humanoid.join(', ')}` }); });
     (config.clips || []).forEach((c, i) => {
-      if (!c.keys || typeof c.keys !== 'object' || Array.isArray(c.keys)) { errs.push({ code: 'clip_keys', path: `clips[${i}].keys`, message: 'keys must be { bone: [[t, rx, ry, rz], ...] }' }); return; }
-      for (const [bone, list] of Object.entries(c.keys)) if (!Array.isArray(list) || list.some(k => !Array.isArray(k) || k.length !== 4 || k.some(v => !Number.isFinite(v)) || k[0] < 0 || k[0] > c.dur)) errs.push({ code: 'clip_keys', path: `clips[${i}].keys.${bone}`, message: 'each key is [t, rx, ry, rz] with 0 <= t <= dur' });
-      (c.events || []).forEach((e, j) => { if (e.t > c.dur) errs.push({ code: 'clip_event_time', path: `clips[${i}].events[${j}].t`, message: `event at ${e.t}s is after the clip ends (${c.dur}s)` }); });
+      // The shapes (keys a map of [t, rx, ry, rz] lists) are the card's; the times against dur are this rule.
+      if (!c?.keys || typeof c.keys !== 'object') return;
+      for (const [bone, list] of Object.entries(c.keys)) if (Array.isArray(list) && list.some(k => Array.isArray(k) && (k[0] < 0 || k[0] > c.dur))) errs.push({ code: 'clip_keys', path: `clips[${i}].keys.${bone}`, message: 'each key is [t, rx, ry, rz] with 0 <= t <= dur' });
+      (Array.isArray(c.events) ? c.events : []).forEach((e, j) => { if (e?.t > c.dur) errs.push({ code: 'clip_event_time', path: `clips[${i}].events[${j}].t`, message: `event at ${e.t}s is after the clip ends (${c.dur}s)` }); });
     });
     return errs;
   },

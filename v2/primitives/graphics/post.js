@@ -4,7 +4,8 @@
 // finished frame. In 3D spaces the same config goes to the three renderer's
 // adapter (bloom, tonemap, outline, ssao...).
 import { hubOf, ORDER } from './flat-stage.js';
-import { rgba, surface, ctx2d, rng, clamp, isHex } from './flat-util.js';
+import { rgba, surface, ctx2d, rng, clamp } from './flat-util.js';
+import { color } from './model-lib.js';
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16 - 0.5);
 /** Posterize RGBA data in place to `levels` per channel with 4×4 ordered dithering. Pure. */
@@ -54,16 +55,13 @@ export default {
       tonemap: { type: 'string', default: 'none', options: ['none', 'aces', 'filmic'], effect: 'contrast/saturation curve' },
       outline: { type: 'number', default: 0, min: 0, max: 8, unit: 'px', effect: '3D: edge outlines (2D sprites are outlined already)' },
       quantize: { type: 'integer', default: 0, min: 0, max: 4096, unit: 'colors', effect: 'approximate palette size with ordered dithering (0 = off)' },
-      palette: { type: 'list', default: [], of: { type: 'string' }, effect: "a locked palette (an art look's colors): frames map to these exact colors instead of an approximate size" },
+      palette: { type: 'list', default: [], of: color(), effect: "a locked palette (an art look's colors): frames map to these exact colors instead of an approximate size" },
       dither: { type: 'string', default: 'bayer4', options: ['none', 'bayer4', 'bayer8'], effect: 'ordered dithering used with a locked palette' },
       vignette: { type: 'number', default: 0.25, min: 0, max: 1, effect: 'darken the frame edges' },
       grain: { type: 'number', default: 0, min: 0, max: 1, effect: 'animated film grain' },
       scanlines: { type: 'boolean', default: false, effect: 'CRT scanlines' },
       ssao: { type: 'boolean', default: false, effect: '3D: screen-space ambient occlusion' },
     },
-  },
-  validate(config) {
-    return (config.palette || []).flatMap((c, i) => (isHex(c) ? [] : [{ code: 'flat_color', path: `palette[${i}]`, message: `'${c}' is not a hex color` }]));
   },
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;

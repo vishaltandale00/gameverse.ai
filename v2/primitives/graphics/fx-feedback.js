@@ -7,7 +7,8 @@
 // it the freeze and slow-mo are presentational (see kernel/requests/flat.md).
 import { hubOf, ORDER, subjectOf } from './flat-stage.js';
 import { eventPoint } from './particles.js';
-import { label, rgba, clamp, clamp01, lerp, isHex } from './flat-util.js';
+import { label, rgba, clamp, clamp01, lerp } from './flat-util.js';
+import { color } from './model-lib.js';
 
 export const DEFAULT_SHAKE = { hurt: 0.55, damaged: 0.45, stomp: 0.35, defeated: 0.4, explode: 1, hit: 0.22, boss_defeated: 1, crash: 0.7 };
 const DEFAULT_STOP = ['hit', 'stomp', 'defeated', 'damaged'];
@@ -77,9 +78,9 @@ export default {
       hitStop: { type: 'number', default: 60, min: 0, max: 300, unit: 'ms', effect: 'freeze length on hits (defeats hold longer)' },
       hitStopOn: { type: 'list', default: DEFAULT_STOP, of: { type: 'string' }, effect: 'events that hit-stop' },
       shake: { type: 'number', default: 0.5, min: 0, max: 1, effect: 'overall shake strength' },
-      shakeOn: { type: 'object', default: DEFAULT_SHAKE, open: true, effect: 'event → shake amount 0..1 (stacking, decays)' },
+      shakeOn: { type: 'object', default: DEFAULT_SHAKE, values: { type: 'number', min: 0, max: 1 }, effect: 'event → shake amount 0..1 (stacking, decays)' },
       damageFlash: { type: 'boolean', default: true, effect: 'edge flash when the player is hurt' },
-      damageColor: { type: 'string', default: '#ff2a3a', effect: 'damage flash color' },
+      damageColor: color({ default: '#ff2a3a', effect: 'damage flash color' }),
       flashOn: { type: 'list', default: [], of: { type: 'string' }, effect: 'events that flash the screen white' },
       slowmoOn: { type: 'list', default: [], of: { type: 'string' }, effect: "events that trigger slow motion ('prefix:*' allowed)" },
       slowmoScale: { type: 'number', default: 0.3, min: 0.05, max: 1, effect: 'time scale during slow motion' },
@@ -89,12 +90,6 @@ export default {
       popups: { type: 'boolean', default: true, effect: 'floating damage, heal and score numbers' },
       reducedMotion: { type: 'string', default: 'respect', options: ['respect', 'ignore'], effect: "honor the viewer's reduced-motion setting" },
     },
-  },
-  validate(config) {
-    const errs = [];
-    for (const [k, v] of Object.entries(config.shakeOn)) if (!Number.isFinite(v) || v < 0 || v > 1) errs.push({ code: 'param_range', path: `shakeOn.${k}`, message: 'shake amounts are 0..1' });
-    if (!isHex(config.damageColor)) errs.push({ code: 'flat_color', path: 'damageColor', message: `'${config.damageColor}' is not a hex color` });
-    return errs;
   },
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;

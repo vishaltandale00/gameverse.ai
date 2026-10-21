@@ -5,6 +5,7 @@
 // Without an instance in the document, renderers use paletteFor()'s default.
 import { joinStage, presentationOnly } from './three-stage.js';
 import { colorOf, hash01, isHex } from './three-util.js';
+import { color, blocksData } from './model-lib.js';
 
 export const STYLES = ['flat', 'noise', 'bevel', 'toon'];
 const DEFAULT = { colors: {}, faceShade: [1, 0.6, 0.8], style: 'flat', emissive: [], glow: 1.6 };
@@ -121,7 +122,7 @@ export default {
     intent: 'Block and surface colors, per-face shade and texture-free styles for 3D worlds and models: flat, noise (pixel-texture value noise), bevel (darkened block edges), toon (banded light); emissive blocks and color keys glow.',
     views: ['1p', '3p', 'iso', 'td'],
     params: {
-      colors: { type: 'object', open: true, default: {}, effect: 'block id or color key -> #hex, overriding content.blocks colors' },
+      colors: { type: 'object', values: color(), default: {}, effect: 'block id or color key -> #hex, overriding content.blocks colors' },
       faceShade: { type: 'list', of: { type: 'number', min: 0, max: 1.5 }, min: 3, max: 3, default: [1, 0.6, 0.8], effect: '[top, x-faces, z-faces] brightness; bottom faces get half the darker side' },
       style: { type: 'string', options: STYLES, default: 'flat', effect: 'surface treatment' },
       emissive: { type: 'list', of: { type: 'string' }, default: [], effect: 'block ids or palette color keys that glow' },
@@ -129,11 +130,7 @@ export default {
     },
     provides: {},
     reads: ['content.blocks'],
-  },
-  validate(config) {
-    const errs = [];
-    for (const [k, v] of Object.entries(config.colors || {})) if (!isHex(v)) errs.push({ code: 'color_invalid', path: `colors.${k}`, message: `'${v}' is not a #hex color` });
-    return errs;
+    data: { 'content.blocks': blocksData(['color', 'tags', 'transparent', 'light']) },
   },
   install(rt, config, instance) {
     if (presentationOnly(rt)) return;

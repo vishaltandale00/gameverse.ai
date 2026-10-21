@@ -6,12 +6,13 @@
 // model or a character role draw as sprites rotated with the body. Static walls
 // and sensors, distance/rope/revolute joints are drawn too.
 import { ensureJuice } from './flat-juice.js';
-import { hubOf, bindSpace, ORDER, stageProjection, checkBinding } from './flat-stage.js';
+import { hubOf, bindSpace, ORDER, stageProjection, checkBinding, bindingRules } from './flat-stage.js';
 import { driveFit, followTarget } from './flat-follow.js';
-import { drawEntity, lookOf } from './flat-models.js';
+import { drawEntity, lookOf, STATES, FLAT_MODEL_FIELDS } from './flat-models.js';
 import { paintMaterial, materialFor, materialColors, MATERIALS } from './flat-materials.js';
 import { drawBackdrop, defaultLayers } from './flat-backdrop.js';
-import { TAU, rgba, col, seedOf, clamp01, lerp, isHex } from './flat-util.js';
+import { TAU, rgba, col, seedOf, clamp01, lerp } from './flat-util.js';
+import { modelsData, MODEL_COMPONENT, color } from './model-lib.js';
 
 const SPRITE_ROLES = new Set(['player', 'enemy', 'boss', 'npc', 'pickup', 'goal', 'hazard', 'mount']);
 
@@ -24,8 +25,8 @@ export default {
     // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
     projection: { side: { kind: 'plane', right: '+x', up: '+y' }, td: { kind: 'plane', right: '+x', up: '+y' } },
     params: {
-      materials: { type: 'object', default: {}, open: true, effect: 'archetype id or tag → material (wood, stone, glass, tnt, rock, metal, ice, rubber, ball, plastic)' },
-      colors: { type: 'object', default: {}, open: true, effect: 'archetype id → tint hex' },
+      materials: { type: 'object', default: {}, values: { type: 'string', options: Object.keys(MATERIALS) }, effect: 'archetype id or tag → material (wood, stone, glass, tnt, rock, metal, ice, rubber, ball, plastic)' },
+      colors: { type: 'object', default: {}, values: color(), effect: 'archetype id → tint color' },
       wallMaterial: { type: 'string', default: 'rock', options: Object.keys(MATERIALS), effect: 'look of static walls' },
       trails: { type: 'boolean', default: true, effect: 'motion trails behind fast bodies' },
       shards: { type: 'boolean', default: true, effect: 'breakable bodies burst into shards when removed' },
@@ -34,12 +35,12 @@ export default {
       maxScale: { type: 'number', default: 90, min: 4, max: 400, unit: 'px/m', effect: 'largest zoom' },
     },
     reads: ['content.models', 'content.archetypes'],
+    data: { 'content.models': modelsData(FLAT_MODEL_FIELDS, { states: STATES }) },
+    components: { model: MODEL_COMPONENT },
+    rules: { ...bindingRules('graphics.render.physics2d', ['engine.space.physics2d']) },
   },
   validate(config, doc, ctx, info) {
-    const errs = checkBinding(doc, info, 'graphics.render.physics2d', ['engine.space.physics2d']);
-    for (const [k, m] of Object.entries(config.materials)) if (!MATERIALS[m]) errs.push({ code: 'flat_material', path: `${info?.path || ''}.with.materials.${k}`, message: `unknown material '${m}'`, hint: Object.keys(MATERIALS).join(', ') });
-    for (const [k, c] of Object.entries(config.colors)) if (!isHex(c)) errs.push({ code: 'flat_color', path: `${info?.path || ''}.with.colors.${k}`, message: `'${c}' is not a hex color` });
-    return errs;
+    return checkBinding(doc, info, 'graphics.render.physics2d', ['engine.space.physics2d']);
   },
   install(rt, config, instance) {
     if (rt.headless || !rt.view) return;
@@ -119,7 +120,7 @@ export default {
           g.restore(); continue;
         }
         if (it.ghost) continue;
-        const mat = matOf(e), colors = materialColors(mat, config.colors[e.archetype] || e.components?.model?.color);
+        const mat = matOf(e), colors = materialColors(mat, config.colors[e.archetype]);
         const hp = e.components?.health, damage = hp && hp.max > 0 ? 1 - Math.max(0, hp.hp ?? hp.max) / hp.max : 0;
         const fl = flashes.get(it.id), flash = fl ? clamp01(1 - (H.clock - fl.t0) / 0.15) * (0.4 + fl.k * 0.6) : 0;
         const rot = p => { const cs = Math.cos(ang), sn = Math.sin(ang); return [it.pos[0] + cs * p[0] - sn * p[1], it.pos[1] + sn * p[0] + cs * p[1]]; };

@@ -15,7 +15,7 @@ export function modelFor(doc, id) {
   const ch = doc.plot?.characters?.find(c => c.id === id);
   const arch = doc.content?.archetypes?.find(a => a.id === (ch?.archetype || id));
   const key = ch?.model || arch?.components?.model || id;
-  return { id: key, spec: typeof key === 'string' ? models[key] : (typeof key === 'object' ? key : null), name: ch?.name || id, look: ch?.look || arch?.components?.look };
+  return { id: key, spec: typeof key === 'string' ? models[key] ?? null : null, name: ch?.name || id, look: ch?.look || arch?.components?.look };
 }
 
 /**

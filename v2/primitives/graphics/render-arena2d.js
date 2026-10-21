@@ -5,13 +5,14 @@
 // fighter (zooming out as they separate) or follows the player. Wrap edges
 // draw ghost copies; optional hurt/hit box overlays for tuning fighters.
 import { ensureJuice } from './flat-juice.js';
-import { hubOf, bindSpace, ORDER, stageProjection, checkBinding, boundsOf } from './flat-stage.js';
+import { hubOf, bindSpace, ORDER, stageProjection, checkBinding, boundsOf, bindingRules } from './flat-stage.js';
 import { driveFit, driveSide } from './flat-follow.js';
-import { drawEntity, lookOf } from './flat-models.js';
+import { drawEntity, lookOf, STATES, FLAT_MODEL_FIELDS } from './flat-models.js';
 import { drawBackdrop, defaultLayers, normalizeLayers } from './flat-backdrop.js';
 import { normalizeTheme, themeFromBlock, paintTile } from './flat-tiles.js';
 import { blobMask } from './flat-autotile.js';
 import { rgba, surface, ctx2d, light, shade } from './flat-util.js';
+import { modelsData, MODEL_COMPONENT } from './model-lib.js';
 
 export default {
   id: 'graphics.render.arena2d',
@@ -29,6 +30,9 @@ export default {
       maxScale: { type: 'number', default: 96, min: 4, max: 400, unit: 'px/u', effect: 'largest zoom' },
     },
     reads: ['content.models', 'content.archetypes'],
+    data: { 'content.models': modelsData(FLAT_MODEL_FIELDS, { states: STATES }) },
+    components: { model: MODEL_COMPONENT },
+    rules: { ...bindingRules('graphics.render.arena2d', ['engine.space.arena2d']) },
   },
   validate(config, doc, ctx, info) { return checkBinding(doc, info, 'graphics.render.arena2d', ['engine.space.arena2d']); },
   install(rt, config, instance) {
