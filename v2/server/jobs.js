@@ -149,7 +149,11 @@ export function createJobs({ store, pipeline, maxConcurrent = 2 }) {
     } finally {
       job.checkpoints = {};
       running.delete(job.gameId);
-      const next = queue.shift(); if (next) run(next);
+      // The next queued job whose game has none running: one game's jobs run one at a time, in order, so each builds
+      // on the versions the one before it published (never two versions made from the same base, the later one
+      // silently dropping the earlier one's change).
+      const i = queue.findIndex(j => !running.has(j.gameId));
+      if (i >= 0) run(queue.splice(i, 1)[0]);
     }
   }
 
@@ -162,7 +166,8 @@ export function createJobs({ store, pipeline, maxConcurrent = 2 }) {
     submit(job) {
       /** @type {Job} */
       const full = { id: `job-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`, stages: [], ...job, checkpoints: {}, submittedAt: Date.now() };
-      if (running.size < maxConcurrent) run(full); else { queue.push(full); broadcast({ type: 'queued', gameId: full.gameId, jobId: full.id, position: queue.length }); }
+      if (running.size < maxConcurrent && !running.has(full.gameId) && !queue.some(j => j.gameId === full.gameId)) run(full);
+      else { queue.push(full); broadcast({ type: 'queued', gameId: full.gameId, jobId: full.id, position: queue.length }); }
       return full;
     },
   };

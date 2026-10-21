@@ -27,7 +27,7 @@ export default {
   card: {
     loop: { verbs: ['equip', 'unequip'], progress: ['equipped'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { equip: { type: 'choice', of: 'an item and its slot' }, unequip: { type: 'choice', of: 'an equipped slot or item' } },
+    actionSpace: { equip: { type: 'choice', of: 'an item and its slot', from: 'options', emits: ['equipped'] }, unequip: { type: 'choice', of: 'an equipped slot or item', from: 'options', emits: ['unequipped'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "items", "min": 2, "why": "equipment needs gear items", "example": {"id": "iron_sword", "name": "Iron sword", "kind": "weapon", "weapon": {"damage": 3, "reach": 1.4, "arc": 90, "speed": 1}}},
@@ -50,6 +50,8 @@ export default {
       } }, effect: 'events that wear items down: {who, item} events wear that item; slot rules wear what is worn there' },
       autoEquip: { type: 'boolean', default: true, effect: "starting items (and components.equipment.start) fill empty slots that accept them" },
     },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['equip_denied'],
     provides: { events: ['equipped', 'equipped:*', 'unequipped', 'equip_denied', 'broke', 'broke:*', 'repaired'], vars: ['stat.*', 'budget.*'], actions: ['equip', 'unequip'], services: ['equipment'] },
     requires: { primitives: ['gameplay.inventory'] },
     reads: ['content.items'],
@@ -183,7 +185,9 @@ export default {
         const slot = slotsFor('player').find(s => matches(def, s.accepts) && (wornRead('player')[s.id]?.length ?? 0) < s.max && (!costed(s.id) || used('player') + costOf(id) <= capacity()));
         if (slot) out.push({ label: `equip ${id}`, actions: { equip: id } });
       }
-      return out.slice(0, 8);
+      const worn = wornRead('player'), off = [];
+      for (const slot of Object.keys(worn).sort()) for (const id of new Set(worn[slot])) off.push({ label: `unequip ${id}`, actions: { unequip: id } });
+      return [...out.slice(0, 8), ...off];
     });
     rt.provide('equipment', {
       slots: (who = 'player') => slotsFor(who).map(s => ({ id: s.id, accepts: s.accepts, max: s.max, items: [...(wornRead(who)[s.id] || [])], item: wornRead(who)[s.id]?.[0] ?? null })),

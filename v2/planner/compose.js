@@ -62,6 +62,7 @@ export const COMPOSE_RULES = Object.freeze({
   union_zone_unbound: 'a reference to a zone of the secondary\'s space has no zone on the primary\'s space to bind to (the host declares fewer zones than the zone\'s place)',
   union_world_loop: 'a loop of the secondary is carried by the world it generates (a generator\'s card.mode): on the primary\'s space it would need a second world',
   union_needs_adapter: 'the united loops do not compose on the primary\'s space: the composition check names the adapter that would fix it',
+  union_incompatible: 'the united document fails the composition check where no adapter helps (a conflict, a control a person lacks for a loop verb): the check names each failure',
   union_loop_problem: 'the united document fails the loop check',
   compose_preflight: 'the composed document fails preflight',
 });
@@ -577,6 +578,10 @@ export function composeUnion(primary, secondary, { registry, logic }) {
   const pre = preflight(structuredClone(merged.doc), registry, logic);
   if (!pre.ok) return { doc: null, problems: pre.errors.slice(0, 8).map(e => problem('compose_preflight', e.path, `[${e.code}] ${e.message}`)), union: null, united: u.doc };
   const check = checkComposition(merged.doc, registry, { logic });
+  if (check.failures.some(f => !f.adaptable)) {
+    problems.push(problem('union_incompatible', 'systems', `'${secondary.id}' on '${primary.id}''s space ${host?.use}: ${check.failures.filter(f => !f.adaptable).slice(0, 4).map(f => `[${f.code}] ${f.message}`).join('; ')}`));
+    return { doc: null, problems, union: null, united: u.doc };
+  }
   if (check.failures.length) {
     const sig = check.signature;
     problems.push({ ...problem('union_needs_adapter', 'systems', `'${secondary.id}' on '${primary.id}''s space ${host?.use}: ${check.failures.slice(0, 4).map(f => `[${f.code}] ${f.message}`).join('; ')}${sig ? `; the adapter that would fix it: ${sig.id} (${JSON.stringify(sig.card.adapts.provides)})` : ''}`), ...(sig ? { signature: sig } : {}) });

@@ -33,7 +33,9 @@ export default {
       ability: { type: 'string', default: '', effect: 'ability required; empty = always' },
       ...COMMON_PARAMS,
     },
-    provides: { events: ['dodged', 'dodge_end'], actions: ['dodge'] },
+    // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
+    denials: ['dodge_failed'],
+    provides: { events: ['dodge_failed', 'dodged', 'dodge_end'], actions: ['dodge'] },
     requires: { capabilities: ['position'] },
     optional: { capabilities: ['gravity'] },
     envelope,

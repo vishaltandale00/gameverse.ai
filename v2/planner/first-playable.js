@@ -14,6 +14,7 @@ import { hashOf } from '../server/store.js';
 import { repairDocument, instances } from './repair.js';
 import { requirementsOf } from './catalog.js';
 import { furnishWorld, worldProblems } from './world.js';
+import { hostDocument } from '../web/host-doc.js';
 import { isList, isStr, obj, objects, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
@@ -91,7 +92,11 @@ function patch(rt) {
 
 /** @param {Doc} doc @param {RegistryLike} registry @param {LogicLike} logic @param {unknown} seed @param {number} frames @returns {Runtime} */
 function boot(doc, registry, logic, seed, frames) {
-  const rt = createWorld(doc, tracingRegistry(registry), logic, { seed });
+  // The world booted is the one a person plays: the document with the host's input and UI (v2/web/host-doc.js), as the
+  // gate verifies it; the host document's preflight failing is a defect of the document as played, reported as such.
+  const host = preflight(hostDocument(doc, registry), registry, logic);
+  if (!host.ok) throw Object.assign(Error(`the document a person plays (the host's input and UI added) does not preflight: ${host.errors.slice(0, 3).map(e => `${e.code} ${e.path}: ${e.message}`).join('; ')}`), { hostErrors: host.errors });
+  const rt = createWorld(host.doc, tracingRegistry(registry), logic, { seed });
   for (let i = 0; i < frames && rt.state.status === 'playing'; i++) rt.step();
   rt.availableOptions();
   return rt;
@@ -165,6 +170,8 @@ export function firstPlayable(input, registry, logic, { seed, frames = 3, furnis
   for (let attempt = 0; !rt; attempt++) {
     try { rt = boot(checked, registry, logic, seed, frames); break; }
     catch (error) {
+      const hostErrors = prop(error, 'hostErrors');
+      if (isList(hostErrors)) return { ok: false, errors: /** @type {PlayableProblem[]} */ (hostErrors), problems, removed, ms: elapsed() };
       const err = throwError(error, checked);
       const culprit = err.primitive && registry.has(err.primitive) ? err.primitive : findCulprit(checked, registry, logic, seed, excluded, kept);
       // checked is doc preflighted (same instances and uses).

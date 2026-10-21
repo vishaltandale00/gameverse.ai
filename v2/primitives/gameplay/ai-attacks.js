@@ -71,7 +71,7 @@ export default {
       maxSummons: { type: 'integer', default: 4, min: 0, max: 64, effect: 'live summons per summoner' },
       interruptOn: { type: 'list', of: { type: 'string' }, default: ['staggered'], effect: 'events {who} that cancel the victim\'s attack' },
     },
-    provides: { events: ['telegraph', 'attack_launched', 'attack_hit', 'attack_end', 'attack_cancelled', 'summoned', 'shot_hit', 'shot_blocked', 'attack_buff'] },
+    provides: { events: ['self_destruct', 'enemy_shoot', 'telegraph', 'attack_launched', 'attack_hit', 'attack_end', 'attack_cancelled', 'summoned', 'shot_hit', 'shot_blocked', 'attack_buff'] },
     requires: { capabilities: ['position', 'distance'] },
     reads: ['content.archetypes'],
   },

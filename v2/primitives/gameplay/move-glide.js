@@ -31,7 +31,7 @@ export default {
       ability: { type: 'string', default: '', effect: 'ability required (via unlock_ability grants); empty = always' },
       ...COMMON_PARAMS,
     },
-    provides: { events: ['glide_start', 'glide_end'], actions: ['glide', 'jump'] },
+    provides: { events: ['evaded', 'glide_start', 'glide_end'], actions: ['glide', 'jump'] },
     requires: { capabilities: ['position', 'gravity'] },
     optional: { capabilities: ['editCells', 'raycast'] },
     envelope,

@@ -4,9 +4,10 @@
 // it offers are the ones the game's primitives list for those verbs in their options (rt.options: the legal moves,
 // orders, swaps, zones...), grouped by the declared `pick` field of the verb's choice (the unit a move is for), and
 // sent exactly as the primitive defines them through view.act. Pointer, number keys (when no gameplay key uses them)
-// and back while a group is open. Presentation only: it never writes rt.state.
+// and back while a group is open; more rows than `max` page on with a More button. Presentation only: it never writes
+// rt.state.
 import { uiHost, fill, setClass, setText, titleCase } from './ui-lib.js';
-import { unclaimedChoices, verbInstances, actionSpaceOf } from '../engine/runtime-lib-controls.js';
+import { unclaimedChoices, verbInstances, actionSpaceOf, declaredDenials, deniesPlayer } from '../engine/runtime-lib-controls.js';
 import { INTERACTIONS } from '../gameplay/modes-lib-mode.js';
 
 /** The choice verbs this primitive issues in a document: the loops' choice verbs no other mounted UI names. */
@@ -43,6 +44,32 @@ export function choiceEntries(options, served, pick = {}) {
   return out;
 }
 
+/** The text an option shows: its label, else its verbs and scalar values. */
+export const entryLabel = o => o.label || Object.entries(o.actions || {}).map(([v, x]) => `${titleCase(v)}${typeof x === 'object' ? '' : ` ${x}`}`).join(' ');
+
+/**
+ * The rows the panel shows for the options offered now, with `group` open (null: the top level): a row per group (the
+ * units that have moves, the pieces that can be built) and per ungrouped option at the top level, and inside a group
+ * Back then the group's options. Pure, for tests.
+ * @returns {Array<{ text: string, kind: 'group' | 'option' | 'back', group?: string, field?: string | null, value?: unknown, actions?: Record<string, unknown> }>}
+ */
+export function panelRows(options, served, pick, group = null) {
+  const entries = choiceEntries(options, served, pick);
+  const groups = [...new Map(entries.filter(e => e.group !== null).map(e => [e.group, e])).entries()];
+  if (group !== null && !groups.some(([g]) => g === group)) group = null;
+  return group === null
+    ? [...groups.map(([g, e]) => ({ text: titleCase(g), kind: /** @type {const} */ ('group'), group: g, field: e.field, value: e.value })),
+      ...entries.filter(e => e.group === null).map(e => ({ text: entryLabel(e.option), kind: /** @type {const} */ ('option'), actions: e.option.actions }))]
+    : [{ text: '‹ Back', kind: /** @type {const} */ ('back') }, ...entries.filter(e => e.group === group).map(e => ({ text: entryLabel(e.option), kind: /** @type {const} */ ('option'), actions: e.option.actions }))];
+}
+
+/** The rows of one page of at most `max` buttons: when they do not fit, the last button pages on (More, wrapping). */
+export function pageOf(rows, page, max) {
+  if (rows.length <= max) return { rows, pages: 1, page: 0 };
+  const per = Math.max(1, max - 1), pages = Math.ceil(rows.length / per), p = ((page % pages) + pages) % pages;
+  return { rows: [...rows.slice(p * per, (p + 1) * per), { text: `More › (${p + 1}/${pages})`, kind: 'more' }], pages, page: p };
+}
+
 export default {
   id: 'graphics.ui.choices',
   card: {
@@ -51,8 +78,10 @@ export default {
     interactions: INTERACTIONS.slice(),
     // Issues every choice verb of the document no other mounted UI primitive names (runtime-lib-controls.js unclaimedChoices).
     controls: { choice: true },
+    // Says why a choice or press was refused: the denials the document's primitives declare (card.denials).
+    feedback: { denials: true },
     params: {
-      max: { type: 'integer', default: 9, min: 1, max: 24, effect: 'entries shown at once (number keys pick the first nine)' },
+      max: { type: 'integer', default: 9, min: 1, max: 24, effect: 'buttons shown at once; more entries page on with a More button (number keys pick the first nine)' },
     },
   },
   install(rt, config) {
@@ -60,36 +89,44 @@ export default {
     const el = host.el, served = servedVerbs(rt.doc, rt.registry), { pick, selects } = picksOf(rt.doc, rt.registry, served);
     if (!served.length) return;
     const list = el('div.gv-choice-list', { role: 'group', aria: { label: 'Choices' } });
-    const head = el('div.gv-choice-head');
-    const root = el('section.gv-choice-panel.gv-panel', { style: { position: 'absolute', left: '12px', bottom: '12px', 'max-width': 'min(360px, 60vw)', 'pointer-events': 'auto' } }, head, list);
+    const head = el('div.gv-choice-head'), note = el('div.gv-choice-note', { aria: { live: 'polite' } });
+    const root = el('section.gv-choice-panel.gv-panel', { style: { position: 'absolute', left: '12px', bottom: '12px', 'max-width': 'min(360px, 60vw)', 'pointer-events': 'auto' } }, head, note, list);
+    // The last refusal that answered the person, shown for a few seconds.
+    let refused = null;
+    for (const ev of declaredDenials(rt.doc, rt.registry)) rt.on(ev, e => { if (deniesPlayer(rt, e)) { refused = { text: `${titleCase(ev)}${e.reason ? `: ${titleCase(e.reason)}` : ''}`, until: host.now() + 3 }; sig = ''; } });
     host.layer('hud').append(root);
-    let group = null, field = null, shown = [], sig = '';
+    let group = null, page = 0, shown = [], sig = '';
     const bound = rt.hasService?.('input') ? Object.values(rt.service('input').bindings()).flat() : [];
     const digitsFree = !bound.some(k => /^[1-9]$/.test(k) || /^\d-\d$/.test(k));
+    const reset = () => { sig = ''; };
     host.input.push({ id: 'choices', modal: false, takesInput: true, onVerb: verb => {
       const d = /^digit(\d)$/.exec(verb);
       if (d && digitsFree && shown[Number(d[1]) - 1]) { shown[Number(d[1]) - 1]._run(); return true; }
-      if (verb === 'back' && group !== null) { group = null; sig = ''; return true; }
+      if (verb === 'back' && group !== null) { group = null; page = 0; reset(); return true; }
       return false;
     } });
-    const label = o => o.label || Object.entries(o.actions || {}).map(([v, x]) => `${titleCase(v)}${typeof x === 'object' ? '' : ` ${x}`}`).join(' ');
     // Choosing a group (a unit) also issues the verb that selects it, when the document has one (card.actionSpace selects).
-    const choose = (g, f, value) => { group = g; field = f; if (selects[f] && served.includes(selects[f])) rt.view.act({ [selects[f]]: value }); sig = ''; };
+    const run = r => {
+      if (r.kind === 'group') { group = r.group; page = 0; if (selects[r.field] && served.includes(selects[r.field])) rt.view.act({ [selects[r.field]]: r.value }); }
+      else if (r.kind === 'back') { group = null; page = 0; }
+      else if (r.kind === 'more') page++;
+      else { rt.view.act(r.actions); group = null; page = 0; }
+      reset();
+    };
     function paint() {
-      const entries = rt.state.status === 'playing' ? choiceEntries(rt.availableOptions(), served, pick) : [];
-      const groups = [...new Map(entries.filter(e => e.group !== null).map(e => [e.group, e])).entries()];
-      if (group !== null && !groups.some(([g]) => g === group)) group = null;
-      const rows = group === null
-        ? [...groups.map(([g, e]) => ({ text: titleCase(g), run: () => choose(g, e.field, e.value) })),
-          ...entries.filter(e => e.group === null).map(e => ({ text: label(e.option), run: () => rt.view.act(e.option.actions) }))]
-        : [{ text: '‹ Back', run: () => { group = null; sig = ''; } }, ...entries.filter(e => e.group === group).map(e => ({ text: label(e.option), run: () => { rt.view.act(e.option.actions); group = null; sig = ''; } }))];
-      setClass(root, 'gv-hide', !rows.length);
-      const key = JSON.stringify([group, field, rows.map(r => r.text)]);
+      const options = rt.state.status === 'playing' ? rt.availableOptions() : [];
+      const all = panelRows(options, served, pick, group);
+      if (group !== null && all[0]?.kind !== 'back') group = null; // the open group has nothing left to choose
+      const { rows, page: p } = pageOf(all, page, config.max); page = p;
+      if (refused && host.now() > refused.until) refused = null;
+      setClass(root, 'gv-hide', !rows.length && !refused);
+      const key = JSON.stringify([group, page, rows.map(r => r.text), refused?.text ?? null]);
       if (key === sig) return; sig = key;
       setText(head, group === null ? 'Choose' : titleCase(group));
-      shown = rows.slice(0, config.max).map((r, i) => {
+      setText(note, refused?.text ?? ''); setClass(note, 'gv-hide', !refused);
+      shown = rows.map((r, i) => {
         const b = el('button.gv-btn', { attrs: { type: 'button' }, text: `${digitsFree && i < 9 ? `${i + 1}. ` : ''}${r.text}` });
-        b._run = () => { host.sound('confirm'); r.run(); };
+        b._run = () => { host.sound('confirm'); run(r); };
         b.addEventListener('click', () => b._run());
         return b;
       });
