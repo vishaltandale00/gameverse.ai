@@ -4,7 +4,6 @@
 // through the space's editCells capability. Hot-loaded blocks appear on the
 // next lookup (the index is rebuilt when rt.doc changes).
 import { compare } from '../../kernel/logic.js';
-import { uniqueIds } from './runtime-lib.js';
 
 const ID = 'engine.blocks';
 
@@ -33,35 +32,46 @@ export default {
     provides: { events: ['block_changed', 'block_changed:*', 'light_changed'], services: ['blockDef', 'blocks'] },
     requires: {},
     reads: ['content.blocks'],
+    data: {
+      'content.blocks': { type: 'list', of: { type: 'object', open: true, fields: {
+        color: { type: 'string', effect: 'CSS colour of the block (default #888888)' },
+        solid: { type: 'boolean', effect: 'blocks movement (default true)' },
+        hardness: { type: 'number', min: 0, effect: 'break-time points; 9999 or more is unbreakable' },
+        tool: { type: 'string', effect: 'tool kind that harvests it (content.items[].tool.kind); none: any' },
+        tier: { type: 'integer', min: 0, effect: 'index of the lowest tool tier (params.tiers) that harvests it' },
+        drops: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1, effect: 'default 1' }, p: { type: 'number', min: 0, max: 1, effect: 'drop chance (default always)' } } }, effect: 'what harvesting it gives (default the block itself)' },
+        light: { type: 'integer', min: 0, max: 31, effect: 'light level it emits (at most params.lightLevels)' },
+        transparent: { type: 'boolean' },
+        tags: { type: 'list', of: { type: 'string' } },
+        liquid: { type: 'boolean' },
+        friction: { type: 'number', min: 0 },
+      } } },
+    },
+    rules: {
+      block_tier_unknown: { fields: ['content.blocks[].tier', 'tiers'], message: 'a block tier is an index of tiers (below its length)' },
+      block_light_range: { fields: ['content.blocks[].light', 'lightLevels'], message: 'a block light is at most lightLevels' },
+    },
   },
   logic(logic) {
     // {block_tag: 'ore', at: [x,y,z], space?}: the cell at `at` holds a block carrying the tag.
     logic.predicate('block_tag', {
+      codes: [{ code: 'block_predicate_invalid', fields: ['block_tag', 'at'], message: 'block_tag is a tag (a string) and at a position [x, y, z]', example: { block_tag: 'ore' } }],
       check: (p, path, errors) => { if (typeof p.block_tag !== 'string' || !Array.isArray(p.at)) errors.push({ code: 'block_predicate_invalid', path, message: 'block_tag needs a tag and at: [x,y,z]' }); },
       test: (p, rt) => { const id = rt.space(p.space).getCell?.(p.at); return Boolean(id) && (rt.service('blockDef')(id)?.tags || []).includes(p.block_tag); },
     });
     // {block_light: [x,y,z], gte: 8, space?}: block light at a position (numbers compare).
     logic.predicate('block_light', {
+      codes: [{ code: 'block_predicate_invalid', fields: ['block_light'], message: 'block_light is a position [x, y, z]', example: { block_light: 3, gte: 8 } }],
       check: (p, path, errors) => { if (!Array.isArray(p.block_light)) errors.push({ code: 'block_predicate_invalid', path, message: 'block_light needs a position [x,y,z]' }); },
       test: (p, rt) => { return compare(rt.service('blocks').lightAt(p.block_light, p.space), p); },
     });
   },
-  validate(config, doc, ctx) {
-    const errors = [], blocks = doc.content?.blocks || [];
-    if (!Array.isArray(blocks)) return [{ code: 'block_invalid', path: 'content.blocks', message: 'content.blocks must be a list' }];
-    uniqueIds(blocks, 'content.blocks', 'id_duplicate', errors);
+  validate(config, doc) {
+    const errors = [], blocks = Array.isArray(doc.content?.blocks) ? doc.content.blocks : [];
     blocks.forEach((b, i) => {
       const path = `content.blocks[${i}]`;
-      if (b.tier !== undefined && (typeof b.tier === 'string' ? !config.tiers.includes(b.tier) : !(Number.isInteger(b.tier) && b.tier >= 0 && b.tier < config.tiers.length)))
-        errors.push({ code: 'block_tier_unknown', path: `${path}.tier`, message: `tier ${JSON.stringify(b.tier)} is not one of ${config.tiers.map((t, k) => `${k}:${t}`).join(', ')}` });
-      if (b.light !== undefined && !(Number.isInteger(b.light) && b.light >= 0 && b.light <= config.lightLevels)) errors.push({ code: 'block_light_range', path: `${path}.light`, message: `light must be an integer in [0, ${config.lightLevels}]` });
-      if (b.hardness !== undefined && !(Number.isFinite(b.hardness) && b.hardness >= 0)) errors.push({ code: 'block_invalid', path: `${path}.hardness`, message: 'hardness must be a number >= 0' });
-      if (b.drops !== undefined && !Array.isArray(b.drops)) errors.push({ code: 'block_invalid', path: `${path}.drops`, message: 'drops must be a list of {item, count?, p?}' });
-      (Array.isArray(b.drops) ? b.drops : []).forEach((d, j) => {
-        if (typeof d?.item !== 'string') errors.push({ code: 'block_invalid', path: `${path}.drops[${j}]`, message: 'a drop needs an item id' });
-        else ctx.noteRef('item', d.item, `${path}.drops[${j}].item`, 'read');
-        if (d?.p !== undefined && !(d.p >= 0 && d.p <= 1)) errors.push({ code: 'block_invalid', path: `${path}.drops[${j}].p`, message: 'p must be in [0, 1]' });
-      });
+      if (Number.isInteger(b?.tier) && b.tier >= config.tiers.length) errors.push({ code: 'block_tier_unknown', path: `${path}.tier`, message: `tier ${b.tier} is not one of ${config.tiers.map((t, k) => `${k}:${t}`).join(', ')}` });
+      if (Number.isInteger(b?.light) && b.light > config.lightLevels) errors.push({ code: 'block_light_range', path: `${path}.light`, message: `light must be an integer in [0, ${config.lightLevels}]` });
     });
     return errors;
   },

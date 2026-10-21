@@ -25,19 +25,25 @@ export default {
     views: ['any'],
     params: {
       options: { type: 'object', open: true, default: DEFAULT_OPTIONS, effect: 'option -> starting value (number or boolean); each is var assist.<option>' },
-      presets: { type: 'object', open: true, default: DEFAULT_PRESETS, effect: 'difficulty -> {option: value} overrides' },
+      presets: { type: 'object', default: DEFAULT_PRESETS, values: { type: 'object', open: true, effect: 'option -> value (a number or boolean, as the option)' }, effect: 'difficulty -> {option: value} overrides' },
       difficulty: { type: 'string', default: 'normal', effect: 'starting preset' },
       locked: { type: 'list', of: { type: 'string' }, default: [], effect: 'options the player cannot change from menus' },
-      ranges: { type: 'object', open: true, default: { damage_taken: [0, 4], damage_dealt: [0.25, 4], game_speed: [0.25, 1], aim_assist: [0, 1], timing_window: [0.5, 3] }, effect: 'option -> [min, max] for numeric options' },
+      ranges: { type: 'object', values: { type: 'list', of: { type: 'number' }, min: 2, max: 2, effect: '[min, max]' }, default: { damage_taken: [0, 4], damage_dealt: [0.25, 4], game_speed: [0.25, 1], aim_assist: [0, 1], timing_window: [0.5, 3] }, effect: 'option -> [min, max] for numeric options' },
       rules: { type: 'list', default: [], effect: 'adaptive difficulty, checked every second',
         of: { type: 'object', fields: { when: { type: 'predicate', required: true }, set: { type: 'object', open: true, default: {} }, preset: { type: 'string' }, once: { type: 'boolean', default: true }, offer: { type: 'boolean', default: false, effect: 'emit assist_offered instead of applying' } } } },
     },
     provides: { events: ['assist_changed', 'assist_changed:*', 'difficulty_changed', 'assist_offered'], vars: ['assist.*', 'assist.difficulty'], actions: ['assist'], services: ['assist'] },
     requires: {},
+    rules: {
+      assist_option_type: { fields: ['options', 'presets'], message: "every option's value is a number or a boolean, and a preset sets an option to a value of the option's type", example: { options: { hints: 'yes' } } },
+      assist_option_unknown: { fields: ['presets', 'locked', 'rules[].set'], message: 'presets, locked and rules[].set name options of options' },
+      assist_preset_unknown: { fields: ['difficulty', 'rules[].preset'], message: 'difficulty and rules[].preset name a preset of presets (the built-in story, easy, normal, hard when presets is not set)' },
+      assist_range_invalid: { fields: ['ranges'], message: 'a range is [min, max] with min ≤ max', example: { ranges: { damage_taken: [4, 0] } } },
+    },
   },
   logic(logic) {
-    logic.effect('set_assist', { check: (e, path, errors) => { if (typeof e.option !== 'string' || !['number', 'boolean'].includes(typeof e.value)) errors.push({ code: 'assist_effect_invalid', path, message: 'set_assist needs option and a number or boolean value' }); }, run: (e, rt) => rt.service('assist').set(e.option, e.value, { force: true }) });
-    logic.effect('set_difficulty', { check: (e, path, errors) => { if (typeof e.difficulty !== 'string') errors.push({ code: 'assist_effect_invalid', path, message: 'set_difficulty needs a difficulty' }); }, run: (e, rt) => rt.service('assist').difficulty(e.difficulty) });
+    logic.effect('set_assist', { codes: [{ code: 'assist_effect_invalid', fields: ['option', 'value'], message: 'option is an option name and value a number or boolean', example: { do: 'set_assist', option: 'hints', value: 'yes' } }], check: (e, path, errors) => { if (typeof e.option !== 'string' || !['number', 'boolean'].includes(typeof e.value)) errors.push({ code: 'assist_effect_invalid', path, message: 'set_assist needs option and a number or boolean value' }); }, run: (e, rt) => rt.service('assist').set(e.option, e.value, { force: true }) });
+    logic.effect('set_difficulty', { codes: [{ code: 'assist_effect_invalid', fields: ['difficulty'], message: 'difficulty is a preset name', example: { do: 'set_difficulty', difficulty: 2 } }], check: (e, path, errors) => { if (typeof e.difficulty !== 'string') errors.push({ code: 'assist_effect_invalid', path, message: 'set_difficulty needs a difficulty' }); }, run: (e, rt) => rt.service('assist').difficulty(e.difficulty) });
   },
   validate(config) {
     const errors = [], opts = config.options, presets = presetsOf(config);
@@ -48,7 +54,7 @@ export default {
     }
     if (!(config.difficulty in presets)) errors.push({ code: 'assist_preset_unknown', path: 'difficulty', message: `unknown difficulty '${config.difficulty}'`, hint: `presets: ${Object.keys(config.presets).join(', ')}` });
     config.locked.forEach((k, i) => { if (!(k in opts)) errors.push({ code: 'assist_option_unknown', path: `locked[${i}]`, message: `unknown option '${k}'` }); });
-    for (const [k, r] of Object.entries(config.ranges)) if (k in opts && !(Array.isArray(r) && r.length === 2 && r[0] <= r[1])) errors.push({ code: 'assist_range_invalid', path: `ranges.${k}`, message: 'a range is [min, max]' });
+    for (const [k, r] of Object.entries(config.ranges)) if (k in opts && Array.isArray(r) && r[0] > r[1]) errors.push({ code: 'assist_range_invalid', path: `ranges.${k}`, message: 'a range is [min, max]' });
     config.rules.forEach((r, i) => {
       if (r.preset && !(r.preset in presets)) errors.push({ code: 'assist_preset_unknown', path: `rules[${i}].preset`, message: `unknown difficulty '${r.preset}'` });
       for (const k of Object.keys(r.set)) if (!(k in opts)) errors.push({ code: 'assist_option_unknown', path: `rules[${i}].set.${k}`, message: `unknown option '${k}'` });

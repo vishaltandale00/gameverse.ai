@@ -8,7 +8,7 @@
 // unlocked at runtime, delayed (the traveller is held in transit) and
 // cooled down. Solvers get options for every usable portal in reach, plus
 // macro options (walk there and use it) where the space can path.
-import { frames, inRegion, isVec, checkFx, uniqueIds, SLUG } from './runtime-lib.js';
+import { frames, inRegion, isVec, checkFx } from './runtime-lib.js';
 
 const ID = 'engine.portal';
 const TRANSITION_SEC = { cut: 0, fade: 0.5, elevator: 1.5, load: 1 };
@@ -23,11 +23,11 @@ export default {
       portals: { type: 'list', default: [], effect: 'portals',
         of: { type: 'object', fields: {
           id: { type: 'string', required: true },
-          from: { type: 'object', required: true, fields: { ...end, size: { type: 'json', effect: 'trigger box size' }, r: { type: 'number', min: 0, effect: 'trigger radius' } } },
+          from: { type: 'object', required: true, fields: { ...end, size: { type: 'list', of: { type: 'number', min: 0 }, min: 1, max: 3, effect: 'trigger box size' }, r: { type: 'number', min: 0, effect: 'trigger radius' } } },
           to: { type: 'object', required: true, fields: { ...end, facing: { type: 'number', effect: 'facing after arrival (degrees, or ±1 in side views)' } } },
           gate: { type: 'json', effect: 'plot.gate id (string) or a predicate that must hold' },
           key: { type: 'ref', to: 'item', effect: 'item the traveller must carry' }, consumeKey: { type: 'boolean', default: false },
-          prompt: { type: 'string', default: '' }, lockedText: { type: 'string', default: '' },
+          prompt: { type: 'string', default: '', display: true, effect: 'shown near the portal' }, lockedText: { type: 'string', default: '', display: true, effect: 'shown when it is locked' },
           transition: { type: 'string', options: ['cut', 'fade', 'elevator', 'load'], default: 'cut' },
           delaySec: { type: 'number', min: 0, max: 30, unit: 's', effect: 'transit time (default from transition: cut 0, fade 0.5, elevator 1.5, load 1)' },
           oneWay: { type: 'boolean', default: true, effect: 'false: also usable from `to` back to `from`' },
@@ -43,30 +43,32 @@ export default {
     provides: { events: ['portal_used', 'portal_used:*', 'portal_start', 'portal_near', 'portal_locked', 'portal_locked:*', 'blocked'], actions: ['use_portal'], services: ['portals'] },
     requires: { capabilities: ['position'] },
     defines: [{ kind: 'portal', in: 'portals' }],
+    rules: {
+      portal_endpoint: { fields: ['portals[].from', 'portals[].to', 'portals[].oneWay'], message: 'from has at or zone; to has at, zone or space; a zone given with a space is a zone of that space; a two-way portal (oneWay false) has a to at or zone' },
+      portal_gate_invalid: { fields: ['portals[].gate'], message: 'gate is a plot.gate id (a string) or a predicate (an object)', example: { portals: [{ id: 'door', from: { at: [0, 0] }, to: { at: [1, 1] }, gate: 5 }] } },
+    },
   },
   logic(logic) {
     logic.effect('use_portal', {
       refs: e => [['portal', e.portal]],
+      codes: [{ code: 'portal_effect_invalid', fields: ['portal'], message: 'portal is a portal id', example: { do: 'use_portal' } }],
       check: (e, path, errors) => { if (typeof e.portal !== 'string') errors.push({ code: 'portal_effect_invalid', path, message: 'use_portal needs a portal id' }); },
       run: (e, rt, c) => { const who = rt.resolve(e.who, c); if (who) rt.service('portals').use(e.portal, who, { force: Boolean(e.force), reverse: Boolean(e.reverse) }); },
     });
-    const lock = locked => ({ refs: e => [['portal', e.portal]], check: (e, path, errors) => { if (typeof e.portal !== 'string') errors.push({ code: 'portal_effect_invalid', path, message: 'needs a portal id' }); }, run: (e, rt) => { rt.store(ID).locked ??= {}; rt.store(ID).locked[e.portal] = locked; } });
+    const lock = locked => ({ refs: e => [['portal', e.portal]], codes: [{ code: 'portal_effect_invalid', fields: ['portal'], message: 'portal is a portal id', example: { do: locked ? 'lock_portal' : 'unlock_portal' } }], check: (e, path, errors) => { if (typeof e.portal !== 'string') errors.push({ code: 'portal_effect_invalid', path, message: 'needs a portal id' }); }, run: (e, rt) => { rt.store(ID).locked ??= {}; rt.store(ID).locked[e.portal] = locked; } });
     logic.effect('lock_portal', lock(true));
     logic.effect('unlock_portal', lock(false));
     logic.predicate('portal_open', { refs: p => [['portal', p.portal_open]], test: (p, rt, c) => rt.service('portals').usable(p.portal_open, rt.resolve(p.who, c)).ok });
   },
   validate(config, doc, ctx) {
     const errors = [];
-    uniqueIds(config.portals, 'portals', 'portal_duplicate', errors);
     config.portals.forEach((p, i) => {
       const path = `portals[${i}]`;
-      if (!SLUG.test(p.id || '')) errors.push({ code: 'id_invalid', path: `${path}.id`, message: 'portal id must be a slug' });
       if (p.from.at === undefined && p.from.zone === undefined) errors.push({ code: 'portal_endpoint', path: `${path}.from`, message: 'from needs at or zone' });
       if (p.to.at === undefined && p.to.zone === undefined && p.to.space === undefined) errors.push({ code: 'portal_endpoint', path: `${path}.to`, message: 'to needs at, zone or space' });
       for (const k of ['from', 'to']) {
         const z = p[k].zone, sp = p[k].space;
         if (z && sp && !doc.spaces.find(s => s.id === sp)?.zones?.some(x => x.id === z)) errors.push({ code: 'portal_endpoint', path: `${path}.${k}.zone`, message: `zone '${z}' is not in space '${sp}'` });
-        if (p[k].size !== undefined && !isVec(p[k].size)) errors.push({ code: 'portal_endpoint', path: `${path}.${k}.size`, message: 'size must be a vector' });
       }
       if (!p.oneWay && p.to.at === undefined && p.to.zone === undefined) errors.push({ code: 'portal_endpoint', path: `${path}.to`, message: 'a two-way portal needs a destination at or zone to use it back' });
       if (p.gate !== undefined) {

@@ -37,22 +37,26 @@ export default {
     provides: { events: ['recording_started', 'recording_stopped', 'ghost_saved', 'ghost_started', 'ghost_finished', 'ghost_finished:*'], services: ['replay'] },
     requires: { capabilities: ['position'] },
     defines: [{ kind: 'ghost', in: 'ghosts' }],
+    rules: {
+      replay_ghost_archetype: { fields: ['ghosts[].archetype', 'ghostArchetype'], message: 'every ghost has an archetype: its own, or ghostArchetype', example: { ghosts: [{ id: 'past', points: [[0, 0]] }] } },
+      replay_points_invalid: { fields: ['ghosts[].points'], message: "every point is a position in the space's coordinates (never null)", example: { ghostArchetype: 'ball', ghosts: [{ id: 'past', points: [[0, 0], null] }] } },
+    },
   },
   logic(logic) {
+    const codes = kind => [{ code: 'replay_effect_invalid', fields: ['ghost'], message: 'ghost is a ghost id', example: { do: kind } }];
     const g = (e, path, errors) => { if (typeof e.ghost !== 'string') errors.push({ code: 'replay_effect_invalid', path, message: `${e.do} needs a ghost id` }); };
     logic.effect('start_recording', { run: (e, rt) => rt.service('replay').startRecording() });
     logic.effect('stop_recording', { run: (e, rt) => rt.service('replay').stopRecording() });
-    logic.effect('save_ghost', { check: g, run: (e, rt) => rt.service('replay').saveGhost(e.ghost) });
-    logic.effect('start_ghost', { check: g, run: (e, rt) => rt.service('replay').startGhost(e.ghost, { archetype: e.archetype, loop: e.loop, id: e.id }) });
-    logic.effect('stop_ghost', { check: g, run: (e, rt) => rt.service('replay').stopGhost(e.ghost) });
+    logic.effect('save_ghost', { codes: codes('save_ghost'), check: g, run: (e, rt) => rt.service('replay').saveGhost(e.ghost) });
+    logic.effect('start_ghost', { codes: codes('start_ghost'), check: g, run: (e, rt) => rt.service('replay').startGhost(e.ghost, { archetype: e.archetype, loop: e.loop, id: e.id }) });
+    logic.effect('stop_ghost', { codes: codes('stop_ghost'), check: g, run: (e, rt) => rt.service('replay').stopGhost(e.ghost) });
   },
-  validate(config, doc) {
+  validate(config) {
     const errors = [];
     config.ghosts.forEach((g, i) => {
       if (!g.archetype && !config.ghostArchetype) errors.push({ code: 'replay_ghost_archetype', path: `ghosts[${i}].archetype`, message: 'a ghost needs an archetype (or set ghostArchetype)' });
       if (g.points?.some(p => p === null || p === undefined)) errors.push({ code: 'replay_points_invalid', path: `ghosts[${i}].points`, message: 'points are positions in the space\'s coordinates' });
     });
-    if (config.ghosts.some(g => !g.space) && !doc.spaces?.length) errors.push({ code: 'replay_points_invalid', path: 'ghosts', message: 'no space to play ghosts in' });
     return errors;
   },
   install(rt, config) {
