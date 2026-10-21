@@ -11,6 +11,7 @@ import { random, seedFrom } from '../kernel/rng.js';
 import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
 import { vocabIndex, selectPrimitives } from './select.js';
 import { firstPlayable } from './first-playable.js';
+import { engageDocument } from './engage.js';
 import { repairDocument, describeErrors } from './repair.js';
 import { parseReply } from './writer.js';
 import { configureGenerators, furnishWorld, worldProblems } from './world.js';
@@ -150,7 +151,7 @@ export async function ensureAgency({ decomposition, selection, registry, logic, 
   const kept = sel => new Set([...sel.systems, ...sel.generators.map(g => g.id)]);
   for (let i = 0; i < tries; i++) {
     const o = proceduralOutline({ decomposition, selection: current, registry, logic, seed, prompt });
-    const fp = o.ok ? firstPlayable(o.doc, registry, logic, { seed }) : null;
+    const fp = o.ok ? firstPlayable(engageDocument(o.doc, registry, logic).doc, registry, logic, { seed }) : null;
     attempts.push({ spaces: current.spaces.map(s => s.use), options: fp?.options ?? null, ok: Boolean(fp?.ok) });
     if (fp?.ok && fp.options > 0) return { selection: current, attempts, agency: true };
     excluded = [...excluded, current.spaces[0].use];

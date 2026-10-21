@@ -28,6 +28,8 @@ export default {
     provides: { events: ['airborne', 'landed', 'stall', 'stall_recovered', 'crash'] },
     requires: { capabilities: ['position'], primitives: ['gameplay.vehicle.core'] },
     reads: ['content.archetypes'],
+    engage: { player: { spawn: { role: 'vehicle', archetype: { id: 'aircraft', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, aircraft: {} } } } },
+      actors: { spawn: { role: 'vehicle', archetype: { id: 'aircraft', kind: 'vehicle', components: { vehicle: { seats: 1, health: 100, fuel: 0 }, aircraft: {} } }, components: { drive: { control: { up: true, pitch: 0.3 } } } } } },
   },
   validate(config, doc) {
     const errors = [];

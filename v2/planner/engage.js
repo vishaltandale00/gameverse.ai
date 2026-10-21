@@ -1,0 +1,217 @@
+// The engagement step: a document that picks a mechanic must also wire the
+// player (and the mechanic's AI participants) into it, or the mechanic never
+// fires (a race nobody drives, a car nobody sits in, health nobody has).
+// Each card says how it is engaged in `card.engage`; this step applies those
+// contracts to a document without overwriting anything the document already
+// has. It knows no primitive id: everything comes from the cards.
+//
+// card.engage = {
+//   player: {
+//     components: { comp: defaults },      merged into the player's archetype (missing keys only)
+//     spawn: { role, archetype },          an entity made at the player's start (role names it in effects, e.g. 'vehicle');
+//                                          an archetype in the document with the same component keys is reused
+//     enter: [effects],                    run once at start; '$player' and '$<role>' are substituted, effects naming
+//                                          a role nobody spawned are dropped; skipped when the document already runs
+//                                          these effect kinds itself
+//   },
+//   actors: { components, spawn, enter },  the same, for each AI participant ('$actor' = the participant)
+//   participants: { param },               who the participants are: the instance param listing ids or archetypes;
+//                                          missing ones are spawned at start beside the player
+//   config: { param: value },              instance params filled when the document leaves them unset or empty;
+//                                          '$first:<doc.path>' = the id of the first entry at that path (dropped if none)
+// }
+//
+// Start spawns and start effects run through the spawner primitive that declares the `spawn` effect (its rules
+// place unique entities and run onSpawn effects on the first step), added first in systems when missing so the
+// participants exist before anything that reads them arms.
+import { preflight } from '../kernel/document.js';
+
+export const ENGAGE_VERSION = 'engage/0.1';
+
+const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+const clone = v => structuredClone(v);
+const slug = s => (String(s || '').toLowerCase().match(/[a-z0-9]+/g) || ['x']).join('_');
+
+/** Fill keys of `defaults` missing from `target` (recursively for plain objects). Returns the keys added. */
+function fillMissing(target, defaults, path = '', out = []) {
+  for (const [k, v] of Object.entries(defaults || {})) {
+    if (target[k] === undefined) { target[k] = clone(v); out.push(path + k); }
+    else if (isObj(target[k]) && isObj(v)) fillMissing(target[k], v, `${path}${k}.`, out);
+  }
+  return out;
+}
+
+/** Replace '$name' strings in effects; null when an effect names a role that is not bound. */
+function bind(value, roles) {
+  if (typeof value === 'string' && value.startsWith('$') && !value.startsWith('$first:')) return value.slice(1) in roles ? roles[value.slice(1)] : undefined;
+  if (Array.isArray(value)) { const out = []; for (const v of value) { const b = bind(v, roles); if (b === undefined) return undefined; out.push(b); } return out; }
+  if (isObj(value)) { const out = {}; for (const [k, v] of Object.entries(value)) { const b = bind(v, roles); if (b === undefined) return undefined; out[k] = b; } return out; }
+  return value;
+}
+
+/** Effect kinds the document already runs anywhere (`{do: kind}` objects). */
+function effectKinds(doc) {
+  const kinds = new Set();
+  const walk = v => { if (Array.isArray(v)) v.forEach(walk); else if (isObj(v)) { if (typeof v.do === 'string') kinds.add(v.do); Object.values(v).forEach(walk); } };
+  walk(doc);
+  return kinds;
+}
+
+const at = (doc, path) => path.split('.').reduce((v, k) => (v == null ? undefined : v[k]), doc);
+
+/** Every instance in the document with the primitive's card. */
+function instances(doc, registry) {
+  const out = [];
+  for (const [section, list] of [['systems', doc.systems], ['graphics', doc.graphics]]) (Array.isArray(list) ? list : []).forEach((inst, i) => {
+    const p = inst && registry.get(inst.use);
+    if (p?.card?.engage) out.push({ inst, path: `${section}[${i}]`, card: p.card, id: p.id });
+  });
+  return out;
+}
+
+/** The spawner the document uses or should use: the primitive that owns the `spawn` effect. */
+function spawnerId(registry) {
+  for (const id of registry.ids()) { const c = registry.get(id).card; if (c.params?.rules && (c.defines || []).some(d => d.kind === 'spawn_rule')) return id; }
+  return null;
+}
+
+/** A position `k` steps beside the player's start (behind it on the first axis); zone/slot starts are shared. */
+function beside(start, k) {
+  if (!Array.isArray(start)) return start;
+  const p = start.slice(); p[0] = Math.round((p[0] - 2 * k) * 1000) / 1000; return p;
+}
+
+/**
+ * engageDocument(doc, registry, logic) -> { doc, applied: [{use, part, what}], skipped: [...], ok, errors, version }
+ * The input is not modified. When the engaged document would not preflight, the input is returned unchanged
+ * (ok false, with the errors), so this step can never break a playable document.
+ */
+export function engageDocument(input, registry, logic) {
+  const doc = clone(input), applied = [], skipped = [];
+  const found = instances(doc, registry);
+  if (!found.length || !doc.player) return { doc: input, applied, skipped, ok: true, errors: [], version: ENGAGE_VERSION };
+  doc.content = isObj(doc.content) ? doc.content : {};
+  doc.content.archetypes = Array.isArray(doc.content.archetypes) ? doc.content.archetypes : [];
+  const archetypes = doc.content.archetypes, archetype = id => archetypes.find(a => a?.id === id);
+  const already = effectKinds(input);
+  const player = archetype(doc.player.archetype);
+  const rules = [];
+  const ruleIds = new Set();
+  const addRule = r => { if (ruleIds.has(r.id)) return; ruleIds.add(r.id); rules.push(r); };
+
+  // 1. Instance params the mechanic needs to have anything to engage with.
+  for (const { inst, path, card, id } of found) {
+    for (const [param, value] of Object.entries(card.engage.config || {})) {
+      const cur = inst.with?.[param];
+      if (cur !== undefined && !(Array.isArray(cur) && !cur.length) && cur !== null && cur !== '') continue;
+      let v = clone(value), missing = false;
+      const sub = x => { if (typeof x === 'string' && x.startsWith('$first:')) { const list = at(doc, x.slice(7)); const first = Array.isArray(list) ? list.find(e => e?.id)?.id : isObj(list) ? Object.keys(list)[0] : undefined; if (first === undefined) missing = true; return first; } if (Array.isArray(x)) return x.map(sub); if (isObj(x)) return Object.fromEntries(Object.entries(x).map(([k, y]) => [k, sub(y)])); return x; };
+      v = sub(v);
+      if (missing) { skipped.push({ use: id, part: 'config', what: param, why: 'the document has no content to fill it from' }); continue; }
+      inst.with = { ...(inst.with || {}), [param]: v };
+      applied.push({ use: id, path, part: 'config', what: param });
+    }
+  }
+
+  // 2. Player components.
+  for (const { card, id } of found) {
+    const comps = card.engage.player?.components;
+    if (!comps || !player) continue;
+    player.components = isObj(player.components) ? player.components : {};
+    const added = fillMissing(player.components, comps);
+    if (added.length) applied.push({ use: id, part: 'player.components', what: added.join(',') });
+  }
+
+  // 3. Role spawns (one archetype per role: reused from the document when one has the template's components).
+  const roleArchetypes = {};
+  const roleFor = (spec, id) => {
+    if (!spec?.role || !spec.archetype) return null;
+    if (roleArchetypes[spec.role]) return roleArchetypes[spec.role];
+    const keys = Object.keys(spec.archetype.components || {});
+    const reuse = archetypes.find(a => a?.id !== doc.player.archetype && keys.length && keys.every(k => a?.components?.[k] !== undefined));
+    if (reuse) return (roleArchetypes[spec.role] = reuse.id);
+    let aid = slug(spec.archetype.id || spec.role); while (archetype(aid)) aid += '_x';
+    archetypes.push({ ...clone(spec.archetype), id: aid });
+    applied.push({ use: id, part: 'archetype', what: aid });
+    return (roleArchetypes[spec.role] = aid);
+  };
+  const space = doc.player.space, start = doc.player.at;
+  const spawnsOf = side => found.map(f => ({ ...f, spec: f.card.engage[side]?.spawn })).filter(f => f.spec?.role);
+  const entersOf = side => found.flatMap(f => (f.card.engage[side]?.enter || []).map(e => ({ use: f.id, effect: e })));
+
+  // The player's role entities and start effects; skipped when the document already runs those effects itself.
+  const pEnter = entersOf('player');
+  if (pEnter.length && pEnter.every(e => !already.has(e.effect.do))) {
+    const roles = { player: 'player' }, roleRules = [];
+    for (const f of spawnsOf('player')) {
+      if (roles[f.spec.role]) continue;
+      const aid = roleFor(f.spec, f.id), eid = `player_${aid}`;
+      roles[f.spec.role] = eid;
+      roleRules.push({ id: eid, archetype: aid, ...(space ? { space } : {}), at: clone(start), unique: true, activation: 'always', respawnSec: 0, ...(f.spec.components ? { components: clone(f.spec.components) } : {}), onSpawn: [] });
+    }
+    const effects = pEnter.map(e => bind(e.effect, roles)).filter(Boolean);
+    if (effects.length && roleRules.length) {
+      roleRules.at(-1).onSpawn = effects;
+      roleRules.forEach(addRule);
+      applied.push({ use: [...new Set(pEnter.map(e => e.use))].join(','), part: 'player.enter', what: effects.map(e => e.do).join(',') });
+    } else if (pEnter.length) skipped.push({ use: pEnter[0].use, part: 'player.enter', why: 'no role entity to enter' });
+  } else if (pEnter.length) skipped.push({ use: pEnter[0].use, part: 'player.enter', why: 'the document already runs these effects' });
+
+  // 4. Participants: spawned beside the player when missing, then equipped by every mechanic's actors contract.
+  // Participants that already exist: characters, and named (unique) spawns in the document or added above.
+  const spawned = (doc.systems || []).flatMap(s => (Array.isArray(s?.with?.rules) ? s.with.rules : []).filter(r => r?.unique).map(r => r.id));
+  const entities = new Set([...(doc.plot?.characters || []).map(c => c?.id), ...rules.map(r => r.id), ...spawned]);
+  const actors = [];
+  for (const { inst, card, id } of found) {
+    const part = card.engage.participants; if (!part?.param) continue;
+    const list = inst.with?.[part.param] ?? card.params?.[part.param]?.default ?? [];
+    for (const sel of Array.isArray(list) ? list : []) {
+      if (typeof sel !== 'string' || sel === 'player' || actors.some(a => a.id === sel) || entities.has(sel)) continue;
+      // A selector that names no archetype becomes one (an NPC with that name), so the participant exists.
+      if (!archetype(sel)) { archetypes.push({ id: sel, kind: 'npc', components: { name: sel } }); applied.push({ use: id, part: 'archetype', what: sel }); }
+      actors.push({ id: sel, archetype: sel, from: id });
+    }
+  }
+  const aEnter = entersOf('actors');
+  actors.forEach((a, k) => {
+    const where = beside(start, k + 1), components = {};
+    for (const f of found) if (f.card.engage.actors?.components) fillMissing(components, f.card.engage.actors.components);
+    const own = archetype(a.archetype);
+    for (const key of Object.keys(components)) if (own?.components?.[key] !== undefined) delete components[key];
+    addRule({ id: a.id, archetype: a.archetype, ...(space ? { space } : {}), at: where, unique: true, activation: 'always', respawnSec: 0, ...(Object.keys(components).length ? { components } : {}) });
+    const roles = { actor: a.id };
+    const roleRules = [];
+    for (const f of spawnsOf('actors')) {
+      if (roles[f.spec.role]) continue;
+      const tkeys = Object.keys(f.spec.archetype.components || {});
+      if (tkeys.length && tkeys.every(t => own?.components?.[t] !== undefined)) continue; // the participant is that role itself
+      const aid = roleFor(f.spec, f.id), eid = `${a.id}_${aid}`;
+      roles[f.spec.role] = eid;
+      roleRules.push({ id: eid, archetype: aid, ...(space ? { space } : {}), at: where, unique: true, activation: 'always', respawnSec: 0, ...(f.spec.components ? { components: clone(f.spec.components) } : {}), onSpawn: [] });
+    }
+    const effects = aEnter.map(e => bind(e.effect, roles)).filter(Boolean);
+    if (roleRules.length) roleRules.at(-1).onSpawn = effects;
+    roleRules.forEach(addRule);
+    applied.push({ use: a.from, part: 'participant', what: `${a.id}${roleRules.length ? ` +${roleRules.map(r => r.archetype).join('+')}` : ''}` });
+  });
+
+  // 5. Start spawns go through the spawner: the document's own, else one added first in systems.
+  if (rules.length) {
+    const sid = spawnerId(registry);
+    if (!sid) { skipped.push({ part: 'spawn', why: 'no primitive owns start spawns' }); }
+    else {
+      doc.systems = Array.isArray(doc.systems) ? doc.systems : [];
+      let sp = doc.systems.find(s => s?.use === sid);
+      if (!sp) { sp = { use: sid, with: { rules: [] } }; doc.systems.unshift(sp); applied.push({ use: sid, part: 'system', what: 'start spawns' }); }
+      sp.with = isObj(sp.with) ? sp.with : {};
+      sp.with.rules = Array.isArray(sp.with.rules) ? sp.with.rules : [];
+      const taken = new Set(sp.with.rules.map(r => r?.id));
+      for (const r of rules) if (!taken.has(r.id)) sp.with.rules.push(r);
+    }
+  }
+
+  if (!applied.length) return { doc: input, applied, skipped, ok: true, errors: [], version: ENGAGE_VERSION };
+  const pre = preflight(doc, registry, logic);
+  if (!pre.ok) return { doc: input, applied: [], skipped: [...skipped, ...applied.map(a => ({ ...a, why: 'reverted: the engaged document failed preflight' }))], ok: false, errors: pre.errors.slice(0, 20), version: ENGAGE_VERSION };
+  return { doc, applied, skipped, ok: true, errors: [], version: ENGAGE_VERSION };
+}

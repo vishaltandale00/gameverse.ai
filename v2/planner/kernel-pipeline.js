@@ -12,6 +12,7 @@ import { decomposeIdea, decomposeOffline } from './decompose.js';
 import { selectPrimitives } from './select.js';
 import { writeOutline, ensureAgency } from './outline.js';
 import { firstPlayable } from './first-playable.js';
+import { engageDocument } from './engage.js';
 import { detailTasks, writeDetail, acceptPatch } from './detail.js';
 import { tweakDocument, reviseDocument, applyOps, guardRevision } from './doc-revise.js';
 import { repairDocument, describeErrors } from './repair.js';
@@ -65,7 +66,10 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
 
     // Layer 2: first playable, zero model calls.
     t = performance.now();
-    const fp = firstPlayable(outline.doc, registry, logic, { seed });
+    // Last document step before play: wire the player and AI participants into the chosen mechanics (card.engage).
+    const engaged = engageDocument(outline.doc, registry, logic);
+    checkpoint('engage', { ok: engaged.ok, applied: engaged.applied, skipped: engaged.skipped, errors: engaged.errors });
+    const fp = firstPlayable(engaged.doc, registry, logic, { seed });
     timings.firstPlayableBuildMs = ms(t);
     if (!fp.ok) checkpoint('firstPlayable', { ok: false, ms: fp.ms, errors: (fp.errors || []).slice(0, 20), problems: (fp.problems || []).slice(0, 20), removed: fp.removed || [] });
     if (!fp.ok) throw Object.assign(Error(`The first playable would not start: ${[...fp.errors, ...fp.problems].slice(0, 3).map(e => e.message || e.code).join('; ')}`), { status: 422 });
