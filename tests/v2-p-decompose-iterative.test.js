@@ -17,8 +17,8 @@ const writerOf = (plan, options) => { const answer = decomposer(plan); return fa
 const forms = writer => writer.calls.map(c => `${c.schema.name}${/\nConcept: (\S+) \(/.exec(c.user)?.[1] ? `:${/\nConcept: (\S+) \(/.exec(c.user)[1]}` : ''}`);
 const slotsOf = call => Object.values(call.schema.schema.properties).map(p => p.description.split(':')[0]);
 
-const CHESS = { id: 'chess', name: 'Chess', quote: 'chess', kind: 'game', brings: 'loop', keeps: ['the board and its pieces', 'checkmate'] };
-const POKEMON = { id: 'pokemon', name: 'Pokémon', quote: 'pokemon', kind: 'game', brings: 'loop', keeps: ['creature battles', 'type advantages'] };
+const CHESS = { id: 'chess', name: 'Chess', quote: 'chess', kind: 'game', keeps: ['the board and its pieces', 'checkmate'] };
+const POKEMON = { id: 'pokemon', name: 'Pokémon', quote: 'pokemon', kind: 'game', keeps: ['creature battles', 'type advantages'] };
 const CHESS_MECHANICS = [
   { id: 'chess_match', verb: 'move', description: 'move pieces by chess rules in turns until one king is checkmated', from: 'chess', role: 'loop' },
   { id: 'capture_pieces', verb: 'capture', description: 'capture an opposing piece by moving onto its square', from: 'chess', role: 'core' },
@@ -42,9 +42,9 @@ test('the check behind step 1 reads only the answer and the declarations, never 
   assert.match(folded[0].message, /'Pokémon' \(concept 'pokemon'\) maps to no concept/);
   // A feature of one concept is not a concept: one reference, one concept, no problem.
   assert.deepEqual(conceptProblems([{ ...CHESS, id: 'platformer', name: 'platformer', kind: 'genre' }], [{ name: 'a platformer', concept: 'platformer' }]), []);
-  assert.match(conceptProblems([{ ...CHESS, kind: 'setting' }], refs.slice(0, 1)).map(p => p.message).join(), /a setting brings content only/);
+  // Whether a concept has a loop is its kind: an idea with no game or genre has no loop to play.
+  assert.match(conceptProblems([{ ...CHESS, kind: 'setting' }], refs.slice(0, 1)).map(p => p.message).join(), /no concept is a game or genre/);
   assert.match(conceptProblems([{ ...CHESS, kind: 'franchise' }], refs.slice(0, 1)).map(p => p.message).join(), /chess \('franchise'\) has no kind/);
-  assert.match(conceptProblems([{ ...CHESS, brings: 'content' }], refs.slice(0, 1)).map(p => p.message).join(), /no concept brings a loop/);
   assert.match(conceptProblems([CHESS, CHESS], refs.slice(0, 1)).map(p => p.message).join(), /ids chess are used twice/);
   assert.equal(notASentence('checkmate-win-condition', new Set()), "'checkmate-win-condition' is an id-like token");
   assert.equal(notASentence('checkmate', new Set()), "'checkmate' is an id-like token");
@@ -62,7 +62,7 @@ test('(a) a two-game idea yields two concepts, each with its own loop, and a mas
   } };
   const d = await decomposeIdea({ writer, prompt: 'chess but with pokemon', registry });
   assert.equal(peak, 2, 'both concepts\' mechanics were asked at once');
-  assert.deepEqual(d.concepts.map(c => [c.id, c.brings]), [['chess', 'loop'], ['pokemon', 'loop']]);
+  assert.deepEqual(d.concepts.map(c => [c.id, c.loop]), [['chess', 'chess_match'], ['pokemon', 'creature_battle']]);
   assert.deepEqual(d.references.map(r => r.name), ['Chess', 'Pokémon']);
   for (const c of d.concepts) assert.equal(d.mechanics.filter(m => m.from === c.id && ['chess_match', 'creature_battle'].includes(m.id)).length, 1, `${c.id} has its own loop`);
   assert.equal(d.mechanics.find(m => m.id === 'creature_battle').importance, 'core', 'a joined concept\'s loop is a core mechanic');
@@ -70,7 +70,7 @@ test('(a) a two-game idea yields two concepts, each with its own loop, and a mas
   assert.equal(loopMechanicOf(d), 'chess_match');
   assert.equal(worklist(d)[0].id, 'chess_match');
   assert.deepEqual(d.core.mashup, CHESS_SPEC.mashup);
-  assert.equal(conceptMashupProblem({ concepts: d.concepts, mechanics: d.mechanics, mashup: d.core.mashup }), null);
+  assert.equal(conceptMashupProblem({ concepts: d.concepts, mechanics: d.mechanics, mashup: d.core.mashup, loop: d.core.loop }), null);
   assert.equal(d.movement, 'none', 'pieces moved in turns: no avatar movement');
   // Small forms, one per step (and one per concept), every enum built from the steps before.
   assert.deepEqual(forms(writer).sort(), ['concept_mechanics:chess', 'concept_mechanics:pokemon', 'idea_about', 'idea_concepts', 'idea_spaces', 'play_spec']);
@@ -83,7 +83,7 @@ test('(a) a two-game idea yields two concepts, each with its own loop, and a mas
   assert.ok(d.calls.every(c => c.chars > 0 && c.model === 'fake-writer'));
 });
 
-test('(a) a mashup that leaves a loop-bringing concept unlinked is re-asked as that field alone', async () => {
+test('(a) a mashup that leaves a game concept unlinked is re-asked as that field alone', async () => {
   const writer = writerOf({ ...CHESS_PLAN, spec: (req, n) => (n === 0 ? { ...CHESS_SPEC, mashup: [] } : CHESS_SPEC) });
   const d = await decomposeIdea({ writer, prompt: 'chess but with pokemon', registry });
   const asks = writer.calls.filter(c => c.schema.name.startsWith('play_spec'));
@@ -124,13 +124,13 @@ test('(b) mechanic ids that clash across concepts re-ask the later concept with 
 });
 
 test('(c) win and lose written as an id (the live one-shot record) are re-asked as sentences, with the mashup, alone', async () => {
-  const plan = planFrom(record.decomposition, { pok_mon: { name: 'Pokémon', quote: 'pokemon', brings: 'content' } });
+  const plan = planFrom(record.decomposition, { pok_mon: { name: 'Pokémon', quote: 'pokemon' } });
   const fixed = { ...plan.spec, win: "checkmate the rival's king", lose: 'your own king is checkmated', mashup: [{ relation: 'skin', mechanics: ['turn_based_player_moves', 'special_pokemon_abilities'], why: 'creatures are the pieces' }] };
   const writer = writerOf({ ...plan, spec: (req, n) => (n === 0 ? plan.spec : fixed) });
   const d = await decomposeIdea({ writer, prompt: record.prompt, registry });
   const asks = writer.calls.filter(c => c.schema.name.startsWith('play_spec'));
   assert.equal(asks.length, 2);
-  // Only the failing fields: win and lose (id-like, identical) and the union with a concept that brings no loop.
+  // Only the failing fields: win and lose (id-like, identical) and the union with a theme concept (no loop of its own).
   assert.deepEqual(slotsOf(asks[1]).sort(), ['lose', 'mashup', 'win']);
   assert.match(asks[1].user, /'checkmate-win-condition' is an id-like token/);
   assert.match(asks[1].user, /needs a loop from pok_mon/);
@@ -143,7 +143,7 @@ test('(c) win and lose written as an id (the live one-shot record) are re-asked 
 });
 
 test('(c) a model that keeps writing an id is escalated once, then the decomposition fails 422 with the diagnosis', async () => {
-  const plan = planFrom(record.decomposition, { pok_mon: { name: 'Pokémon', quote: 'pokemon', brings: 'content' } });
+  const plan = planFrom(record.decomposition, { pok_mon: { name: 'Pokémon', quote: 'pokemon' } });
   const stuck = { ...plan, spec: { ...plan.spec, mashup: [] } };
   const writer = writerOf(stuck), escalate = writerOf(stuck, { model: 'escalation' });
   await assert.rejects(decomposeIdea({ writer, escalate, prompt: record.prompt, registry }), e => {
@@ -165,8 +165,8 @@ test('(c) a model that keeps writing an id is escalated once, then the decomposi
   assert.match(failing.calls[1].user, /previous reply failed/);
 });
 
-const LIBRARY = { id: 'pac_man', name: 'Pac-Man', quote: 'Pac-Man', kind: 'game', brings: 'loop', keeps: ['maze chase', 'pellets', 'ghosts'] };
-const HAUNTED = { id: 'haunted_library', name: 'haunted library', quote: 'a haunted library', kind: 'setting', brings: 'content', keeps: ['shelves as walls', 'ghostly librarians'] };
+const LIBRARY = { id: 'pac_man', name: 'Pac-Man', quote: 'Pac-Man', kind: 'game', keeps: ['maze chase', 'pellets', 'ghosts'] };
+const HAUNTED = { id: 'haunted_library', name: 'haunted library', quote: 'a haunted library', kind: 'setting', keeps: ['shelves as walls', 'ghostly librarians'] };
 const PAC_MECHANICS = [
   { id: 'maze_chase', verb: 'eat', description: 'eat every pellet in the maze while ghosts chase you', from: 'pac_man', role: 'loop' },
   { id: 'power_pellets', verb: 'turn', description: 'a power pellet lets you eat the ghosts for a while', from: 'pac_man', role: 'core' },
@@ -178,20 +178,18 @@ const LIBRARY_PLAN = { concepts: [LIBRARY, HAUNTED], mechanics: { pac_man: PAC_M
 test('(d) a single game in a themed setting: a theme concept without a loop, a mashup of skin or none, no invented second loop', async () => {
   const writer = writerOf(LIBRARY_PLAN);
   const d = await decomposeIdea({ writer, prompt: 'Pac-Man in a haunted library', registry });
-  assert.deepEqual(d.concepts.map(c => [c.id, c.kind, c.brings]), [['pac_man', 'game', 'loop'], ['haunted_library', 'setting', 'content']]);
+  assert.deepEqual(d.concepts.map(c => [c.id, c.kind, c.loop]), [['pac_man', 'game', 'maze_chase'], ['haunted_library', 'setting', undefined]]);
   assert.deepEqual(d.mechanics.map(m => m.id), ['maze_chase', 'power_pellets']);
   assert.deepEqual(d.core.mashup, []);
   assert.deepEqual(writer.calls.find(c => /Concept: haunted_library /.test(c.user)).schema.schema.properties.mechanics.items.properties.role.enum, ['core', 'supporting', 'flavor'], 'no loop on offer for a setting');
-  // A model that invents a loop for the setting (step 1 or step 2) is re-asked there; a nested mashup with it is rejected.
+  // A model that invents a loop for the setting (step 2) is re-asked there; a nested mashup with it is rejected.
   const invented = writerOf({ ...LIBRARY_PLAN,
-    concepts: (req, n) => ({ concepts: [LIBRARY, n === 0 ? { ...HAUNTED, brings: 'loop' } : HAUNTED] }),
     mechanics: (req, n, concept) => ({ mechanics: concept === 'pac_man' ? PAC_MECHANICS : n === 0 ? [{ id: 'ghost_hunt', verb: 'hunt', description: 'hunt the library ghosts', from: 'haunted_library', role: 'loop' }] : [{ id: 'shifting_shelves', verb: 'shift', description: 'shelves slide to open and close paths', from: 'haunted_library', role: 'flavor' }] }),
     spec: (req, n) => ({ ...LIBRARY_PLAN.spec, mashup: [{ relation: n === 0 ? 'nested' : 'skin', mechanics: ['maze_chase', 'shifting_shelves'], why: 'the library is the maze' }] }) });
   const skinned = await decomposeIdea({ writer: invented, prompt: 'Pac-Man in a haunted library', registry });
-  assert.deepEqual(forms(invented), ['idea_concepts', 'idea_concepts_fields', 'concept_mechanics:pac_man', 'concept_mechanics:haunted_library', 'concept_mechanics_fields:haunted_library', 'play_spec', 'play_spec_fields', 'idea_about', 'idea_spaces']);
-  assert.match(invented.calls[1].user, /haunted_library is a setting but brings a loop/);
-  assert.match(invented.calls[4].user, /brings only content, so it has no loop mechanic \(ghost_hunt\)/);
-  assert.match(invented.calls[6].user, /needs a loop from haunted_library/);
+  assert.deepEqual(forms(invented), ['idea_concepts', 'concept_mechanics:pac_man', 'concept_mechanics:haunted_library', 'concept_mechanics_fields:haunted_library', 'play_spec', 'play_spec_fields', 'idea_about', 'idea_spaces']);
+  assert.match(invented.calls[3].user, /haunted_library is a setting, which brings only content, so it has no loop mechanic \(ghost_hunt\)/);
+  assert.match(invented.calls[5].user, /needs a loop from haunted_library/);
   assert.equal(skinned.mechanics.filter(m => m.importance === 'core').length, 2, 'Pac-Man\'s loop and power pellets; nothing from the library');
   assert.deepEqual(skinned.core.mashup.map(x => x.relation), ['skin']);
 });
@@ -199,17 +197,17 @@ test('(d) a single game in a themed setting: a theme concept without a loop, a m
 test('(e) three unrelated ideas go through the same steps and prompts, none of them special-cased', async () => {
   const ideas = [
     { prompt: 'a farming sim where crops grow by season', plan: {
-      concepts: [{ id: 'farming_sim', name: 'farming sim', quote: 'a farming sim', kind: 'genre', brings: 'loop', keeps: ['planting', 'harvest'] }],
+      concepts: [{ id: 'farming_sim', name: 'farming sim', quote: 'a farming sim', kind: 'genre', keeps: ['planting', 'harvest'] }],
       mechanics: { farming_sim: [{ id: 'tend_crops', verb: 'plant', description: 'plant, water and harvest crops', from: 'farming_sim', role: 'loop' }, { id: 'seasons', verb: 'wait', description: 'crops grow by season', from: 'farming_sim', role: 'supporting' }] },
       spec: { loop: 'tend_crops', interaction: 'avatar-realtime', opponent: 'clock', win: 'harvest every field before winter', lose: 'the crops wither in the frost', theme: 'pastoral', narrative: false, mashup: [] },
       where: { spaces: [{ role: 'farm', kind: 'tiles-topdown', description: 'fields' }], views: ['td'], movement: 'ground' } }, calls: 5 },
     { prompt: 'Mario Kart with shopping carts', plan: {
-      concepts: [{ id: 'mario_kart', name: 'Mario Kart', quote: 'Mario Kart', kind: 'game', brings: 'loop', keeps: ['kart races', 'item boxes'] }, { id: 'shopping_carts', name: 'shopping carts', quote: 'shopping carts', kind: 'theme', brings: 'content', keeps: ['carts as the karts'] }],
+      concepts: [{ id: 'mario_kart', name: 'Mario Kart', quote: 'Mario Kart', kind: 'game', keeps: ['kart races', 'item boxes'] }, { id: 'shopping_carts', name: 'shopping carts', quote: 'shopping carts', kind: 'theme', keeps: ['carts as the karts'] }],
       mechanics: { mario_kart: [{ id: 'kart_race', verb: 'race', description: 'race laps against rivals', from: 'mario_kart', role: 'loop' }, { id: 'item_boxes', verb: 'use', description: 'pick up and fire items', from: 'mario_kart', role: 'core' }], shopping_carts: [{ id: 'cart_handling', verb: 'drift', description: 'carts drift on wobbly wheels', from: 'shopping_carts', role: 'flavor' }] },
       spec: { loop: 'kart_race', interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'cross the finish line first', lose: 'finish behind the rival carts', theme: 'supermarket', narrative: false, mashup: [{ relation: 'skin', mechanics: ['kart_race', 'cart_handling'], why: 'the karts are carts' }] },
       where: { spaces: [{ role: 'track', kind: 'continuous-3d', description: 'aisles' }], views: ['3p'], movement: 'track' } }, calls: 6 },
     { prompt: 'a detective story in a lighthouse', plan: {
-      concepts: [{ id: 'detective_story', name: 'detective story', quote: 'a detective story', kind: 'genre', brings: 'loop', keeps: ['clues', 'suspects'] }, { id: 'lighthouse', name: 'lighthouse', quote: 'a lighthouse', kind: 'setting', brings: 'content', keeps: ['the tower'] }],
+      concepts: [{ id: 'detective_story', name: 'detective story', quote: 'a detective story', kind: 'genre', keeps: ['clues', 'suspects'] }, { id: 'lighthouse', name: 'lighthouse', quote: 'a lighthouse', kind: 'setting', keeps: ['the tower'] }],
       mechanics: { detective_story: [{ id: 'gather_clues', verb: 'search', description: 'search rooms for clues', from: 'detective_story', role: 'loop' }, { id: 'interrogate', verb: 'question', description: 'question suspects', from: 'detective_story', role: 'core' }], lighthouse: [] },
       spec: { loop: 'gather_clues', interaction: 'avatar-realtime', opponent: 'none', win: 'name the culprit with the clues', lose: 'accuse the wrong person', theme: 'storm and salt', narrative: true, mashup: [] },
       where: { spaces: [{ role: 'tower', kind: 'locations', description: 'rooms' }], views: ['td', 'text'], movement: 'ground' }, story: { acts: 3, zones: 5 } }, calls: 7 },

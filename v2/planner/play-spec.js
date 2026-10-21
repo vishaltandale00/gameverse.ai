@@ -43,9 +43,9 @@ export function coreSchema() {
       lose: { ...str, description: "how it is lost, in the game's own terms ('' when it cannot be lost)" },
       theme: str,
       narrative: { type: 'boolean', description: 'true when the idea has a story told in acts (characters, plot, quests); false for a pure loop' },
-      mashup: { type: 'array', description: 'one entry per joined idea when the idea combines two or more concepts (games, genres) that each bring their own loop: how that idea\'s mechanics relate ACROSS to the primary idea\'s (an entry naming mechanics of one concept only is rejected); [] only for a single idea', items: { type: 'object', additionalProperties: false, required: ['relation', 'mechanics', 'why'], properties: {
-        relation: { type: 'string', enum: RELATIONS, description: 'nested: its loop is entered from the other (a creature battle deciding a chess capture); union: both loops run in one space; skin: only its content and cast fill the other\'s slots' },
-        mechanics: { type: 'array', items: str, description: 'ids (exactly as in mechanics[].id) from BOTH concepts: first the primary idea\'s mechanic it joins into (its loop), then the joined idea\'s mechanics, its own loop first' }, why: str } } },
+      mashup: { type: 'array', description: 'exactly one entry per additional game or genre concept (each has its own loop; the entry says how this idea uses it), and one per content concept that skins the primary: how its mechanics relate ACROSS to the primary concept\'s (an entry naming mechanics of one concept only is rejected); [] only for a single game or genre with nothing to skin', items: { type: 'object', additionalProperties: false, required: ['relation', 'mechanics', 'why'], properties: {
+        relation: { type: 'string', enum: RELATIONS, description: 'nested: its loop runs inside the primary\'s, entered on the primary mechanic named first (a creature battle deciding a chess capture); union: both loops run in one space; skin: only its content and cast fill the primary\'s slots, its loop is not played' },
+        mechanics: { type: 'array', items: str, description: 'ids (exactly as in mechanics[].id) from BOTH concepts: first the primary concept\'s mechanic it joins into (for nested, the primary event that enters its loop), then the joined concept\'s own loop mechanic (whatever the relation), then its other mechanics' }, why: str } } },
     },
   };
 }
@@ -95,20 +95,29 @@ export function mashupSides(entry, mechanics) {
   return outer.length === entry.mechanics.length ? { outer: [], inner: [...entry.mechanics] } : { outer, inner: entry.mechanics.filter(id => !outer.includes(id)) };
 }
 
+/** @typedef {'mashup_unknown_mechanic' | 'mashup_within_concept' | 'mashup_joined_concepts' | 'mashup_outer' | 'mashup_loop_missing' | 'mashup_relation_loop' | 'mashup_duplicate' | 'mashup_missing'} ConceptMashupCode */
+
 /**
  * The decomposition's own mashup check (decompose.js, step 3), run before any primitive is mapped: the same rule as
- * mashupProblem over the idea's concepts instead of mapped loops. Every entry names known mechanic ids and relates
- * them ACROSS concepts (mechanic.from = concept id); nested and union need a loop on both sides, skin a loop on the
- * side joined into (the inner side may bring only content); and when two or more concepts bring their own loop, every
- * one of them is linked by an entry. null when the mashup is complete.
- * @param {{ concepts: Array<{ id: string, brings: string }>, mechanics: Array<{ id: string, from: string }>, mashup: Mashup[] }} spec
- * @returns {{ code: 'mashup_unknown_mechanic' | 'mashup_within_concept' | 'mashup_relation_loop' | 'mashup_missing', message: string } | null}
+ * mashupProblem over the idea's concepts instead of mapped loops. A concept has a loop when it declares one
+ * (concept.loop: the id of its loop mechanic; every game and genre concept does, whatever the idea does with it), and
+ * the primary concept is the one whose loop is the spec's `loop`. Every entry names known mechanic ids and relates them
+ * ACROSS concepts (mechanic.from = concept id): first the primary's mechanic it joins into, then ONE joined concept's
+ * mechanics, which include that concept's loop mechanic when it has one, whatever the relation; nested and union need
+ * a loop on the joined side (a content concept joins as skin); and every concept with a loop other than the primary is
+ * joined by exactly one entry (no concept by two). null when the mashup is complete.
+ * @param {{ concepts: Array<{ id: string, loop?: string }>, mechanics: Array<{ id: string, from: string }>, mashup: Mashup[], loop?: string }} spec
+ * @returns {{ code: ConceptMashupCode, message: string } | null}
  */
-export function conceptMashupProblem({ concepts, mechanics, mashup }) {
+export function conceptMashupProblem({ concepts, mechanics, mashup, loop = '' }) {
   const fromOf = new Map(mechanics.map(m => [m.id, ideaKey(m.from)]));
-  const loops = new Set(concepts.filter(c => c.brings === 'loop').map(c => ideaKey(c.id)));
-  /** @type {Array<{ code: 'mashup_unknown_mechanic' | 'mashup_within_concept' | 'mashup_relation_loop' | 'mashup_missing', message: string }>} */
+  /** concept key -> its loop mechanic id. @type {Map<string, string>} */
+  const loops = new Map(concepts.filter(c => isStr(c.loop) && c.loop).map(c => [ideaKey(c.id), String(c.loop)]));
+  const primary = [...loops].find(([, id]) => id === loop)?.[0] || null;
+  /** @type {Array<{ code: ConceptMashupCode, message: string }>} */
   const found = [];
+  /** joined concept key -> how many entries join it. @type {Map<string, number>} */
+  const joins = new Map();
   const label = (/** @type {Mashup} */ x) => `${x.relation} [${x.mechanics.join(', ')}]`;
   for (const x of mashup) {
     const unknown = x.mechanics.filter(id => !fromOf.has(id));
@@ -116,16 +125,31 @@ export function conceptMashupProblem({ concepts, mechanics, mashup }) {
     const sides = mashupSides(x, mechanics);
     if (!sides.outer.length) { found.push({ code: 'mashup_within_concept', message: `${label(x)} relates mechanics of one concept only (${fromOf.get(x.mechanics[0]) || 'none'}): an entry relates mechanics ACROSS concepts` }); continue; }
     const outer = fromOf.get(sides.outer[0]) || '', inner = [...new Set(sides.inner.map(id => fromOf.get(id) || ''))];
-    const loopless = [!loops.has(outer) && outer, ...(x.relation === 'skin' ? [] : inner.filter(c => !loops.has(c)))].filter(Boolean);
-    if (loopless.length) found.push({ code: 'mashup_relation_loop', message: `${label(x)} needs a loop from ${loopless.join(', ')}, which bring${loopless.length === 1 ? 's' : ''} only content: ${x.relation === 'skin' ? 'skin joins content INTO a concept that brings its loop (put that concept\'s mechanic first)' : 'a concept that brings only content joins as skin, or not at all'}` });
+    if (inner.length > 1) { found.push({ code: 'mashup_joined_concepts', message: `${label(x)} joins ${inner.join(' and ')} at once: one entry per joined concept` }); continue; }
+    const joined = inner[0];
+    joins.set(joined, (joins.get(joined) || 0) + 1);
+    if (primary && outer !== primary) { found.push({ code: 'mashup_outer', message: `${label(x)} joins ${joined} into ${outer}, but the primary concept is ${primary} (its loop ${loop}): an entry joins a concept into the primary, its first id a mechanic of ${primary}` }); continue; }
+    if (!loops.has(outer)) { found.push({ code: 'mashup_relation_loop', message: `${label(x)} needs a loop from ${outer}, which has only content: an entry joins INTO the primary concept's loop (put its mechanic first)` }); continue; }
+    const own = loops.get(joined);
+    if (own && !x.mechanics.includes(own)) found.push({ code: 'mashup_loop_missing', message: `${label(x)} joins ${joined} without its loop mechanic ${own}: name ${own} right after the primary's mechanic, whatever the relation (skin leaves it unplayed)` });
+    else if (!own && x.relation !== 'skin') found.push({ code: 'mashup_relation_loop', message: `${label(x)} needs a loop from ${joined}, which has only content: a concept without a loop of its own joins as skin, or not at all` });
   }
-  if (loops.size >= 2) {
-    const linked = new Set(mashup.filter(x => mashupSides(x, mechanics).outer.length).flatMap(x => x.mechanics.map(id => fromOf.get(id) || '')));
-    const unlinked = [...loops].filter(c => !linked.has(c));
-    if (unlinked.length) found.push({ code: 'mashup_missing', message: `${[...loops].join(', ')} each bring their own loop, but no entry links ${unlinked.join(', ')}: give one entry per joined concept, first the primary concept's mechanic it joins into, then the joined concept's own mechanics, its loop first` });
-  }
+  const twice = [...joins].filter(([, n]) => n > 1).map(([k]) => k);
+  if (twice.length) found.push({ code: 'mashup_duplicate', message: `${twice.join(', ')} ${twice.length === 1 ? 'is' : 'are'} joined by more than one entry: exactly one entry per joined concept` });
+  // With the primary known, every other concept with a loop is joined; without it, each is linked on some side.
+  const linked = primary ? new Set([primary, ...joins.keys()]) : new Set(mashup.filter(x => mashupSides(x, mechanics).outer.length).flatMap(x => x.mechanics.map(id => fromOf.get(id) || '')));
+  const unlinked = [...loops.keys()].filter(c => !linked.has(c));
+  if (loops.size >= 2 && unlinked.length) found.push({ code: 'mashup_missing', message: `${[...loops.keys()].join(', ')} each have their own loop (${[...loops.values()].join(', ')}), but no entry links ${unlinked.join(', ')}: give exactly one entry per joined game or genre concept, first the primary concept's mechanic it joins into, then the joined concept's loop mechanic, then its other mechanics, related nested, union or skin` });
   return found.length ? { code: found[0].code, message: found.map(f => f.message).join('; ') } : null;
 }
+
+/**
+ * The loop mechanics the idea does not play: a concept's own loop (concept.loop) that a skin relation marked flavor
+ * (decompose.js). Selection never builds them (build.js worklist, select.js). Read from ids and importance only.
+ * @param {{ concepts?: Array<{ loop?: string }>, mechanics?: Array<{ id: string, importance: string }> }} decomposition @returns {Set<string>}
+ */
+export const unplayedLoops = decomposition => new Set((decomposition.concepts || []).map(c => c.loop)
+  .filter(/** @returns {id is string} */ id => isStr(id) && (decomposition.mechanics || []).some(m => m.id === id && m.importance === 'flavor')));
 
 /**
  * What a mashup check found: the joined ideas whose loops each declare their own win, which of them no relation

@@ -152,14 +152,15 @@ export function decomposer(plan) {
 
 /**
  * A plan from a one-shot decomposition (the shape the model used to write in one call): one concept per mechanic.from
- * ('' = one concept, 'idea'); the concept holding core.loop brings the loop, and core.loop's mechanic has role loop.
- * `concepts` overrides fields of the derived concepts by id.
+ * ('' = one concept, 'idea'); the concept holding core.loop is a game (core.loop's mechanic has role loop), the others
+ * are themes (content only: a one-shot record names no loop for them). `concepts` overrides fields of the derived
+ * concepts by id.
  */
 export function planFrom(d, concepts = {}) {
   const idOf = from => (String(from || '').toLowerCase().match(/[a-z0-9]+/g) || ['idea']).join('_');
   const ids = [...new Set(d.mechanics.map(m => idOf(m.from)))];
   return {
-    concepts: ids.map(id => ({ id, name: id.replace(/_/g, ' '), quote: '', kind: 'game', brings: d.mechanics.some(m => idOf(m.from) === id && m.id === d.core.loop) ? 'loop' : 'content', keeps: [], ...concepts[id] })),
+    concepts: ids.map(id => ({ id, name: id.replace(/_/g, ' '), quote: '', kind: d.mechanics.some(m => idOf(m.from) === id && m.id === d.core.loop) ? 'game' : 'theme', keeps: [], ...concepts[id] })),
     mechanics: Object.fromEntries(ids.map(id => [id, d.mechanics.filter(m => idOf(m.from) === id).map(m => ({ id: m.id, verb: m.verb, description: m.description, from: id, role: m.id === d.core.loop ? 'loop' : m.importance }))])),
     spec: { loop: d.core.loop, interaction: d.core.interaction, opponent: d.core.opponent, win: d.core.win, lose: d.core.lose ?? '', theme: d.core.theme ?? '', narrative: d.core.narrative ?? false, mashup: d.core.mashup ?? [] },
     about: { title: d.title, premise: d.premise, tone: d.tone ?? '' },
