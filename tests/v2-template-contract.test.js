@@ -118,3 +118,29 @@ test('contract replay: a document whose play depends on anything but its seed an
   const r = await checkTemplate(broken(farm, t => { t.doc.systems.push({ use: 'gameplay.contract.noise' }); }), buildCatalogue([noise]));
   assert.deepEqual(codes(r), ['replay_mismatch'], JSON.stringify(r.problems));
 });
+
+// The controls and features stages (ARCHITECTURE §6.3), each failing with its code on a catalogue broken for it.
+const swap = (id, change) => buildCatalogue([], PRIMITIVES.map(p => (p.id === id ? change(p) : p)));
+
+test('contract controls: a steering frame that turns the kart away from the screen\'s right fails direction_mismatch', async () => {
+  // The defect the kart had: the car turned by the frame of a top-down plane on a track whose lanes count to the right.
+  const cat = swap('engine.space.track', p => ({ ...p, card: { ...p.card, frame: { up: 2, handed: 'right' } } }));
+  const r = await checkTemplate(templateById('race'), cat, { through: 'controls' });
+  assert.ok(r.problems.some(p => p.code === 'direction_mismatch' && /right/.test(p.message)), JSON.stringify(r.problems).slice(0, 600));
+});
+
+test('contract controls: a loop verb no control issues fails controls_missing', async () => {
+  // till as a chosen value with no UI primitive to choose it: no key (a choice) and no control.
+  const cat = buildCatalogue([], PRIMITIVES.filter(p => p.id !== 'graphics.ui.choices').map(p => (p.id === 'gameplay.farming' ? { ...p, card: { ...p.card, actionSpace: { till: { type: 'choice', of: 'a cell' } } } } : p)));
+  const r = await checkTemplate(farm, cat, { through: 'controls' });
+  assert.ok(r.problems.some(p => p.code === 'controls_missing' && p.verb === 'till'), JSON.stringify(r.problems).slice(0, 600));
+});
+
+test('contract features: a loop verb that does nothing when pressed fails feature_inert, naming the primitive and verb', async () => {
+  const cat = swap('gameplay.farming', p => ({ ...p, card: { ...p.card, loop: { ...p.card.loop, verbs: [...p.card.loop.verbs, 'whistle'] }, provides: { ...p.card.provides, actions: [...p.card.provides.actions, 'whistle'] } },
+    install(rt, config, inst) { p.install(rt, config, inst); rt.action('whistle', () => {}); } }));
+  const r = await checkTemplate(farm, cat, { through: 'features' });
+  const f = r.problems.find(p => p.code === 'feature_inert');
+  assert.ok(f && f.use === 'gameplay.farming' && f.verb === 'whistle', JSON.stringify(r.problems).slice(0, 600));
+  assert.ok(Array.isArray(r.evidence.features) && r.evidence.features.some(row => row.use === 'gameplay.farming' && row.verbs.till?.works === true), 'the feature table is in the evidence');
+});
