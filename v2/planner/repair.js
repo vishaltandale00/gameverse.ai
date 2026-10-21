@@ -292,6 +292,8 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
           const m = /provided by '([^']+)'/.exec(e.message || '') || /"use": "([^"]+)"/.exec(e.hint || '');
           if (m && addSystem(m[1], e.code)) progressed = true;
           else if (m && (doc.systems || []).some(s => s.use === m[1])) progressed = true;
+          // The owner was isolated (excluded): its vocabulary in document data is neutralised, not left dangling.
+          else if (m && exclude.has(m[1]) && keys.length) { removals.push(keys); fix(`dropped ${/^(\w+)/.exec(e.message || '')?.[1] || 'vocabulary'} owned by isolated '${m[1]}'`); }
           break;
         }
         case 'primitive_conflict': if (loc) { removed.push({ use: loc.inst.use, why: e.message }); removals.push(loc.keys); fix(`removed ${loc.inst.use}: ${e.message}`); } break;

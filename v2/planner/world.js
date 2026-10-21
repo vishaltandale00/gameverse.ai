@@ -105,7 +105,7 @@ export function furnishWorld(input, registry, logic, { seed, rt = null } = {}) {
   const started = performance.now();
   const done = (doc, added, fixes, problems) => ({ doc, added, fixes, problems, ms: Math.round(performance.now() - started), version: WORLD_VERSION });
   const pre = preflight(input, registry, logic);
-  if (!pre.ok) return done(input, [], [], []);
+  if (!pre.ok || !spacesNeedingWorld(pre.doc, registry).length) return done(input, [], [], []);
   try { rt ??= boot(pre.doc, registry, logic, seed); } catch { return done(input, [], [], []); }
   const empty = worldProblems(rt, pre.doc, registry);
   if (!empty.length) return done(input, [], [], []);
@@ -121,7 +121,7 @@ export function furnishWorld(input, registry, logic, { seed, rt = null } = {}) {
     for (const cand of generatorsFor(registry, space, doc.views?.primary)) {
       const p = registry.get(cand.id);
       let made;
-      try { made = typeof p.scaffold === 'function' ? p.scaffold(space, doc, { envelope, registry }) : { with: {} }; } catch { made = null; }
+      try { made = typeof p.scaffold === 'function' ? p.scaffold(space, doc, { envelope, reserve: reservedRegions(pre.doc, registry, space.id), registry }) : { with: {} }; } catch { made = null; }
       if (!made) continue;
       const trial = structuredClone(doc), gen = { use: cand.id };
       (trial.spaces[index].generators ??= []).push(gen);
@@ -146,8 +146,39 @@ export function furnishWorld(input, registry, logic, { seed, rt = null } = {}) {
   return done(doc, added, fixes, left);
 }
 
+/**
+ * Cell regions of a space that other primitives own (a falling-piece board, a match grid...), as rects
+ * [x0,y0,x1,y1) in space cells, from param metadata: a param schema with `region: 'board'` ({at, size, axes, fall},
+ * as puzzle-lib-board's boardParam) or `region: 'rect'` ([x0,y0,x1,y1)), or card.regions: [{ param, kind }].
+ * Generators leave them clear and keep them reachable.
+ */
+export function reservedRegions(doc, registry, spaceId) {
+  const first = doc.spaces?.[0]?.id, out = [];
+  for (const inst of doc.systems || []) {
+    if ((inst.space ?? first) !== spaceId) continue;
+    const card = registry.get(inst.use)?.card; if (!card) continue;
+    const defaults = defaultsOf(card), given = inst.with || {};
+    const config = Object.fromEntries(Object.keys({ ...defaults, ...given }).map(k => [k, given[k] && typeof given[k] === 'object' && !Array.isArray(given[k]) && defaults[k] && typeof defaults[k] === 'object' ? { ...defaults[k], ...given[k] } : given[k] ?? defaults[k]]));
+    const claims = [...(card.regions || []).map(r => [r.param, r.kind]), ...Object.entries(card.params || {}).filter(([, s]) => s.region).map(([k, s]) => [k, s.region])];
+    for (const [param, kind] of claims) {
+      const rect = regionRect(kind, config[param]);
+      if (rect && !out.some(r => r.join() === rect.join())) out.push(rect);
+    }
+  }
+  return out;
+}
+function regionRect(kind, v) {
+  if (kind === 'rect') return Array.isArray(v) && v.length === 4 && v.every(Number.isFinite) && v[2] > v[0] && v[3] > v[1] ? v.slice() : null;
+  if (kind !== 'board' || !v || !Array.isArray(v.at) || !Array.isArray(v.size)) return null;
+  const [a, b] = v.axes || [0, 1], [w, h] = v.size;
+  if (![a, b].every(i => i === 0 || i === 1) || a === b || !(w > 0 && h > 0)) return null;
+  const across = [v.at[a], v.at[a] + w], vertical = (v.fall ?? -1) < 0 ? [v.at[b], v.at[b] + h] : [v.at[b] - h + 1, v.at[b] + 1];
+  const [xs, ys] = a === 0 ? [across, vertical] : [vertical, across];
+  return [xs[0], ys[0], xs[1], ys[1]];
+}
+
 /** Apply a scaffold result (generator config, content additions, player start) to one generator instance of a document. */
-function applyScaffold(doc, spaceIndex, gen, made) {
+function applyScaffold(doc, spaceIndex, gen, made, { start = true } = {}) {
   if (Object.keys(made.with || {}).length) gen.with = { ...made.with, ...(gen.with || {}) };
   for (const [section, list] of Object.entries(made.content || {})) {
     doc.content ??= {};
@@ -155,7 +186,7 @@ function applyScaffold(doc, spaceIndex, gen, made) {
     for (const x of list) if (!have.some(h => h?.id === x.id)) have.push(x);
   }
   const space = doc.spaces[spaceIndex];
-  if (Array.isArray(made.start) && doc.player && (doc.player.space ?? doc.spaces[0].id) === space.id) doc.player.at = made.start;
+  if (start && Array.isArray(made.start) && doc.player && (doc.player.space ?? doc.spaces[0].id) === space.id) doc.player.at = made.start;
 }
 
 /**
@@ -167,14 +198,17 @@ export function configureGenerators(doc, registry) {
   (doc.spaces || []).forEach((space, i) => (space.generators || []).forEach((gen, j) => {
     const p = registry.get(gen.use), card = p?.card;
     if (typeof p?.scaffold !== 'function') return;
+    // Missing required params: the scaffold configures the instance (and its start). Otherwise it only fills params
+    // the instance leaves unset (regions to keep clear, the proof's movement...), never overriding what is there.
     const missing = Object.entries(card.params || {}).some(([k, s]) => s.required && s.default === undefined && gen.with?.[k] === undefined);
-    if (!missing) return;
     const gravity = Math.abs(Number(space.with?.gravity)) || undefined;
     let made = null;
-    try { made = p.scaffold(space, doc, { envelope: movementEnvelope(doc, registry, doc.player?.abilities || [], gravity ? { gravity } : {}), registry }); } catch { made = null; }
+    try { made = p.scaffold(space, doc, { envelope: movementEnvelope(doc, registry, doc.player?.abilities || [], gravity ? { gravity } : {}), reserve: reservedRegions(doc, registry, space.id), registry }); } catch { made = null; }
     if (!made) return;
-    applyScaffold(doc, i, gen, made);
-    fixes.push({ code: 'generator_scaffold', path: `spaces[${i}].generators[${j}]`, action: `configured ${gen.use} from the zones` });
+    const unset = Object.keys(made.with || {}).filter(k => gen.with?.[k] === undefined);
+    if (!missing && !unset.length) return;
+    applyScaffold(doc, i, gen, made, { start: missing });
+    fixes.push({ code: 'generator_scaffold', path: `spaces[${i}].generators[${j}]`, action: missing ? `configured ${gen.use} from the zones` : `filled ${unset.join(', ')} of ${gen.use}` });
   }));
   return fixes;
 }

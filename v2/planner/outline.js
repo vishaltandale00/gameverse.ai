@@ -147,12 +147,35 @@ const zoneStart = z => z.bounds ? [z.bounds.min[0] + 1, z.bounds.min[1] + 1, z.b
 export async function ensureAgency({ decomposition, selection, registry, logic, seed, prompt = '', decisions = null, tries = 4 }) {
   const attempts = [];
   let current = selection, excluded = [];
-  const kept = sel => new Set([...sel.systems, ...sel.generators.map(g => g.id)]);
+  // Mechanics (systems) must survive a space change; generators build whichever space is chosen, so they may change with it.
+  const kept = sel => new Set(sel.systems);
   for (let i = 0; i < tries; i++) {
     const o = proceduralOutline({ decomposition, selection: current, registry, logic, seed, prompt });
     const fp = o.ok ? firstPlayable(o.doc, registry, logic, { seed }) : null;
     attempts.push({ spaces: current.spaces.map(s => s.use), options: fp?.options ?? null, ok: Boolean(fp?.ok) });
     if (fp?.ok && fp.options > 0) return { selection: current, attempts, agency: true };
+    // The space may be right and only movement missing: add the movement primitive that fits it best (a card with a
+    // movement envelope whose capabilities the space provides and whose views fit), before giving the space up.
+    if (o.ok && !(fp?.errors || []).some(e => e.code !== 'no_options')) {
+      const space = current.spaces[0], caps = new Set(space.caps || []), views = new Set([...(registry.get(space.use)?.card.views || []), ...(decomposition.views || [])]);
+      const movers = registry.cards('gameplay').filter(c => (c.envelope || registry.get(c.id).envelope) && !current.systems.includes(c.id) && (c.requires?.capabilities || []).every(x => caps.has(x)))
+        .map(c => {
+          // Fit: views, how specialised it is to this space (capabilities it needs and gets), and its own reach there.
+          let env = {}; try { const f = c.envelope || registry.get(c.id).envelope; env = (typeof f === 'function' ? f(defaultsOf(c), new Set(), {}) : f) || {}; } catch { env = {}; }
+          const reach = (env.run > 0 ? 2 : 0) + (caps.has('gravity') ? Math.min(4, env.jumpHeight || 0) : 0);
+          return { id: c.id, score: (c.views || []).filter(v => views.has(v)).length * 2 + ((c.views || []).includes(decomposition.views?.[0]) ? 3 : 0) + (c.requires?.capabilities || []).length * 1.5 + reach };
+        })
+        .filter(c => c.score > 0).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, 3);
+      let moved = null;
+      for (const m of movers) {
+        const sel = { ...current, systems: [...current.systems, m.id].sort((a, b) => (a.startsWith('engine.') ? 0 : a.startsWith('gameplay.') ? 1 : 2) - (b.startsWith('engine.') ? 0 : b.startsWith('gameplay.') ? 1 : 2) || a.localeCompare(b)) };
+        const o2 = proceduralOutline({ decomposition, selection: sel, registry, logic, seed, prompt });
+        const fp2 = o2.ok ? firstPlayable(o2.doc, registry, logic, { seed }) : null;
+        attempts.push({ spaces: sel.spaces.map(s => s.use), added: m.id, options: fp2?.options ?? null, ok: Boolean(fp2?.ok) });
+        if (fp2?.ok && fp2.options > 0) { moved = sel; break; }
+      }
+      if (moved) return { selection: moved, attempts, agency: true };
+    }
     excluded = [...excluded, current.spaces[0].use];
     const next = await selectPrimitives({ decomposition, registry, decisions: null, excludeSpaces: excluded });
     if (!next.spaces.length || [...kept(selection)].some(id => !kept(next).has(id))) break;
@@ -280,6 +303,11 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
       const w = furnishWorld(repaired.doc, registry, logic, { seed });
       if (w.added.length) { repaired.doc = w.doc; worldAdded = w.added.map(a => a.use); }
       if (!skeleton.world?.problems?.length) worldLeft = w.problems;
+      // Boot it (ms): a primitive that throws on install or on its first steps is isolated with what pointed at it;
+      // when isolation cannot save the world, the error (naming the primitive, install or step) goes to the model.
+      const fp = firstPlayable(repaired.doc, registry, logic, { seed, furnish: false });
+      if (fp.ok && fp.removed.length) { repaired.doc = fp.doc; repaired.removed = [...(repaired.removed || []), ...fp.removed]; }
+      else if (!fp.ok) { repaired.ok = false; repaired.errors = fp.errors.length ? fp.errors : fp.problems; }
     }
     const before = repaired.fixes.length ? repaired.fixes.length : 0;
     if (firstPassOk === null) firstPassOk = repaired.ok && before === 0;
@@ -322,7 +350,7 @@ Return the corrected complete document.`;
   // rather than throw away the model's world and story for the placeholder skeleton.
   if (last?.doc) {
     const isolated = repairDocument(last.doc, { registry, logic, fallbackSpace, isolate: true });
-    if (isolated.ok) {
+    if (isolated.ok && firstPlayable(isolated.doc, registry, logic, { seed, furnish: false }).ok) {
       rounds.push({ kind: 'isolate', ok: true, removed: isolated.removed.map(r => r.use) });
       return { doc: isolated.doc, ok: true, source: model, isolated: true, rounds, firstPassOk, modelMs, removed: [...(last.removed || []), ...isolated.removed], errors: [] };
     }
