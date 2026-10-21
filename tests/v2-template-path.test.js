@@ -28,6 +28,7 @@ const IDEAS = {
   tactics: { idea: 'XCOM-style squad tactics in a sunken city', game: 'XCOM', themes: [['sunken city', 'setting']] },
   board: { idea: 'Checkers with garden gnomes', game: 'checkers', themes: [['garden gnomes', 'theme']] },
   rts: { idea: 'StarCraft with ants in a backyard', game: 'StarCraft', themes: [['ants in a backyard', 'setting']] },
+  'match-board': { idea: 'Candy Crush with sushi', game: 'Candy Crush', themes: [['sushi', 'theme']] },
 };
 test('every template has an idea fixture', () => assert.deepEqual(TEMPLATES.map(t => t.id).filter(id => !IDEAS[id]), []));
 

@@ -57,6 +57,13 @@ test('a win (the explorer\'s or a bot\'s) counts as progress', () => {
   assert.equal(viability(play({ progress: none, winnable: true }), [], bots(), loop).viable, true);
 });
 
+test('a bot\'s play that moves the win quantity beyond idling counts as progress; a bot that never moves it does not', () => {
+  const none = { quantity: 'var stage.advance', idle: 0, high: 0 };
+  assert.equal(viability(play({ progress: none }), [], bots([{ id: 'stages', reason: 'card', proven: [], progress: 0.5 }]), loop).viable, true);
+  assert.equal(code(viability(play({ progress: none }), [], bots([{ id: 'stages', reason: 'card', proven: [], progress: 0 }]), loop)), 'no_progress');
+  assert.equal(code(viability(play({ progress: { ...none, idle: 1 } }), [], bots([{ id: 'stages', reason: 'card', proven: [], progress: 1 }]), loop)), 'no_progress', 'idling moves it as far');
+});
+
 test('winMeasure measures events, vars toward their target, and the components of the entities a win reads', () => {
   const rt = state => ({ state });
   const ev = winMeasure({ event: 'lap', cmp: 'gte', target: 3 });
@@ -139,7 +146,7 @@ test('the gate blocks a game whose objective score rises while the win quantity 
 test('an avatar-less real-time game: the playtest keeps lines of play that run longer, so orders play out', async () => {
   const { buildCatalogue } = await import('../v2/planner/catalog.js');
   const { preflight } = await import('../v2/kernel/document.js');
-  const { templateById } = await import('../v2/templates/index.js');
+  const { templateById } = await import('../v2/templates/registry.js');
   const { registry, logic } = buildCatalogue();
   const doc = preflight(structuredClone(templateById('rts').doc), registry, logic).doc;
   assert.equal(doc.player, undefined, 'the strategy template has no avatar');
@@ -153,7 +160,7 @@ test('objective counts: false scores by the primitives\' progress hooks alone (e
   const { buildCatalogue } = await import('../v2/planner/catalog.js');
   const { preflight } = await import('../v2/kernel/document.js');
   const { createWorld } = await import('../v2/kernel/world.js');
-  const { templateById } = await import('../v2/templates/index.js');
+  const { templateById } = await import('../v2/templates/registry.js');
   const { registry, logic } = buildCatalogue();
   const doc = preflight(structuredClone(templateById('tactics').doc), registry, logic).doc;
   const rt = createWorld(doc, registry, logic, { seed: 1, headless: true });
@@ -165,4 +172,22 @@ test('objective counts: false scores by the primitives\' progress hooks alone (e
   assert.ok(a > all.score(rt), 'event counts move the default score');
   assert.equal(s, sided.score(rt), 'they do not move the side-aware score');
   assert.ok(sided.hooks > 0);
+});
+
+test('verify measures the bots on the win quantity the playtest steers by: their progress reaches the gate', async () => {
+  const { buildCatalogue } = await import('../v2/planner/catalog.js');
+  const { verify } = await import('../v2/verify/index.js');
+  const { registry, logic } = buildCatalogue();
+  // A well whose win (forty lines) no 0.4 s of play finishes: the placement bot still clears lines toward it.
+  const doc = { schema: 'gameverse.v2.game/0.2', id: 'well', title: 'Well', seed: 2, spaces: [{ id: 'g', use: 'engine.space.grid', with: { size: [10, 22] } }],
+    systems: [{ use: 'gameplay.falling.pieces', with: { board: { name: 'board', at: [0, 0], size: [10, 22], axes: [0, 1], fall: -1 }, clearFrames: 0, next: 1 } }, { use: 'plot.ending' }],
+    content: { archetypes: [] }, plot: { endings: [{ id: 'cleared', title: 'Cleared', when: { var: 'falling.lines', gte: 40 }, outcome: 'won' }] } };
+  const win = winQuantity(doc, registry);
+  assert.deepEqual(win, { use: 'gameplay.falling.pieces', var: 'falling.lines', cmp: 'gte', target: 40 });
+  const r = await verify(doc, registry, logic, { seed: 2, budgetMs: 400, plot: false, spatial: false, invariants: false, playtest: { budgetMs: 50, win }, strategies: { budgetMs: 2000, only: ['placement'], placement: { depth: 1, seeds: [2] } } });
+  const bot = r.strategies.ran.find(b => b.id === 'placement');
+  assert.ok(bot.progress > 0, `the bot's lines count toward the win: ${JSON.stringify(bot.progress)}`);
+  assert.ok(bot.progress >= Math.max(...bot.metrics.runs.map(x => x.cleared)), 'at least the lines its kept play cleared (its lookahead may reach further)');
+  const without = await verify(doc, registry, logic, { seed: 2, budgetMs: 400, plot: false, spatial: false, invariants: false, playtest: { budgetMs: 50 }, strategies: { budgetMs: 300, only: ['placement'], placement: { depth: 1, seeds: [2] } } });
+  assert.equal('progress' in without.strategies.ran[0], false, 'no win quantity: nothing measured');
 });

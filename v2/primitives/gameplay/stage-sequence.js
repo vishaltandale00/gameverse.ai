@@ -54,7 +54,9 @@ export default {
       {"need": "param", "param": "stages", "min": 3, "why": "a level sequence needs several stages, each with its own goal and parameters"},
     ],
     // Levels mode: a wrapper that sequences the stages of another mode; its bot plays the wrapped mode stage by stage.
-    mode: { loop: 'levels', wraps: true, interaction: 'any', opponent: 'clock', space: [], needs: { content: [], participants: null }, win: { param: 'onComplete', end: 'endOnComplete', reads: { event: 'stage_clear', by: { events: ['*'] } } }, lose: { param: null, end: 'endOnGameOver', reads: { var: 'stage.lives', by: { events: ['*'] } } }, bot: 'stages' },
+    // The win reads stage.advance (stages cleared plus the current stage's goal progress): it moves within a stage, so
+    // progress toward completing the sequence is measurable before the first stage clears.
+    mode: { loop: 'levels', wraps: true, interaction: 'any', opponent: 'clock', space: [], needs: { content: [], participants: null }, win: { param: 'onComplete', end: 'endOnComplete', reads: { var: 'stage.advance', by: { events: ['*'] } } }, lose: { param: null, end: 'endOnGameOver', reads: { var: 'stage.lives', by: { events: ['*'] } } }, bot: 'stages' },
     intent: 'Ordered stages/levels with intro, play, clear and fail phases; per-stage parameter tables applied to other primitives and vars; stage goals (lines, score, survive, chain, viruses, blockers, jelly, collect, tile, predicate), move and time limits, stars, lives and retries, loops with difficulty scaling, endless mode, arcade ladders and stage select.',
     views: ['any'],
     params: {
@@ -90,7 +92,7 @@ export default {
     },
     provides: {
       events: ['stage_intro', 'stage_intro:*', 'stage_start', 'stage_start:*', 'stage_clear', 'stage_clear:*', 'stage_fail', 'stage_fail:*', 'stars', 'stage_loop', 'sequence_complete', 'sequence_over', 'stage_selected'],
-      vars: ['stage.index', 'stage.number', 'stage.loop', 'stage.stars', 'stage.progress', 'stage.moves', 'stage.time', 'stage.lives', 'stage.starsTotal', 'stage.score'],
+      vars: ['stage.index', 'stage.number', 'stage.loop', 'stage.stars', 'stage.progress', 'stage.advance', 'stage.moves', 'stage.time', 'stage.lives', 'stage.starsTotal', 'stage.score'],
       actions: ['select_stage', 'next_stage'],
     },
     requires: {},
@@ -146,7 +148,7 @@ export default {
     return errors;
   },
   /** Solver progress: stages cleared plus the current stage's goal progress. */
-  progress(rt, config) { const s = rt.state.prim[`${ID}:${config.id}`]; if (!s) return 0; return (s.phase === 'complete' ? config.stages.length : (s.index ?? 0)) + (rt.state.vars['stage.progress'] ?? 0); },
+  progress(rt, config) { return rt.state.prim[`${ID}:${config.id}`] ? rt.state.vars['stage.advance'] ?? 0 : 0; },
   install(rt, config) { install(rt, config); },
   extend(rt, config) { rt.caches[`${ID}:${config.id}:reapply`]?.(); },
 };
@@ -340,6 +342,8 @@ function install(rt, config) {
     v['stage.moves'] = g?.moves ? Math.max(0, g.moves - (s.moves ?? 0)) : 0;
     v['stage.time'] = g?.timeSec ? Math.max(0, Math.ceil(g.timeSec - (s.playT ?? 0) / 60)) : r6((s.playT ?? 0) / 60);
     v['stage.progress'] = !g || g.m === 'pred' || g.m === 'none' ? 0 : g.m === 'remaining' ? (s.seen ? r6(measure(s, g) / s.seen) : 0) : g.m === 'time' ? r6(Math.min(1, s.playT / Math.max(1, F(g.timeSec)))) : r6(Math.min(1, measure(s, g) / (g.target || 1)));
+    // Stages cleared plus the current stage's goal progress: what the levels win reads (card.mode.win.reads).
+    v['stage.advance'] = r6((s.phase === 'complete' ? N : (s.index ?? 0)) + (s.phase === 'complete' ? 0 : v['stage.progress']));
   }, ID);
 
   rt.options(rt => {
