@@ -7,7 +7,7 @@ export default {
   id: 'farm',
   concept: 'Farming: till soil, plant seeds, water the crops every day and harvest them as they ripen; harvest enough crops to win.',
   doc: {
-    schema: 'gameverse.v2.game/0.2', id: 'farm', title: 'Farm', seed: 5,
+    schema: 'gameverse.v2.game/0.2', id: 'farm', title: 'Farm', seed: 5, views: { primary: 'td' },
     spaces: [{ id: 'field', use: 'engine.space.grid', with: { size: [12, 10] },
       generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', terrain: [{ block: 'grass', weight: 5 }, { block: 'rock', weight: 1, blocks: true }], density: 0.75, symmetry: 'none', teams: 1, deployDepth: 2 } }] }],
     systems: [

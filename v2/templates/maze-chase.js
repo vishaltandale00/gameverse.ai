@@ -8,7 +8,7 @@ export default {
   id: 'maze-chase',
   concept: 'Maze chase: eat every pellet in a maze while hunters chase you; power pellets turn the hunters into prey.',
   doc: {
-    schema: 'gameverse.v2.game/0.2', id: 'maze-chase', title: 'Maze Chase', seed: 3,
+    schema: 'gameverse.v2.game/0.2', id: 'maze-chase', title: 'Maze Chase', seed: 3, views: { primary: 'td' },
     spaces: [{ id: 'maze', use: 'engine.space.grid', with: { size: [28, 31], wrap: 'x', rules: { house_door: { pass: ['hunter'] } } },
       generators: [{ use: 'engine.generate.grid.maze', with: { size: 'classic', style: 'classic', density: 0.6 } }] }],
     systems: [
