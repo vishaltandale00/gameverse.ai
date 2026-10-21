@@ -15,8 +15,9 @@ import { verifyDocument } from '../v2/planner/verify-adapter.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
 import { fakeWriter, decomposition } from './v2-p-pipeline-fixtures.js';
 
-// A fixed slice of the catalogue: the stored game's primitives plus every 2D generator (they compete).
-const IDS = ['engine.space.tilemap', 'engine.space.graph', 'engine.input.actions', 'gameplay.move.platformer', 'gameplay.move.climb', 'gameplay.inventory', 'plot.storyboard', 'gameplay.falling.pieces',
+// A fixed slice of the catalogue: the stored game's primitives plus every 2D generator (they compete), and the
+// evaluator of plot.endings triggers (the falling-pieces win is a `when` ending: without it nothing can win the game).
+const IDS = ['engine.space.tilemap', 'engine.space.graph', 'engine.input.actions', 'gameplay.move.platformer', 'gameplay.move.climb', 'gameplay.inventory', 'plot.storyboard', 'plot.ending', 'gameplay.falling.pieces',
   ...PRIMITIVES.map(p => p.id).filter(id => id.startsWith('engine.generate.'))];
 const { registry, logic } = buildCatalogue([], IDS.map(id => PRIMITIVES.find(p => p.id === id)).filter(Boolean));
 

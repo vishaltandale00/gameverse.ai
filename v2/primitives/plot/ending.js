@@ -21,6 +21,9 @@ export default {
     },
     provides: { events: ['ending_reached', 'ending_reached:*'] },
     reads: ['plot.endings'],
+    // The configuration under which endings reached only through end_game (no `when`) are valid: a loop's lose wired
+    // by its effects next to a win evaluated here (planner/presets.js wireLoop).
+    untriggered: { param: 'requireWhen', is: false },
   },
   logic(logic) {
     logic.predicate('ending_available', { refs: p => [['ending', p.ending_available]], test: (p, rt) => { const e = (rt.doc.plot?.endings || []).find(x => x.id === p.ending_available); return Boolean(e?.when) && rt.test(e.when); } });
