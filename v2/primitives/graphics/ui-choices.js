@@ -7,7 +7,7 @@
 // and back while a group is open; more rows than `max` page on with a More button. Presentation only: it never writes
 // rt.state.
 import { uiHost, fill, setClass, setText, titleCase } from './ui-lib.js';
-import { unclaimedChoices, verbInstances, actionSpaceOf, declaredDenials, deniesPlayer } from '../engine/runtime-lib-controls.js';
+import { unclaimedChoices, verbInstances, actionSpaceOf, declaredDenials, deniesPlayer, uiControls } from '../engine/runtime-lib-controls.js';
 import { INTERACTIONS } from '../gameplay/modes-lib-mode.js';
 
 /** The choice verbs this primitive issues in a document: the loops' choice verbs no other mounted UI names. */
@@ -45,7 +45,7 @@ export function choiceEntries(options, served, pick = {}) {
 }
 
 /** The text an option shows: its label, else its verbs and scalar values. */
-export const entryLabel = o => o.label || Object.entries(o.actions || {}).map(([v, x]) => `${titleCase(v)}${typeof x === 'object' ? '' : ` ${x}`}`).join(' ');
+export const entryLabel = o => o.text || o.label || Object.entries(o.actions || {}).map(([v, x]) => `${titleCase(v)}${typeof x === 'object' ? '' : ` ${x}`}`).join(' ');
 
 /**
  * The rows the panel shows for the options offered now, with `group` open (null: the top level): a row per group (the
@@ -53,13 +53,13 @@ export const entryLabel = o => o.label || Object.entries(o.actions || {}).map(([
  * Back then the group's options. Pure, for tests.
  * @returns {Array<{ text: string, kind: 'group' | 'option' | 'back', group?: string, field?: string | null, value?: unknown, actions?: Record<string, unknown> }>}
  */
-export function panelRows(options, served, pick, group = null) {
+export function panelRows(options, served, pick, group = null, { wholeOptions = true } = {}) {
   const entries = choiceEntries(options, served, pick);
   const groups = [...new Map(entries.filter(e => e.group !== null).map(e => [e.group, e])).entries()];
   if (group !== null && !groups.some(([g]) => g === group)) group = null;
   return group === null
     ? [...groups.map(([g, e]) => ({ text: titleCase(g), kind: /** @type {const} */ ('group'), group: g, field: e.field, value: e.value })),
-      ...entries.filter(e => e.group === null).map(e => ({ text: entryLabel(e.option), kind: /** @type {const} */ ('option'), actions: e.option.actions }))]
+      ...entries.filter(e => e.group === null && wholeOptions).map(e => ({ text: entryLabel(e.option), kind: /** @type {const} */ ('option'), actions: e.option.actions }))]
     : [{ text: '‹ Back', kind: /** @type {const} */ ('back') }, ...entries.filter(e => e.group === group).map(e => ({ text: entryLabel(e.option), kind: /** @type {const} */ ('option'), actions: e.option.actions }))];
 }
 
@@ -105,6 +105,9 @@ export default {
       if (verb === 'back' && group !== null) { group = null; page = 0; reset(); return true; }
       return false;
     } });
+    // A UI that lists the game's options (card.controls.options: the story's choices) already lists every whole option: this
+    // panel then lists only its selections (a unit to act with), so one number key never means two things on screen.
+    const listedElsewhere = uiControls(rt.doc, rt.registry).options.some(u => u !== 'graphics.ui.choices');
     // Choosing a group (a unit) also issues the verb that selects it, when the document has one (card.actionSpace selects).
     const run = r => {
       if (r.kind === 'group') { group = r.group; page = 0; if (selects[r.field] && served.includes(selects[r.field])) rt.view.act({ [selects[r.field]]: r.value }); }
@@ -115,7 +118,7 @@ export default {
     };
     function paint() {
       const options = rt.state.status === 'playing' ? rt.availableOptions() : [];
-      const all = panelRows(options, served, pick, group);
+      const all = panelRows(options, served, pick, group, { wholeOptions: !listedElsewhere });
       if (group !== null && all[0]?.kind !== 'back') group = null; // the open group has nothing left to choose
       const { rows, page: p } = pageOf(all, page, config.max); page = p;
       if (refused && host.now() > refused.until) refused = null;

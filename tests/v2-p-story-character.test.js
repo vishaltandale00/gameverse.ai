@@ -49,6 +49,23 @@ test('talk: range check, met, talked:<id>, first matching dialogue', () => {
   assert.equal(rt.state.counts['talked:ranger'], 1, 'in range after moving');
 });
 
+test('a conversation opened by talking ends when the player walks out of talk range; one an effect opens does not', () => {
+  const { rt } = make(doc());
+  const log = recorder(rt), dlg = () => rt.service('dialogue');
+  act(rt, { talk: 'elder' });
+  assert.equal(dlg().active(), true, 'talking opened the elder\'s dialogue');
+  moveTo(rt, [11, 0, 0]); step(rt, 1);
+  assert.equal(dlg().active(), false, 'walking away ended it');
+  assert.equal(log.filter(e => e.name === 'dialogue_end').pop()?.dialogue, 'elder_day');
+  assert.ok(rt.availableOptions().some(o => o.actions?.talk === 'ranger'), 'the character in front of the player can be talked to');
+  rt.run([{ do: 'start_dialogue', dialogue: 'elder_day', with: 'elder' }]);
+  step(rt, 3);
+  assert.equal(dlg().active(), true, 'an effect-opened conversation is not tied to the talk range');
+  // Replays: the same inputs give the same state.
+  const play = () => { const { rt: r } = make(doc()); act(r, { talk: 'elder' }); moveTo(r, [11, 0, 0]); step(r, 2); return r.snapshot(); };
+  assert.deepEqual(play(), play());
+});
+
 test('set_alive despawns and revives; alive drives beats; deaths from combat count', () => {
   const { rt } = make(doc());
   rt.run([{ do: 'set_alive', character: 'ranger', alive: false }]);

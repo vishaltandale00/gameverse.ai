@@ -29,6 +29,8 @@ export function parseTarget(t) {
   if (kind === 'exit') { const [from, to, extra] = id.split('>'); if (!from || !to || extra !== undefined) return null; return { kind, id, from, to }; }
   return { kind, id };
 }
+/** The reference kinds a lock target names, by its '<kind>:' prefix: an exit names two zones joined by '>'. */
+export const TARGETS = Object.freeze({ exit: Object.freeze({ of: Object.freeze(['zone', 'zone']), sep: '>' }), zone: 'zone', beat: 'beat', quest: 'quest', portal: 'portal', interactable: 'interactable', mechanism: 'mechanism', ending: 'ending', dialogue: 'dialogue', character: 'character' });
 const TARGET_KINDS = { zone: 'zone', beat: 'beat', quest: 'quest', portal: 'portal', interactable: 'interactable', mechanism: 'mechanism', ending: 'ending', dialogue: 'dialogue', character: 'character' };
 
 export function gateOpen(rt, id) {
@@ -55,6 +57,12 @@ export default {
     },
     provides: { events: ['gate_opened', 'gate_opened:*', 'gate_closed', 'gate_closed:*', 'gate_blocked', 'gate_blocked:*'], services: ['gates'] },
     reads: ['plot.gates'],
+    // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
+    data: { 'plot.gates': { type: 'list', of: { type: 'object', fields: {
+      id: { type: 'string', required: true }, title: { type: 'string' }, requires: { type: 'predicate', required: true }, hint: { type: 'string' },
+      // A target is '<kind>:<id>' ('exit:<zone>><zone>' for an exit): `targets` declares the reference kind of each part.
+      locks: { type: 'list', of: { type: 'string', targets: TARGETS } },
+    } } } },
     defines: [{ kind: 'gate', at: 'plot.gates' }],
   },
   logic(logic) {

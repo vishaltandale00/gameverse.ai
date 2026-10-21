@@ -20,20 +20,22 @@ export default {
     defines: [{ kind: 'gate', at: 'plot.gates' }, { kind: 'portal', in: 'portals' }],  // new reference kinds
   },
   logic(logic) {},                          // register predicates/effects (once per catalogue)
-  validate(config, doc, ctx) { return [] }, // extra preflight: [{code, path, message, hint}]
+  validate(config, doc, ctx) { return [] }, // extra preflight: [{code, path, message, hint}]; every code declared in card.rules
   install(rt, config, instance) {},         // runtime hooks; instance = { key, use, with, space?, id? }
   extend(rt, config, added, instance) {},   // only if it caches derived data and must see hot-loaded content
   capabilities(config) { return [...] },    // spaces only, when capabilities depend on params
 };
 ```
 
-Param types: `number integer boolean string ref list object predicate effects json`. `ref` takes `to: <kind>`. A `string` that selects entities (an entity id, an archetype id or a tag) declares `selects: ENTITY_KINDS` (`kernel/params.js`): a value that is an id of those kinds refers to that entry, so composition renames it with the entry; other values stay free. `object` takes `fields`, `open` and `values` (the shape of every value under a key `fields` does not name: a map with free keys). `list` takes `of`, `min` and `max`. Defaults are applied by preflight, so `install` receives a complete config.
+`card.rules` (`kernel/rules.js`) declares every code `validate` can emit: `{ code: { fields, message, example? } }`, for cross-field rules only (a rule about one field is a declaration: options, min/max, pattern, multipleOf, ref, required). `card.data` declares the shape of each document section the primitive reads, over the kernel's base shapes (`kernel/sections.js`); `display: true` marks text a person reads. Preflight checks sections against their merged shapes and reports undeclared codes (`rule_undeclared`).
+
+Param types: `number integer boolean string ref list object predicate effects json`. `ref` takes `to: <kind>`. A `string` that selects entities (an entity id, an archetype id or a tag) declares `selects: ENTITY_KINDS` (`kernel/params.js`): a value that is an id of those kinds refers to that entry, so composition renames it with the entry; other values stay free. `object` takes `fields`, `open` and `values` (the shape of every value under a key `fields` does not name: a map with free keys). `list` takes `of`, `min` and `max`. An `object` may declare `variants: { by, of: { <value>: fields } }`: fields that depend on a discriminating field (a quest objective's `kind`). A `string` naming a typed target declares `targets: { <prefix>: kind | { of: [kinds], sep } }` (a gate lock `exit:<zone>><zone>`). A space card declares the fields of its zones in `card.zoneFields` (the graph's exits: `to` a zone, `gate` a predicate). Composition renames the references all of these hold (`planner/compose.js`). Defaults are applied by preflight, so `install` receives a complete config.
 
 **Reference kinds** come from `card.defines`:
 - `{kind, at}` indexes a document path: a list of `{id}` or an id-keyed object.
 - `{kind, in}` indexes a list of `{id}` inside each instance's `with`.
 
-Base kinds (`character item zone quest model archetype space beat ending recipe block dialogue`) are built in. Never edit `REF_KINDS`.
+Base kinds (`character item zone quest model archetype space beat ending recipe block dialogue`, and `section`: the document's content/plot section paths) are built in. Never edit `REF_KINDS`.
 
 ## 2. Runtime (`rt`)
 
@@ -48,7 +50,7 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 | `rt.emitTyped(name, subject, data)` | Emits both `name` (with `subject`) and `name:<subject>`. Use it for every typed event (`defeated:goblin`, `item_gained:key`). |
 | `rt.action(name, fn(value, rt))` | Player verb. Input reaches it through `step({actions})`. |
 | `rt.hold(by, owners)` / `rt.release(by)` | Skip the systems registered by `owners` (their `rt.system` owner) until released. A nested loop holds the outer loop while it runs (`engine.adapt.nested`). Kept in `state.held` only while something is held. |
-| `rt.options(fn(rt) → [{label, actions, steps?, apply?(rt)}])` | Meaningful player choices, as hints for solvers and playtest bots. Bots act only through the real controls (input driver); every option's `actions` must be issuable through a declared control. Continuous spaces offer macro options such as "travel to zone X" via `apply`, which the bot realizes as input. |
+| `rt.options(fn(rt) → [{label, text, actions, steps?, apply?(rt)}])` | Meaningful player choices, as hints for solvers and playtest bots. `label` is the solvers' key (unique, ids allowed); `text` is what a person reads when a UI lists the option (graphics.ui.story, graphics.ui.choices, graphics.ui.battle), written with the document's names (`Talk to Old Maren`, a dialogue choice's line), never ids (`tests/v2-option-text.test.js`). Bots act only through the real controls (input driver); every option's `actions` must be issuable through a declared control. Continuous spaces offer macro options such as "travel to zone X" via `apply`, which the bot realizes as input. |
 | `rt.provide(name, api)` / `rt.service(name)` | Shared services (`roadgraph`, `surface`, `biomeAt`...). Declare them in `card.provides.services` / `requires.services`. |
 | `rt.defineSpace(id, api)` / `rt.space(id)` / `rt.spaces()` | Spaces (§3). |
 | `rt.spawn(archetype, {space, at, components, id})` / `rt.despawn(id)` | Entities. Characters spawn with `id = character id`. |
@@ -146,6 +148,7 @@ A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `prov
 - **Warnings.** Validators can report non-fatal findings with `ctx.warn({code, path, message, hint})`.
 - **Action values.** Only `undefined`, `null` and `false` mean "no action"; `0` and `''` are delivered.
 - **New vocabulary.** If your primitive needs a kind that's missing, register it in your own `logic()`, add `refs()` for reference checking, and add `check()` for field validation.
+- **Declared codes.** The generic vocabulary codes (`predicate_unknown predicate_invalid effect_unknown effect_invalid`) are kernel codes (`kernel/rules.js` `KERNEL_CODES`). Every other code a kind's `check()` emits is declared with its registration: `logic.effect(kind, { codes: [{ code, fields, example }], check, run })`, `example` being a minimal predicate or effect whose check emits exactly that code (the catalogue conformance preflights it). Preflight reports an undeclared code as `rule_undeclared`. A primitive's `validate` codes are declared in `card.rules` (§1).
 
 ## 6. Graphics and hosts
 
