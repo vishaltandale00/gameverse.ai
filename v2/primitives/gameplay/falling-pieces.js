@@ -15,7 +15,7 @@
 // never bury an entity; steering can be the player, follow the player, or drift.
 // With gameplay.match on the same board name, locking hands the board over
 // (piece_locked -> board_busy ... board_idle) and the next piece waits.
-import { boardParam, validateBoard, boardOf, provideBoard, award, isHeld, autoShift, rint, shuffle, solidToken, settleBoard, token as mkToken } from './puzzle-lib-board.js';
+import { BOARD_CONTENT, boardParam, validateBoard, boardOf, provideBoard, award, isHeld, autoShift, rint, shuffle, solidToken, settleBoard, token as mkToken } from './puzzle-lib-board.js';
 
 const ID = 'gameplay.falling.pieces';
 const STANDARD = {
@@ -150,6 +150,7 @@ export default {
       vars: ['falling.lines', 'falling.level', 'falling.pieces', 'falling.combo', 'score'],
       actions: ['shift_left', 'shift_right', 'soft_drop', 'hard_drop', 'rotate_cw', 'rotate_ccw', 'hold', 'place'],
       services: ['board'],
+      content: [...BOARD_CONTENT],
     },
     requires: { capabilities: ['editCells'] },
     reads: ['content.blocks'],

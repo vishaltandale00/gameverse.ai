@@ -4,9 +4,6 @@
 // foe's next hits, and the hand is discarded at the end of the turn. Each foe shows its intent (attack, block, buff)
 // before it acts. Hit points carry over from battle to battle, and each won battle offers a choice of one of three new
 // cards for the deck. Losing all hit points loses; beating the boss wins.
-// Not in v2/templates/index.js yet: compose-check throws on a mode played through card.mode.via (the fix is commit
-// aa2eac21 on the unmerged sports-ai branch), and the loop and mode checks do not yet read wins and spawns owned by
-// a wrapping stage sequence. Its bot (stages over turn-board) wins it and the publish gate finds it viable.
 const won = [{ do: 'end_game', outcome: 'won' }], lost = [{ do: 'end_game', outcome: 'lost' }];
 const STAGES = [['first_fight', 'slime'], ['second_fight', 'cultist'], ['boss_fight', 'guardian']];
 const FOES = STAGES.map(([, archetype]) => archetype);

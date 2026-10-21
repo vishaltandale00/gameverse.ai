@@ -3,7 +3,7 @@
 // (the merged tile cannot merge again that move); fixed rocks split lines; after a
 // move that changed the board a 2 (or, with spawnFour chance, a 4) appears in a
 // random empty cell. Tiles are number tokens ('2', '4', ...), rocks 'rock'.
-import { boardParam, validateBoard, boardOf, provideBoard, award, rint } from './puzzle-lib-board.js';
+import { BOARD_CONTENT, boardParam, validateBoard, boardOf, provideBoard, award, rint } from './puzzle-lib-board.js';
 
 const ID = 'gameplay.slide.merge';
 export const DIRS = ['left', 'right', 'up', 'down'];
@@ -67,7 +67,7 @@ export default {
       slideFrames: { type: 'integer', default: 7, min: 0, max: 60, unit: 'frames', effect: 'slide animation; input during it is queued' },
       onStuck: { type: 'effects', default: [{ do: 'end_game', outcome: 'lost' }], effect: 'run when no move is left or the move limit is spent' },
     },
-    provides: { events: ['slid', 'merged', 'merged:*', 'tile_spawned', 'tile_reached', 'move', 'slide_blocked', 'board_stuck', 'score'], vars: ['slide.max', 'slide.moves', 'score'], actions: ['slide'], services: ['board'] },
+    provides: { events: ['slid', 'merged', 'merged:*', 'tile_spawned', 'tile_reached', 'move', 'slide_blocked', 'board_stuck', 'score'], vars: ['slide.max', 'slide.moves', 'score'], actions: ['slide'], services: ['board'], content: [...BOARD_CONTENT] },
     requires: { capabilities: ['editCells'] },
     actionSpace: { slide: { type: 'enum', options: DIRS } },
   },

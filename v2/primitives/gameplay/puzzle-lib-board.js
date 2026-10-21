@@ -14,6 +14,13 @@
 // 'blocker/hp2'. Tags travel with the cell when it moves.
 import { checkParam } from '../../kernel/params.js';
 
+/**
+ * The world content a board primitive gives the space its board sits in (card.provides.content): it fills the board's
+ * cells itself (its starting tiles or gems, the pieces that land), so the space needs no generator for them
+ * (planner/compose-check.js content coverage). Every card with a boardParam declares it.
+ */
+export const BOARD_CONTENT = Object.freeze(['cells']);
+
 export const boardParam = (size = [10, 20], name = 'board') => ({
   type: 'object',
   // Space-region metadata (planner): this param claims the board's cells, so world generators leave them clear.

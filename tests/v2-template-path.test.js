@@ -32,6 +32,9 @@ const IDEAS = {
   fighting: { idea: 'Street Fighter with kitchen utensils', game: 'Street Fighter', themes: [['kitchen utensils', 'theme']] },
   'ball-sport': { idea: 'Soccer on the moon', game: 'soccer', themes: [['on the moon', 'setting']] },
   shmup: { idea: 'Galaga in a coral reef', game: 'Galaga', themes: [['coral reef', 'setting']] },
+  'card-battle': { idea: 'Slay the Spire in a haunted bakery', game: 'Slay the Spire', themes: [['haunted bakery', 'setting']] },
+  launcher: { idea: 'Angry Birds with penguins on an ice shelf', game: 'Angry Birds', themes: [['penguins on an ice shelf', 'theme']] },
+  'slide-merge': { idea: '2048 with planets', game: '2048', themes: [['planets', 'theme']] },
 };
 test('every template has an idea fixture', () => assert.deepEqual(TEMPLATES.map(t => t.id).filter(id => !IDEAS[id]), []));
 
