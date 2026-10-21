@@ -161,21 +161,25 @@ const BASE = [real('engine.spawner'), real('plot.ending'), real('engine.input.ac
 const catalogue = () => testCatalogue([...BASE, vigor, duel, standoff, jabber, brawlAI, taunter, munch, haunt, forage, pluck, sprint, scramble, pacer]);
 const graph = registry => ({ id: 'field', use: 'engine.space.graph', with: {}, role: 'field', caps: [...registry.get('engine.space.graph').card.provides.capabilities] });
 const grid = registry => ({ id: 'maze', use: 'engine.space.grid', with: { size: [8, 8] }, role: 'maze', caps: [...registry.get('engine.space.grid').card.provides.capabilities] });
-/** A selection mapping one core mechanic to `systems`. */
-const selectionOf = (registry, systems, description, space = graph) => ({ systems: [...systems], spaces: [space(registry)], generators: [], graphics: [], bind: {}, gaps: [], adapters: [],
+/** A selection mapping one core mechanic to `systems`; `drivers` join the collection only (as selection's driver step adds them). */
+const selectionOf = (registry, systems, description, space = graph, drivers = []) => ({ systems: [...systems, ...drivers], spaces: [space(registry)], generators: [], graphics: [], bind: {}, gaps: [], adapters: [],
   mechanics: [{ id: 'core', verb: description.split(' ')[0], description, importance: 'core', primitives: systems.filter(s => s.startsWith('gameplay.')), candidates: [], source: 'test', score: 1, from: '' }] });
 const decompositionOf = (description, core) => ({ version: 'test', title: 'Test Game', premise: `${description}. A test.`, tone: 'brisk', references: [], views: ['ui'], spaces: [], movement: 'none',
-  mechanics: [{ id: 'core', verb: description.split(' ')[0], description, from: '', importance: 'core' }], core: { theme: '', narrative: false, mashup: [], lose: '', ...core } });
+  mechanics: [{ id: 'core', verb: description.split(' ')[0], description, from: '', importance: 'core' }], core: { theme: '', narrative: false, mashup: [], lose: '', loop: 'core', ...core } });
+// What selection chose for each idea, its loop steps included (build-steps.js): the owner of what the win reads joins
+// the core loop (the coverage step), the drivers of AI opponents the collection (the driver step). The preset adds none.
 const COLLECTIONS = {
-  sides: { systems: ['gameplay.test.duel'], description: 'two camps trade blows in turns until one camp falls', core: { interaction: 'pieces-turns', opponent: 'ai-side', win: 'the other camp falls' } },
-  collect: { systems: ['gameplay.test.forage', 'gameplay.test.pluck'], description: 'forage berries in real time while avoiding bees', core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'gather enough berries' } },
-  race: { systems: ['gameplay.test.sprint'], description: 'run laps of the course against rival runners', core: { interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'finish the laps first' } },
-  chase: { systems: ['gameplay.test.munch'], description: 'munch the dots of a grid maze while spooks chase you', space: grid, core: { interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'munch enough dots', lose: 'caught by a spook' } },
+  sides: { systems: ['gameplay.test.duel', 'gameplay.test.vigor'], drivers: ['gameplay.test.campai'], description: 'two camps trade blows in turns until one camp falls', core: { interaction: 'pieces-turns', opponent: 'ai-side', win: 'the other camp falls' } },
+  collect: { systems: ['gameplay.test.forage', 'gameplay.test.pluck'], drivers: [], description: 'forage berries in real time while avoiding bees', core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'gather enough berries' } },
+  race: { systems: ['gameplay.test.sprint'], drivers: ['gameplay.test.pacer'], description: 'run laps of the course against rival runners', core: { interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'finish the laps first' } },
+  chase: { systems: ['gameplay.test.munch'], drivers: ['gameplay.test.haunt'], description: 'munch the dots of a grid maze while spooks chase you', space: grid, core: { interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'munch enough dots', lose: 'caught by a spook' } },
 };
-const build = (name, cat = catalogue(), systems = COLLECTIONS[name].systems) => {
+const build = (name, cat = catalogue(), systems = COLLECTIONS[name].systems, drivers = COLLECTIONS[name].drivers) => {
   const c = COLLECTIONS[name];
-  return preset({ decomposition: decompositionOf(c.description, c.core), selection: selectionOf(cat.registry, systems, c.description, c.space), registry: cat.registry, logic: cat.logic, seed: 5 });
+  return preset({ decomposition: decompositionOf(c.description, c.core), selection: selectionOf(cat.registry, systems, c.description, c.space, drivers), registry: cat.registry, logic: cat.logic, seed: 5 });
 };
+/** A scripted model for the loop steps (build-steps.js): the first offered option of each, or `steps[kind]`. */
+const stepWriter = (steps = {}) => fakeWriter([req => buildAnswer(req, { steps }) ?? '{}']);
 const opponentOf = name => COLLECTIONS[name].core.opponent;
 const codes = (doc, registry, core, opponent = null) => loopProblems(doc, registry, { core, opponent }).map(p => p.code).sort();
 const inst = (doc, use) => doc.systems.find(s => s.use === use);
@@ -246,13 +250,17 @@ test('the check catches each broken structure with a stable code, path and hint'
   const unfinished = structuredClone(race); inst(unfinished, 'gameplay.test.sprint').with.onFinish = [];
   assert.deepEqual(codes(unfinished, registry, ['gameplay.test.sprint']), [LOOP_CODES.win]);
   // Every broken structure the declarations can fix, the structural repair fixes (the model's content is kept).
-  for (const [doc, core] of [[noJab, sidesCore], [allMine, sidesCore], [unseated, sidesCore], [unowned, sidesCore], [frail, sidesCore], [empty, sidesCore], [noEvaluator, collectCore], [alone, ['gameplay.test.sprint']], [unfinished, ['gameplay.test.sprint']]]) {
+  for (const [doc, core] of [[noJab, sidesCore], [allMine, sidesCore], [unseated, sidesCore], [frail, sidesCore], [empty, sidesCore], [noEvaluator, collectCore], [alone, ['gameplay.test.sprint']], [unfinished, ['gameplay.test.sprint']]]) {
     const r = repairLoop(doc, registry, { core });
     assert.deepEqual(r.problems, [], JSON.stringify(r.problems));
     assert.ok(r.fixes.length);
   }
+  // An unowned component is selection's to answer (the coverage step): the repair reports it and adds no primitive.
+  const owned = repairLoop(unowned, registry, { core: sidesCore });
+  assert.deepEqual(owned.problems.map(p => p.code), [LOOP_CODES.owner]);
+  assert.ok(!owned.doc.systems.some(s => s.use === 'gameplay.test.vigor'));
   // What no declaration provides is reported, not invented: the standoff declares no move that saps.
-  const stand = build('sides', catalogue(), ['gameplay.test.standoff']);
+  const stand = build('sides', catalogue(), ['gameplay.test.standoff', 'gameplay.test.vigor']);
   assert.deepEqual(stand.loop.map(p => p.code), [LOOP_CODES.unaffected]);
 });
 
@@ -291,13 +299,15 @@ test('the published chess x pokemon failure is caught statically; the real turn 
 const drivers = doc => doc.systems.map(s => s.use).filter(u => ['gameplay.test.campai', 'gameplay.test.taunter', 'gameplay.test.haunt', 'gameplay.test.pacer'].includes(u)).sort();
 const without = (doc, use) => { const d = structuredClone(doc); d.systems = d.systems.filter(s => s.use !== use); return d; };
 
-test('opponents without behavior are caught and the preset drives them, for a grid chase, a turn-based sides game and a race with rivals', () => {
+test('opponents without behavior are caught; the preset wires the driver selection chose and never adds one, for a grid chase, a turn-based sides game and a race with rivals', async () => {
   const { registry } = catalogue();
-  // sides: the AI camp is driven by the camp driver whose units sap (the duel's lose reads the player's vigor, by sap);
-  // the taunter's units cannot change it and is never chosen.
+  // sides: the AI camp is driven by the camp driver selection chose; without it the preset adds none and reports it.
   const sides = build('sides');
   assert.deepEqual(drivers(sides.doc), ['gameplay.test.campai']);
-  assert.ok(sides.structure.loopCheck.fixes.some(f => /\+gameplay\.test\.campai: it drives the gameplay\.test\.duel AI participants/.test(f)), JSON.stringify(sides.structure.loopCheck.fixes));
+  assert.deepEqual(sides.loop, []);
+  const undriven = build('sides', catalogue(), COLLECTIONS.sides.systems, []);
+  assert.deepEqual(drivers(undriven.doc), [], 'the preset never picks a driver itself');
+  assert.deepEqual(undriven.loop.map(p => p.code), [LOOP_CODES.inert]);
   const sidesCore = COLLECTIONS.sides.systems;
   const inert = loopProblems(without(sides.doc, 'gameplay.test.campai'), registry, { core: sidesCore, opponent: 'ai-side' });
   assert.deepEqual(inert.map(p => p.code), [LOOP_CODES.inert]);
@@ -306,7 +316,7 @@ test('opponents without behavior are caught and the preset drives them, for a gr
   const unaffected = loopProblems(strutting, registry, { core: sidesCore });
   assert.deepEqual(unaffected.map(p => p.code), [LOOP_CODES.loseUnaffected]);
   assert.match(unaffected[0].message, /gameplay\.test\.taunter/);
-  // chase: the munch loop declares only hazards; the play spec's 'ai-rival' opponent needs a driver. The preset adds the
+  // chase: the munch loop declares only hazards; the play spec's 'ai-rival' opponent needs a driver: selection chose the
   // haunting (its spooks are content the model writes from its archetypes contract: pending until then).
   const chase = build('chase');
   assert.equal(chase.ok, true, JSON.stringify(chase.errors));
@@ -321,10 +331,10 @@ test('opponents without behavior are caught and the preset drives them, for a gr
   const caught = loopProblems(spooked, registry, { core: chaseCore, opponent: 'ai-rival' });
   assert.deepEqual(caught.map(p => [p.code, p.primitive, p.path]), [[LOOP_CODES.inert, 'gameplay.test.munch', 'systems']]);
   assert.deepEqual(caught[0].need, { kind: 'driver', control: 'ai', archetypes: ['dot', 'spook'] });
-  const fixedChase = repairLoop(spooked, registry, { core: chaseCore, opponent: 'ai-rival' });
+  assert.deepEqual(drivers(repairLoop(spooked, registry, { core: chaseCore, opponent: 'ai-rival' }).doc), [], 'the repair adds no driver');
+  // With the haunting chosen, the repair wires it: its component goes on the archetypes of the kind its declared example is (the spook, not the dot).
+  const fixedChase = repairLoop({ ...spooked, systems: [...spooked.systems, { use: 'gameplay.test.haunt' }] }, registry, { core: chaseCore, opponent: 'ai-rival' });
   assert.deepEqual(fixedChase.problems, []);
-  assert.deepEqual(drivers(fixedChase.doc), ['gameplay.test.haunt']);
-  // The haunt component goes on the archetypes of the kind its declared example is (the spook, not the dot).
   assert.deepEqual(fixedChase.doc.content.archetypes.filter(a => a.components.haunt).map(a => a.id), ['spook']);
   // race: the rivals are runner ids; the driver that names the sprint drives them.
   const race = build('race');
@@ -332,28 +342,35 @@ test('opponents without behavior are caught and the preset drives them, for a gr
   const raceCore = COLLECTIONS.race.systems;
   const still = without(race.doc, 'gameplay.test.pacer');
   assert.deepEqual(loopProblems(still, registry, { core: raceCore }).map(p => [p.code, p.need.loop]), [[LOOP_CODES.inert, 'gameplay.test.sprint']]);
-  // Every one of them the structural repair fixes from declarations (the model's content is kept).
+  // The structural repair adds none of them: each stays reported for selection's driver step.
   for (const [doc, core, opponent] of [[without(sides.doc, 'gameplay.test.campai'), sidesCore, 'ai-side'], [strutting, sidesCore, 'ai-side'], [still, raceCore, 'ai-rival']]) {
     const r = repairLoop(doc, registry, { core, opponent });
-    assert.deepEqual(r.problems, [], JSON.stringify(r.problems));
-    assert.ok(r.fixes.some(f => f.code === LOOP_CODES.inert || f.code === LOOP_CODES.loseUnaffected), JSON.stringify(r.fixes));
+    assert.deepEqual(drivers(r.doc), drivers(doc), JSON.stringify(r.fixes));
+    assert.ok(r.problems.some(p => p.code === LOOP_CODES.inert || p.code === LOOP_CODES.loseUnaffected), JSON.stringify(r.problems));
   }
   // Without a driver in the catalogue, the preset reports it for the planner to re-plan.
   const bare = testCatalogue([...BASE, munch]);
   const lone = preset({ decomposition: decompositionOf(COLLECTIONS.chase.description, COLLECTIONS.chase.core), selection: selectionOf(bare.registry, chaseCore, COLLECTIONS.chase.description, grid), registry: bare.registry, logic: bare.logic, seed: 5 });
   assert.deepEqual(lone.loop.map(p => p.code), [LOOP_CODES.inert]);
   // Re-planning treats it like the other loop codes: the static problem (or a gate verdict on that document) is a
-  // structure diagnosis, and the catalogue primitive that drives them (and changes what the lose reads) is added.
+  // structure diagnosis, re-planned through the build's driver step: the model is offered only drivers whose units
+  // change what the lose reads (the camp AI, never the taunter) and picks one.
   const sel = selectionOf(registry, sidesCore, COLLECTIONS.sides.description);
   const ds = diagnose(unaffected, { selection: sel, registry, doc: strutting, core: sidesCore });
   assert.deepEqual(ds.map(d => [d.kind, d.primitive, d.loop?.code]), [['structure', 'gameplay.test.duel', LOOP_CODES.loseUnaffected]]);
   const gate = diagnose([{ code: 'not_playable', path: '$', message: 'no_progress: x' }], { selection: sel, registry, doc: spooked, core: chaseCore, opponent: 'ai-rival' });
   assert.deepEqual(gate.map(d => [d.kind, d.loop?.code]), [['structure', LOOP_CODES.inert]]);
-  const r = replan({ ...sel, systems: [...sidesCore, 'gameplay.test.taunter'] }, ds, { registry, decomposition: decompositionOf(COLLECTIONS.sides.description, COLLECTIONS.sides.core), tried: new Map() });
+  const w = stepWriter();
+  const r = await replan({ ...sel, systems: [...sidesCore, 'gameplay.test.taunter'] }, ds, { registry, decomposition: decompositionOf(COLLECTIONS.sides.description, COLLECTIONS.sides.core), tried: new Map(), writer: w });
   assert.deepEqual(r.actions.map(a => [a.action, a.primitive]), [['add', 'gameplay.test.campai']]);
+  assert.deepEqual(w.calls.map(c => [c.schema.name, c.schema.schema.properties.pick.enum]), [['pick_driver', ['gameplay.test.campai', 'none']]]);
+  // Without a model, re-planning chooses nothing: the need is unresolved with the gap layer's signature.
+  const offline = await replan({ ...sel, systems: [...sidesCore, 'gameplay.test.taunter'] }, ds, { registry, decomposition: decompositionOf(COLLECTIONS.sides.description, COLLECTIONS.sides.core), tried: new Map() });
+  assert.deepEqual(offline.actions, []);
+  assert.match(offline.unresolved[0].signature, /card\.drives \{ control: 'ai' \}/);
 });
 
-test('the published haunted-library failure (an ai-rival play spec, no primitive giving the opponents behavior) is caught; the repair drives them from the real catalogue', () => {
+test('the published haunted-library failure (an ai-rival play spec, no primitive giving the opponents behavior) is caught; the repair wires the chosen driver from the real catalogue and never picks one', () => {
   const { registry, logic } = buildCatalogue();
   // local-data pac-man-in-a-haunted-library v1, reduced to what the check reads: the core collection (grid movement,
   // the tome counter, dodging) places ghosts nothing drives; a supporting turn loop has its own AI side.
@@ -371,13 +388,16 @@ test('the published haunted-library failure (an ai-rival play spec, no primitive
   const found = loopProblems(doc, registry, { logic, core, opponent: 'ai-rival' });
   assert.deepEqual(found.map(p => p.code), [LOOP_CODES.inert]);
   assert.deepEqual(found[0].need.archetypes, ['ghost_librarian', 'magical_tome']);
-  // The repair picks the driver the idea's words fit (chasing ghosts) among those whose components the declared example
-  // puts on the enemy-kind archetypes, and the ghosts carry it.
+  // The repair adds no driver: it reports the need (selection's driver step chooses one).
   const idea = 'being caught by a ghost. collect all tomes in the maze. dodge ghostly librarians and spirits who chase the player';
-  const fixed = repairLoop(doc, registry, { logic, core, opponent: 'ai-rival', idea });
+  const unchosen = repairLoop(doc, registry, { logic, core, opponent: 'ai-rival', idea });
+  assert.deepEqual(unchosen.doc.systems.map(s => s.use), doc.systems.map(s => s.use));
+  assert.deepEqual(unchosen.problems.map(p => p.code), [LOOP_CODES.inert]);
+  // With the driver selection chose, the repair puts its declared example component on the enemy-kind archetypes only.
+  const chosen = { ...doc, systems: [...doc.systems, { use: 'gameplay.ai.brain' }] };
+  const fixed = repairLoop(chosen, registry, { logic, core, opponent: 'ai-rival', idea });
   assert.deepEqual(fixed.problems, []);
-  const added = fixed.doc.systems.map(s => s.use).filter(u => !doc.systems.some(s => s.use === u));
-  assert.deepEqual(added, ['gameplay.ai.brain']);
+  assert.deepEqual(fixed.doc.systems.map(s => s.use), chosen.systems.map(s => s.use));
   assert.ok(fixed.doc.content.archetypes.find(a => a.id === 'ghost_librarian').components.ai?.brain?.length);
   assert.equal(fixed.doc.content.archetypes.find(a => a.id === 'magical_tome').components.ai, undefined);
 });
@@ -421,25 +441,26 @@ const run = async (name, mapped, config = {}) => {
   return { ...m, out };
 };
 
-test('sides: the seeded standoff has no move that saps; the loop check fails before any form call, re-planning adds a verb that does', async () => {
-  const { out, versions, stages } = await run('sides', ['gameplay.test.standoff']);
+/** The loop steps the build ran (selection.build.steps without the mechanic steps), as [kind, primitive]. */
+const loopStepsOf = checkpoints => (checkpoints.selection?.build?.steps || []).filter(s => s.kind !== 'mechanic').map(s => [s.kind, s.primitive]);
+
+test('sides: the seeded standoff has no move that saps; the build\'s loop steps add the owner, a verb that does and the camp driver before any form call', async () => {
+  const { out, versions, checkpoints } = await run('sides', ['gameplay.test.standoff']);
+  // The loop check of the partial collection after the mechanic step asked for each missing piece, one small question each.
+  assert.deepEqual(loopStepsOf(checkpoints), [['driver', 'gameplay.test.campai'], ['coverage', 'gameplay.test.vigor'], ['coverage', 'gameplay.test.jabber']]);
   const [first] = out.outline.attempts;
-  assert.equal(first.stage, 'outline');
-  assert.deepEqual(first.diagnoses.map(d => [d.kind, d.primitive, d.codes]), [['structure', 'gameplay.test.standoff', [LOOP_CODES.unaffected]]]);
-  assert.ok(first.actions.some(a => a.action === 'add' && a.primitive === 'gameplay.test.jabber'), JSON.stringify(first.actions));
-  assert.ok(stages.some(s => s.name === 'replanned'));
-  // Verified again and published: the jabber's verb wears the opposing camp down and the duel's win fires.
+  assert.equal(first.stage, 'published', 'nothing left for re-planning');
+  // Published: the jabber's verb wears the opposing camp down and the duel's win fires.
   assert.equal(versions.length, 1);
   assert.ok(versions[0].doc.systems.some(s => s.use === 'gameplay.test.jabber'));
   assert.ok(out.base.viable, out.base.viability);
   assert.equal(out.base.playtest?.winnable, true, 'the playtest agent wins it');
 });
 
-test('collect: nothing produces what the forage win counts; re-planning adds the player-driven producer and the game publishes', async () => {
-  const { out, versions } = await run('collect', ['gameplay.test.forage']);
-  const [first] = out.outline.attempts;
-  assert.deepEqual(first.diagnoses.map(d => [d.kind, d.primitive, d.codes]), [['structure', 'gameplay.test.forage', [LOOP_CODES.unaffected]]]);
-  assert.ok(first.actions.some(a => a.action === 'add' && a.primitive === 'gameplay.test.pluck'), JSON.stringify(first.actions));
+test('collect: nothing produces what the forage win counts; the build\'s coverage step adds the player-driven producer and the game publishes', async () => {
+  const { out, versions, checkpoints } = await run('collect', ['gameplay.test.forage']);
+  assert.deepEqual(loopStepsOf(checkpoints), [['coverage', 'gameplay.test.pluck']]);
+  assert.equal(out.outline.attempts[0].stage, 'published');
   assert.equal(versions.length, 1);
   assert.ok(out.base.viable, out.base.viability);
   assert.equal(out.base.playtest?.winnable, true, 'the playtest agent wins it');
@@ -462,13 +483,13 @@ test('when nothing in the catalogue can make the declared win reachable, the bui
   const m = memoryCtx();
   await assert.rejects(pipeline({ gameId: 'g', prompt: 'duel', kind: 'create', seed: 5 }, m.ctx), e => {
     assert.equal(e.code, 'not_buildable');
-    assert.ok(e.report.missing.some(x => /gameplay\.test\.standoff/.test(x) && /loop_win_unaffected/.test(x) && /vigor/.test(x) && /player verbs change/.test(x)), JSON.stringify(e.report.missing));
+    assert.ok(e.report.missing.some(x => /gameplay\.test\.standoff/.test(x) && /loop_win_unaffected/.test(x) && /vigor/.test(x) && /player verbs or effects change/.test(x)), JSON.stringify(e.report.missing));
     return true;
   });
   assert.equal(m.versions.length, 0);
 });
 
-test('gate verdicts are diagnosed through the loop check of the played document: no_progress, loop_absent, plot_uncompletable', () => {
+test('gate verdicts are diagnosed through the loop check of the played document: no_progress, loop_absent, plot_uncompletable', async () => {
   const { registry } = catalogue();
   const sel = selectionOf(registry, COLLECTIONS.sides.systems, COLLECTIONS.sides.description);
   const doc = build('sides').doc;
@@ -481,9 +502,21 @@ test('gate verdicts are diagnosed through the loop check of the played document:
   // A structure that passes leaves the verdict to the existing re-planning (the win, the loop, the fields).
   assert.equal(diagnose([{ code: 'not_playable', path: '$', message: 'no_progress: none' }], { selection: sel, registry, doc, core: COLLECTIONS.sides.systems })[0].kind, 'win');
   assert.equal(diagnose([{ code: 'not_playable', path: '$', message: 'loop_absent: none' }], { selection: sel, registry, doc, core: COLLECTIONS.sides.systems })[0].kind, 'loop');
-  // A structure diagnosis re-plans: a primitive whose player verbs change what the win reads is added (with what it requires).
+  // A structure diagnosis re-plans through the build's coverage step: the model picks a primitive whose player verbs
+  // change what the win reads, and it is added (with what it requires).
   const ds = diagnose([{ code: 'not_playable', path: '$', message: 'no_progress: x' }], { selection: sel, registry, doc: broken, core: COLLECTIONS.sides.systems });
-  const r = replan({ ...sel, systems: ['gameplay.test.duel'] }, ds, { registry, decomposition: decompositionOf(COLLECTIONS.sides.description, COLLECTIONS.sides.core), tried: new Map() });
+  const w = stepWriter({ coverage: ['gameplay.test.jabber'] });
+  const r = await replan(selectionOf(registry, ['gameplay.test.duel'], COLLECTIONS.sides.description, graph, COLLECTIONS.sides.drivers), ds, { registry, decomposition: decompositionOf(COLLECTIONS.sides.description, COLLECTIONS.sides.core), tried: new Map(), writer: w });
   assert.deepEqual(r.actions.map(a => [a.action, a.primitive]), [['add', 'gameplay.test.jabber']]);
   assert.ok(r.selection.systems.includes('gameplay.test.vigor'), 'what it requires comes with it');
+  assert.deepEqual(w.calls.map(c => c.schema.name), ['pick_coverage']);
+  // The owner alone answers it too (the duel's declared example move saps once vigor is in): both are offered.
+  assert.deepEqual(w.calls[0].schema.schema.properties.pick.enum.slice().sort(), ['gameplay.test.jabber', 'gameplay.test.vigor', 'none']);
+  // A declared win play never moved toward (no static cause) goes to the same coverage step, over the win's reads.
+  const passing = diagnose([{ code: 'not_playable', path: '$', message: 'no_progress: none' }], { selection: sel, registry, doc, core: COLLECTIONS.sides.systems });
+  const w2 = stepWriter({ coverage: [] });
+  const r2 = await replan(sel, passing, { registry, decomposition: decompositionOf(COLLECTIONS.sides.description, COLLECTIONS.sides.core), tried: new Map(), writer: w2 });
+  assert.deepEqual(w2.calls.map(c => c.schema.name), ['pick_coverage']);
+  assert.ok(w2.calls[0].schema.schema.properties.pick.enum.includes('gameplay.test.jabber'), 'the verb that changes the read vigor is offered');
+  assert.deepEqual([r2.actions, r2.unresolved.map(d => d.kind)], [[], ['win']], 'the model said none: unresolved for the gap layer, nothing added');
 });

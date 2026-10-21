@@ -65,7 +65,12 @@ test('the preset adds the matching adapters with params filled from declarations
   const FX = JSON.parse(readFileSync(new URL('./fixtures/v2-chess-pokemon-selection.json', import.meta.url), 'utf8'));
   const d = structuredClone(FX.decomposition);
   d.core.mashup = [...ACROSS, { relation: 'skin', mechanics: ['turn_based_piece_movement', 'unique_abilities'], why: 'creatures are the pieces' }];
-  const p = preset({ decomposition: d, selection: { ...structuredClone(FX.selection), generators: [], bind: {} }, registry, logic, seed: FX.seed, prompt: FX.prompt });
+  // The live selection predates the build's loop steps: the owner of the health the turns win reads is what its coverage
+  // step adds to the core loop mechanic (build-steps.js); the preset never adds it.
+  const selection = { ...structuredClone(FX.selection), generators: [], bind: {} };
+  selection.systems.push('gameplay.combat.health');
+  selection.mechanics.find(m => m.id === d.core.loop).primitives.push('gameplay.combat.health');
+  const p = preset({ decomposition: d, selection, registry, logic, seed: FX.seed, prompt: FX.prompt });
   assert.equal(p.ok, true, JSON.stringify(p.errors));
   assert.deepEqual(p.gaps, []);
   // nested: the joined loop (the creature battle) is entered on the outer turn loop's declared progress event, and its
@@ -97,7 +102,8 @@ test('the preset adds the matching adapters with params filled from declarations
 test('union across concepts: the joined race gets a region of the space kind it declares, projected by the adapter', () => {
   const caps = [...registry.get('engine.space.tilemap').capabilities({ mode: 'side' })];
   const mechanics = [{ id: 'run', verb: 'run', description: 'run and jump through the level', from: 'Mario', importance: 'core' }, { id: 'kart', verb: 'race', description: 'race rivals to the finish', from: 'Mario Kart', importance: 'core' }];
-  const selection = { systems: ['engine.input.actions', 'gameplay.move.platformer', 'gameplay.race'], spaces: [{ id: 'level', use: 'engine.space.tilemap', with: { mode: 'side', size: [64, 24] }, role: 'level', caps }], generators: [], graphics: [], bind: {}, gaps: [], adapters: [],
+  // gameplay.ai.seek: the driver of the race's rivals, as selection's driver step chose it (build-steps.js).
+  const selection = { systems: ['engine.input.actions', 'gameplay.move.platformer', 'gameplay.race', 'gameplay.ai.seek'], spaces: [{ id: 'level', use: 'engine.space.tilemap', with: { mode: 'side', size: [64, 24] }, role: 'level', caps }], generators: [], graphics: [], bind: {}, gaps: [], adapters: [],
     mechanics: [{ ...mechanics[0], primitives: ['gameplay.move.platformer'] }, { ...mechanics[1], primitives: ['gameplay.race'] }] };
   const d = { version: 't', title: 'Kart Bros', premise: 'Platform racing.', tone: '', references: [], views: ['side'], spaces: [], movement: 'ground', mechanics,
     core: { interaction: 'avatar-realtime', opponent: 'ai-rival', win: 'win the race', lose: '', theme: '', narrative: false, mashup: [{ relation: 'union', mechanics: ['run', 'kart'], why: 'the race runs through the level' }] } };
@@ -107,8 +113,8 @@ test('union across concepts: the joined race gets a region of the space kind it 
   assert.equal(region.with.kind, 'engine.space.track', 'the kind gameplay.race declares (card.mode.space)');
   assert.equal(region.space, 'level');
   assert.equal(p.doc.systems.find(s => s.use === 'gameplay.race').space, region.id, 'the joined loop runs in the region');
-  // The race's rivals are AI-controlled participants: the driver that steers by the target service the race declares
-  // (card.drives.targets, card.mode.targets) joins, so they are never published standing still.
+  // The race's rivals are AI-controlled participants: the chosen driver steers them by the target service the race
+  // declares (card.drives.targets, card.mode.targets), so they are never published standing still.
   assert.deepEqual(p.loop, []);
   assert.ok(p.doc.systems.some(s => s.use === 'gameplay.ai.seek'), JSON.stringify(p.doc.systems.map(s => s.use)));
   assert.ok(preflight(p.doc, registry, logic).ok);

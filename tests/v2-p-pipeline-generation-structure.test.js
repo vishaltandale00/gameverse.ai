@@ -113,14 +113,16 @@ test('a platformer gets its avatar and its places; its loop and win come from wh
   assert.equal(p.doc.plot.storyboard, undefined, 'no adventure skeleton: no acts, no reach-zone beats');
 });
 
-test('a collection that declares no win gets a primitive that declares one, chosen from the catalogue (never a mode)', async () => {
-  const { p } = await plan(MINE);
-  const win = p.structure.win;
-  assert.ok(win?.added, JSON.stringify(p.structure));
-  const card = registry.get(win.use).card;
-  assert.ok(endsGame(cardLoop(card).win) && !card.mode, `${win.use} declares a win and owns no whole loop`);
-  assert.ok(p.structure.added.some(a => a.use === win.use && /declares no way to win/.test(a.why)));
-  assert.ok(p.doc.systems.some(s => s.use === win.use));
+test('a collection that declares no win is a core gap: the preset never picks a primitive that declares one (selection\'s win step does)', async () => {
+  const { p, sel } = await plan(MINE);
+  assert.equal(p.structure.win, null, JSON.stringify(p.structure));
+  const gap = p.gaps.find(g => g.kind === 'win');
+  assert.equal(gap?.importance, 'core');
+  assert.match(gap.why, /win step/);
+  // Nothing was added for a win: the document runs only what selection chose.
+  assert.deepEqual(p.structure.added.filter(a => /win/.test(a.why)), []);
+  const winners = p.doc.systems.map(s => s.use).filter(u => !sel.systems.includes(u) && endsGame(cardLoop(registry.get(u)?.card)?.win));
+  assert.deepEqual(winners, []);
 });
 
 test('the genre and view survive the outline for ideas across td, side, 3p, board and ui', async () => {

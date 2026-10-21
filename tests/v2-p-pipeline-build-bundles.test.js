@@ -209,14 +209,16 @@ test('(e) bundles work the same on unrelated ideas: every option composes, withi
     const w = firstWriter();
     const b = await buildSelection({ decomposition: d, registry, writer: w });
     assert.ok(b.systems.length > 0, name);
-    // One step per mechanic, in worklist order; a covered one names the step whose bundle covered it.
-    assert.equal(b.steps.length, x.mechanics.length, name);
-    for (const s of b.steps.filter(s => s.outcome === 'covered')) assert.ok(b.steps.find(t => t.mechanic === s.coveredBy)?.covers?.includes(s.mechanic), `${name}/${s.mechanic}`);
-    assert.equal(w.calls.filter(c => c.schema.name === 'pick_primitive').length, b.steps.filter(s => s.outcome !== 'covered').length + b.steps.reduce((n, s) => n + Math.max(0, s.asks.length - 1), 0), name);
+    // One step per mechanic, in worklist order (the loop steps after them); a covered one names the step whose bundle covered it.
+    const mech = b.steps.filter(s => s.kind === 'mechanic');
+    assert.equal(mech.length, x.mechanics.length, name);
+    assert.ok(b.steps.slice(mech.length).every(s => s.kind !== 'mechanic'), name);
+    for (const s of mech.filter(s => s.outcome === 'covered')) assert.ok(mech.find(t => t.mechanic === s.coveredBy)?.covers?.includes(s.mechanic), `${name}/${s.mechanic}`);
+    assert.equal(w.calls.filter(c => c.schema.name === 'pick_primitive').length, mech.filter(s => s.outcome !== 'covered').length + mech.reduce((n, s) => n + Math.max(0, s.asks.length - 1), 0), name);
     // Every bundle member the collection gained is in it, and every option shown is labelled with its members.
     for (const s of b.steps.filter(s => s.checks)) for (const id of s.checks.bundle.filter(id => !id.startsWith('engine.adapt.'))) assert.ok(b.systems.includes(id) || id === b.space.use, `${name}: ${id}`);
     for (const c of w.calls.filter(c => c.schema.name === 'pick_primitive')) {
-      const step = b.steps.find(s => c.user.includes(`\nMechanic ${s.mechanic} (`));
+      const step = mech.find(s => c.user.includes(`\nMechanic ${s.mechanic} (`));
       for (const o of step.candidates.filter(o => o.members.length > 1)) { bundled++; assert.ok(c.user.includes(`- ${o.members[0]} + ${o.members[1]} (`) || !c.schema.schema.properties.pick.enum.includes(o.id), `${name}: ${o.members.join(' + ')}`); }
     }
     assertOffersCompose(b, registry, w, name);

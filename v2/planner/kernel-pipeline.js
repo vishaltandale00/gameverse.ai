@@ -182,7 +182,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
         return Object.assign(Error(`This isn't the game you asked for yet. Tried ${attempts.length} time(s): ${attempts.map(a => `#${a.attempt} ${a.stage}${Array.isArray(a.actions) && a.actions.length ? ` → ${a.actions.map(x => prop(x, 'text')).join(', ')}` : ''}`).join('; ')}. Still missing: ${missing.slice(0, 4).join('; ')}`), { status: 422, code: 'not_buildable', report: { attempts, missing } });
       };
       if (n >= cfg.replanAttempts) throw fail(missingText(diagnoses));
-      const plan = replan(selection, diagnoses, { registry, decomposition, tried });
+      const plan = await replan(selection, diagnoses, { registry, decomposition, tried, writer: spec, attempts: cfg.modelAttempts });
       /** @type {Array<{ text: string } & Record<string, unknown>>} */
       const actions = plan.actions.map(a => ({ ...a, text: a.action === 'replace' ? `${a.primitive} → ${a.by}` : a.action === 'add' ? `+${a.primitive}` : 'repair fields' }));
       // What the catalogue cannot serve: the gap layer writes it (cfg.gaps 'auto'), within cfg.maxGapPrimitives.

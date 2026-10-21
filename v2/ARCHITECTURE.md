@@ -116,10 +116,13 @@ idea
      core mode, interaction, opponent, win/lose, theme;
      for mashups, primary + secondary modes with relation nested | union | skin
  → selection (deterministic from declarations): the mode's primitives, the movement that fits the
-     world and the idea, the generators the space needs, adapters for every mismatch
+     world and the idea, the generators the space needs, adapters for every mismatch; then the loop steps
+     (planner/build-steps.js): the win, the lose, the drivers of AI opponents and what changes the win's reads,
+     each a small enum question over candidates the composition and loop checks passed (none fits: a gap)
  → static composition check (types): must be compatible, or compatible via adapter; a missing adapter
      is a gap the gap layer writes (model-written primitive, gated by tests and playtest)
- → preset (deterministic, instant): space, world, systems, sides/participants, win wiring, input
+ → preset (deterministic, instant): space, world, systems, sides/participants, win wiring, input;
+     it wires only what selection chose and never picks a primitive (a win, an owner, a driver) itself
  → content (model, small strict forms in parallel): themed cast, species, pieces, places, story,
      filled into the mode's content contracts; content packs give mechanically valid defaults
  → repair (field-level): only the failing fields go back to the model, never the whole document
