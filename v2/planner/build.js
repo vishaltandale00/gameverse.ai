@@ -40,7 +40,7 @@ import { cardLoop } from './loop.js';
 import { isAvatar, unplayedLoops } from './play-spec.js';
 import { relevance, spaceSlug, KIND_HINTS } from './select.js';
 import { unfurnishable } from './world.js';
-import { makeAsk, loopSteps } from './build-steps.js';
+import { makeAsk, loopSteps, adapterSteps } from './build-steps.js';
 import { collectionChecks, collectionState, coverageOf, askCoverage, validOptions, pickOption, MAX_LIST } from './retrieval.js';
 import { isStr, prop } from '../kernel/guards.js';
 
@@ -338,24 +338,40 @@ export async function buildSelection({ decomposition, registry, writer, log = ()
   //    only); what none answers is a gap for the gap layer.
   const loopId = loopMechanicOf(decomposition);
   const loopMechanic = loopId ? decomposition.mechanics.find(m => m.id === loopId) || null : null;
+  // Adapters the mashup steps added keep their own list: tryAdd re-resolves the collection's adapters on each pick.
+  /** @type {AdapterInstance[]} */
+  const stepAdapters = [];
+  /** @type {Record<string, string>} */
+  const stepBind = {};
+  const collection = () => ({ space: { id: sid, use, with: variants[variant]?.with || {}, role, caps: [...(variants[variant]?.caps || [])] }, systems: [...systems],
+    adapters: [...adapters, ...stepAdapters.filter(a => !adapters.some(b => b.id === a.id))], bind: { ...bind, ...stepBind },
+    mechanics: decomposition.mechanics.map(m => ({ id: m.id, importance: m.importance, primitives: [...(mapping[m.id]?.primitives || [])] })), loop: loopMechanic?.id ?? null,
+    composes: (/** @type {string[]} */ ids) => state.composes(ids), resolve: (/** @type {string[]} */ ids, /** @type {number} */ v) => state.resolve(ids, v) });
   if (loopMechanic && mapping[loopMechanic.id]?.primitives.length) {
-    const collection = () => ({ space: { id: sid, use, with: variants[variant]?.with || {}, role, caps: [...(variants[variant]?.caps || [])] }, systems: [...systems], adapters: [...adapters], bind: { ...bind },
-      mechanics: decomposition.mechanics.map(m => ({ id: m.id, importance: m.importance, primitives: [...(mapping[m.id]?.primitives || [])] })), loop: loopMechanic.id,
-      composes: (/** @type {string[]} */ ids) => state.composes(ids), resolve: (/** @type {string[]} */ ids, /** @type {number} */ v) => state.resolve(ids, v) });
-    const r = await loopSteps({ registry, decomposition, collection: collection(), ask, mechanic: loopMechanic, log,
+    const r = await loopSteps({ registry, decomposition, collection: /** @type {any} */ (collection()), ask, mechanic: loopMechanic, log,
       commit: (kind, pick) => {
         const t = tryAdd(pick);
         if (!t.ok) return t.why;
         if (kind !== 'driver') { const own = mapping[loopMechanic.id]; if (!own.primitives.includes(pick.id)) own.primitives.push(pick.id); }
-        return collection();
+        return /** @type {any} */ (collection());
       } });
     steps.push(...r.steps);
     gaps.push(...r.gaps);
   }
+  // 4. The mashup's adapters (build-steps.js adapterSteps): a nested entry asks which declared outer event enters the
+  //    joined loop and adds engine.adapt.nested wired from declarations; union and skin entries are decided by them.
+  {
+    const m = await adapterSteps({ registry, decomposition, collection: /** @type {any} */ (collection()), ask, log,
+      commit: (kind, pick, mech) => { const t = tryAdd(pick); if (!t.ok) return t.why; const own = mech && mapping[mech]; if (own && !own.primitives.includes(pick.id)) own.primitives.push(pick.id); return /** @type {any} */ (collection()); },
+      adopt: (insts, b) => { stepAdapters.push(...insts); Object.assign(stepBind, b); return /** @type {any} */ (collection()); } });
+    steps.push(...m.steps);
+    gaps.push(...m.gaps);
+  }
+  const all = collection();
   const caps = [...(variants[variant]?.caps || [])];
   return {
     version: BUILD_VERSION, loop: loopMechanicOf(decomposition), space: { id: sid, use, with: variants[variant]?.with || {}, role, caps }, spaceStep,
-    mapping, systems, adapters, bind, gaps, contracts, steps, calls, ms: Math.round(performance.now() - started),
+    mapping, systems, adapters: all.adapters, bind: all.bind, gaps, contracts, steps, calls, ms: Math.round(performance.now() - started),
   };
 }
 

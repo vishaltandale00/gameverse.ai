@@ -113,6 +113,9 @@ export function buildAnswer(req, { space = [], picks = {}, steps = {}, covered =
     const offered = props.pick.enum;
     return JSON.stringify({ pick: (picks[mechanic] || []).find(id => offered.includes(id)) || 'none', why: 'scripted', spec: '' });
   }
+  // build-steps.js adapterSteps: a nested mashup asks which declared outer event enters the inner loop (steps.trigger
+  // lists the scripted preference; otherwise the scripted model takes the first event offered).
+  if (name === 'pick_nested_trigger') { const offered = props.pick.enum.filter(x => x !== 'none'); return JSON.stringify({ pick: (steps.trigger || []).find(e => offered.includes(e)) || offered[0] || 'none', why: 'scripted' }); }
   const step = /^pick_(win|lose|driver|coverage)$/.exec(name)?.[1];
   if (step) {
     const offered = props.pick.enum;
