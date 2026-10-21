@@ -2,7 +2,7 @@
 // ({ id, damage, dps, status, respawn, kill }) is applied to an entity that
 // touches any of its sources:
 //   - static `volumes` [{ type, at, size }] in this instance;
-//   - entities with a `hazard` component ("type" | { type }), using their body box;
+//   - entities with a `hazard` component ({ type }), using their body box;
 //   - zones tagged `hazard:<type>` (or zone.rules.hazard = type);
 //   - cells whose content.blocks entry has `hazard: type` (editCells spaces);
 //   - the kill plane `killY`, a rising camera window (`window`) and the space's
@@ -25,7 +25,7 @@ export default {
     views: ['any'],
     params: {
       types: { type: 'list', default: [], of: { type: 'object', fields: {
-        id: { type: 'string', required: true },
+        id: { type: 'string', required: true, effect: 'the hazard type id (volumes, killType, hazard components and blocks name it)' },
         damage: { type: 'number', default: 0, min: 0, effect: 'damage on entry' },
         dps: { type: 'number', default: 0, min: 0, unit: 'hp/s', effect: 'damage per second while inside' },
         damageType: { type: 'string', effect: 'damage type passed to damage (default the hazard id)' },
@@ -36,12 +36,12 @@ export default {
         points: { type: 'number', default: 0, effect: 'score change on entry (negative for penalties)' },
         fx: { type: 'effects', default: [], effect: 'effects on entry (self = the entity hit)' },
       } }, effect: 'hazard types' },
-      volumes: { type: 'list', default: [], of: { type: 'object', fields: { type: { type: 'string', required: true }, at: { type: 'json', required: true }, size: { type: 'json', default: [1, 1, 1] }, space: { type: 'ref', to: 'space' } } }, effect: 'static hazard boxes' },
+      volumes: { type: 'list', default: [], of: { type: 'object', fields: { type: { type: 'ref', to: 'hazard_type', required: true }, at: { type: 'list', of: { type: 'number' }, min: 1, max: 3, required: true, effect: 'box corner in the space' }, size: { type: 'list', of: { type: 'number', min: 0 }, min: 1, max: 3, default: [1, 1, 1] }, space: { type: 'ref', to: 'space' } } }, effect: 'static hazard boxes' },
       affects: { type: 'string', default: 'health', options: ['player', 'health', 'all'], effect: 'who hazards apply to: the player, entities with health (and the player), or every entity with a body' },
       interval: { type: 'number', default: 0.5, min: 0.0167, max: 10, unit: 's', effect: 'damage-over-time tick' },
       fallDamage: { type: 'object', default: { minHeight: 0, perMeter: 0 }, fields: { minHeight: { type: 'number', default: 0, min: 0 }, perMeter: { type: 'number', default: 0, min: 0 }, type: { type: 'string', default: 'fall' } }, effect: 'landing damage; perMeter 0 disables' },
       killY: { type: 'number', effect: 'entities whose centre falls below this y touch hazard killType' },
-      killType: { type: 'string', default: '', effect: "hazard type for killY, window and bounds exits ('' = kill without a type)" },
+      killType: { type: 'ref', to: 'hazard_type', effect: 'hazard type for killY, window and bounds exits (unset: kill without a type)' },
       window: { type: 'object', default: { margin: 0 }, fields: { margin: { type: 'number', default: 0, min: 0, effect: 'rising camera: dying this far below the highest point reached; 0 disables' }, axis: { type: 'integer', default: 1, min: 0, max: 2 } }, effect: 'rising camera kill line (vertical climbers)' },
       bounds: { type: 'boolean', default: true, effect: 'leaving the space bounds() window (if the space has the bounds capability) or its out_of_bounds/scrolled_out events counts as killType' },
       boundsMargin: { type: 'number', default: 0, min: 0, effect: 'how far outside bounds() an entity may be' },
@@ -49,16 +49,10 @@ export default {
     provides: { events: ['respawned', 'hazard_hit', 'hazard_hit:*', 'hazard_exit', 'fell', 'hazard_killed'] },
     requires: { capabilities: ['position'] },
     reads: ['content.blocks', 'content.archetypes'],
-  },
-  validate(config, doc, ctx, inst = {}) {
-    const P = inst.path ? `${inst.path}.with` : undefined; // errors about this instance point at its `with`
-    const errors = [], ids = new Set(config.types.map(t => t.id));
-    const known = t => !t || ids.has(t);
-    for (const v of config.volumes) if (!known(v.type)) errors.push({ code: 'hazard_unknown', path: P, message: `volume uses unknown hazard type '${v.type}'` });
-    if (config.killType && !known(config.killType)) errors.push({ code: 'hazard_unknown', path: P, message: `killType '${config.killType}' is not a hazard type` });
-    (doc.content?.archetypes || []).forEach((a, i) => { const h = a.components?.hazard; const t = typeof h === 'string' ? h : h?.type; if (h != null && !known(t)) errors.push({ code: 'hazard_unknown', path: `content.archetypes[${i}].components.hazard`, message: `unknown hazard type '${t}'` }); });
-    (doc.content?.blocks || []).forEach((b, i) => { if (b.hazard != null && !known(b.hazard)) errors.push({ code: 'hazard_unknown', path: `content.blocks[${i}].hazard`, message: `unknown hazard type '${b.hazard}'` }); });
-    return errors;
+    defines: [{ kind: 'hazard_type', in: 'types' }],
+    data: { 'content.blocks': { type: 'list', of: { type: 'object', open: true, fields: { hazard: { type: 'ref', to: 'hazard_type', effect: 'cells of this block are this hazard' } } } } },
+    // Shapes of the archetype components this primitive owns.
+    components: { hazard: { type: 'object', fields: { type: { type: 'ref', to: 'hazard_type', required: true } }, effect: 'touching this entity is the hazard' } },
   },
   /** Solver key: which hazards entities are inside, not tick counters or remembered footing. */
   solverKey(rt) { return rt.state.prim[KEY]?.in || {}; },
@@ -81,7 +75,7 @@ export default {
       if (!isVec(p)) return out;
       const box = boxOf(rt, e), c = center(rt, e);
       for (const v of config.volumes) if ((v.space ?? rt.doc.spaces[0].id) === e.space) { const b = boxAt(rt, e.space, [...v.at, 0, 0, 0].slice(0, 3), [...v.size, 1, 1, 1].slice(0, 3)); if (boxesTouch(box, b)) out.add(v.type); }
-      for (const o of Object.values(rt.state.entities)) { const h = o.components.hazard; if (h == null || o === e || o.space !== e.space || !isVec(o.at)) continue; if (boxesTouch(box, boxOf(rt, o))) out.add(typeof h === 'string' ? h : h.type); }
+      for (const o of Object.values(rt.state.entities)) { const h = o.components.hazard; if (h == null || o === e || o.space !== e.space || !isVec(o.at)) continue; if (boxesTouch(box, boxOf(rt, o))) out.add(h.type); }
       const sp = spaceApi(rt, e);
       if (sp && typeof sp.getCell === 'function' && blocks().size) {
         const feet = cellPoint(rt, e).slice(); feet[1] = anchorOf(rt, e.space) === 'min' ? Math.floor(box.min[1] - 0.01) : feet[1] - (box.max[1] - box.min[1]) / 2 - 0.01;

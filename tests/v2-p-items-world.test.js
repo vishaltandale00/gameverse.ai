@@ -148,7 +148,7 @@ const cave = (combat = true) => doc({
     fallDamage: { minHeight: 3, perMeter: 2 }, killY: -1, killType: 'pit', window: { margin: 0 },
   } }],
   zones: [{ id: 'yard', rect: [0, 0, 8, 16] }, { id: 'magma', rect: [20, 0, 24, 16], tags: ['hazard:lava'] }],
-  content: { statuses: [{ id: 'burning', duration: 3 }], archetypes: [{ ...hero, components: { ...hero.components, health: health(100) } }, { id: 'spike_ball', kind: 'prop', components: { body: { size: [1, 1, 1] }, hazard: 'spikes' } }] },
+  content: { statuses: [{ id: 'burning', duration: 3 }], archetypes: [{ ...hero, components: { ...hero.components, health: health(100) } }, { id: 'spike_ball', kind: 'prop', components: { body: { size: [1, 1, 1] }, hazard: { type: 'spikes' } } }] },
 });
 
 test('hazard: volumes, entities, zones, falls and kill planes', () => {
@@ -208,7 +208,8 @@ test('hazard: replay is deterministic and bad configs are rejected', () => {
   d.systems[1].with.volumes.push({ type: 'quicksand', at: [0, 0] });
   d.systems[1].with.interval = 0;
   const c = codes(checkWith(d));
-  for (const code of ['param_option', 'hazard_unknown', 'param_range']) assert.ok(c.includes(code), code);
+  // Hazard types are a declared kind (card.defines hazard_type): an unknown volume type is ref_unknown (was hazard_unknown).
+  for (const code of ['param_option', 'ref_unknown', 'param_range']) assert.ok(c.includes(code), code);
 });
 
 test('hazard: v2/games instances preflight without param errors', () => {
