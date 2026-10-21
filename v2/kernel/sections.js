@@ -77,7 +77,6 @@ function refineScalar(a, b, path, conflicts) {
   /** @type {Record<string, unknown>} */
   const out = { ...a };
   const bad = [];
-  if (a.type !== b.type) bad.push('type');
   for (const [k, v] of Object.entries(strip(b))) {
     const was = /** @type {Record<string, unknown>} */ (a)[k];
     if (k === 'required') out.required = Boolean(was || v) || undefined;
