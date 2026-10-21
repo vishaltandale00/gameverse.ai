@@ -10,6 +10,12 @@ import { checkComposition } from '../v2/planner/compose-check.js';
 import { resolveAdapters, adaptersFor } from '../v2/planner/adapters.js';
 
 const { registry, logic } = catalogue();
+// card.mode.space now accepts any space with the listed capabilities (['position'] for turns, ['position', 'distance'] for
+// race), so neither loop lacks anything on a tilemap by itself. These tests are about the adapter, so they state the
+// need explicitly: the turn board plays on cell occupancy, the race on a gravity-bearing course.
+const needs = (id, capabilities) => { registry.get(id).card.requires = { ...registry.get(id).card.requires, capabilities }; };
+needs('gameplay.turns', ['occupancy']);
+needs('gameplay.race', ['position', 'gravity']);
 const world = { id: 'world', use: 'engine.space.tilemap', with: { size: [20, 12], mode: 'topdown' } };
 
 test('(d) a turn board on a tile overworld: needs-adapter becomes compatible-via-adapter with a projected grid', () => {

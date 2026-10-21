@@ -4,13 +4,15 @@
 import { checkFields } from '../../kernel/params.js';
 
 /** The space/generator part of a game document, keeping only instances whose primitives are registered. */
-export function worldOnly(doc, registry, { spaces } = {}) {
+export function worldOnly(doc, registry, { spaces, systems } = {}) {
   const keep = s => !spaces || spaces.includes(s.id);
   const out = {
     schema: doc.schema, id: doc.id, title: doc.title, seed: doc.seed,
     spaces: doc.spaces.filter(keep).filter(s => registry.has(s.use)).map(s => ({ ...structuredClone(s), generators: (s.generators || []).filter(g => registry.has(g.use)) })),
-    content: { blocks: doc.content?.blocks, models: doc.content?.models, archetypes: doc.content?.archetypes, tables: doc.content?.tables },
+    content: { blocks: doc.content?.blocks, models: doc.content?.models, archetypes: doc.content?.archetypes, tables: doc.content?.tables, items: doc.content?.items },
   };
+  // Systems named here stay: they own the predicates (item, ability, gate...) the generators' gates are written in.
+  if (systems) out.systems = (doc.systems || []).filter(x => systems.includes(x.use));
   for (const k of Object.keys(out.content)) if (out.content[k] === undefined) delete out.content[k];
   if (doc.player && out.spaces.some(s => s.id === doc.player.space)) out.player = { archetype: doc.player.archetype, space: doc.player.space, at: doc.player.at };
   return out;
