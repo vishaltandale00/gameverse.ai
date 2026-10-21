@@ -30,12 +30,13 @@ const card = {
     grid: { type: 'number', min: 1, max: 256, unit: 'm', scale: 'world', effect: 'routing grid cell (default: world extent / 192)' },
     drive: { type: 'string', options: ['right', 'left'], default: 'right', effect: 'which side traffic drives on (lane placement)' },
     clearance: { type: 'number', min: 0.5, max: 30, default: 2.5, unit: 'm', effect: 'bridge deck height above water' },
-    lineBlock: { type: 'string', default: 'road_line', effect: 'voxel: dashed centre-line block (skipped if absent)' },
-    sidewalkBlock: { type: 'string', default: 'concrete', effect: 'voxel: sidewalk block' },
-    deckBlock: { type: 'string', default: 'planks', effect: 'voxel: bridge deck block' },
+    lineBlock: { type: 'ref', to: 'block', default: 'road_line', effect: 'voxel: dashed centre-line block (skipped if absent)' },
+    sidewalkBlock: { type: 'ref', to: 'block', default: 'concrete', effect: 'voxel: sidewalk block' },
+    deckBlock: { type: 'ref', to: 'block', default: 'planks', effect: 'voxel: bridge deck block' },
   },
   provides: { content: ['road-network'], extent: 'overlay', services: ['roadgraph'], events: [] },
   reads: [],
+  rules: { road_link_self: { fields: ['links[].from', 'links[].to'], message: 'a link joins two different zones (to differs from from)' } },
 };
 
 const ROAD_BLOCKS = [['asphalt', '#3a3a3a'], ['road_line', '#e8e2c8'], ['concrete', '#a9a9a9'], ['planks', '#a0763f']];
@@ -73,7 +74,7 @@ export default {
     return out;
   },
   validate(config) {
-    return (config.links || []).flatMap((l, i) => (l.from === l.to ? [{ code: 'road_link_self', path: `with.links[${i}]`, message: `link from '${l.from}' to itself` }] : []));
+    return (Array.isArray(config.links) ? config.links : []).flatMap((l, i) => (l.from === l.to ? [{ code: 'road_link_self', path: `with.links[${i}]`, message: `link from '${l.from}' to itself` }] : []));
   },
   install(rt, raw, instance) {
     const config = withDefaults(card, raw), model = generatorModel(rt, instance);

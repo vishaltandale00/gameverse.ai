@@ -20,7 +20,7 @@ export function worldOnly(doc, registry, { spaces, systems } = {}) {
 
 /** Param errors for every instance of `ids` in a document (spaces and generators), via the cards' params. */
 export function instanceParamErrors(doc, registry, ids) {
-  const errors = [], indexes = { zone: new Set(doc.spaces.flatMap(s => (s.zones || []).map(z => z.id))), block: new Set((doc.content?.blocks || []).map(b => b.id)), model: new Set(Object.keys(doc.content?.models || {})), archetype: new Set((doc.content?.archetypes || []).map(a => a.id)), biome: new Set() };
+  const errors = [], indexes = { zone: new Set(doc.spaces.flatMap(s => (s.zones || []).map(z => z.id))), block: new Set((doc.content?.blocks || []).map(b => b.id)), model: new Set(Object.keys(doc.content?.models || {})), archetype: new Set((doc.content?.archetypes || []).map(a => a.id)), table: new Set((doc.content?.tables || []).map(t => t.id)), item: new Set((doc.content?.items || []).map(t => t.id)), prefab: new Set((doc.content?.structures || []).map(t => t.id)), biome: new Set() };
   for (const s of doc.spaces) for (const g of s.generators || []) if (g.use === 'engine.generate.biomes') for (const b of g.with?.biomes || []) indexes.biome.add(b.id);
   const ctx = { indexes, checkPredicate() {}, checkEffect() {} };
   doc.spaces.forEach((s, i) => {

@@ -44,18 +44,18 @@ const codes = doc => preflight(doc, registry, logic).errors.map(e => e.code);
 test('nature: preflight accepts the worlds and rejects bad generator configs with stable codes', () => {
   assert.deepEqual(codes(isle()), []);
   assert.deepEqual(codes(vale()), []);
-  assert.ok(codes(isle({ terrain: { blocks: { surface: 'moss', sub: 'dirt', stone: 'stone', bedrock: 'bedrock', shore: 'sand', underwater: 'gravel' } } })).includes('block_unknown'));
+  assert.ok(codes(isle({ terrain: { blocks: { surface: 'moss', sub: 'dirt', stone: 'stone', bedrock: 'bedrock', shore: 'sand', underwater: 'gravel' } } })).includes('ref_unknown'));
   assert.ok(codes(isle({ terrain: { extent: [10, 10, 0, 0] } })).includes('terrain_extent_invalid'));
   assert.ok(codes(isle({ terrain: { octaves: 12 } })).includes('param_range'));
   assert.ok(codes(isle({ biomes: { regions: [{ zone: 'meadow', biome: 'jungle' }] } })).includes('ref_unknown'));
   assert.ok(codes(isle({ biomes: { regions: [{ zone: 'atlantis', biome: 'plains' }] } })).includes('ref_unknown'));
   assert.ok(codes(isle({ biomes: { biomes: [{ id: 'a', temp: [0.9, 0.1] }, { id: 'a' }] } })).includes('biome_range_invalid'));
-  assert.ok(codes(isle({ water: { lakeRadius: [30, 10] } })).includes('param_range'));
-  assert.ok(codes(isle({ water: { block: 'goo' } })).includes('block_unknown'));
-  assert.ok(codes(isle({ caves: { minY: 50, maxY: 10 } })).includes('param_range'));
-  assert.ok(codes(isle({ caves: { lavaBlock: 'magma' } })).includes('block_unknown'));
+  assert.ok(codes(isle({ water: { lakeRadius: [30, 10] } })).includes('range_reversed'));
+  assert.ok(codes(isle({ water: { block: 'goo' } })).includes('ref_unknown'));
+  assert.ok(codes(isle({ caves: { minY: 50, maxY: 10 } })).includes('range_reversed'));
+  assert.ok(codes(isle({ caves: { lavaBlock: 'magma' } })).includes('ref_unknown'));
   assert.ok(codes(isle({ ores: { veins: [{ block: 'mithril' }] } })).includes('ref_unknown'));
-  const badPred = isle(); badPred.systems = [{ use: 'plot.storyboard' }]; badPred.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'b', when: { biome: 'swamp' }, do: [] }] }] } };
+  const badPred = isle(); badPred.systems = [{ use: 'plot.storyboard' }]; badPred.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'b', when: { biome: ['swamp'] }, do: [] }] }] } };
   assert.ok(codes(badPred).includes('ref_unknown'));
 });
 
@@ -89,7 +89,7 @@ test('nature: island falloff, land zones, column layers and biome surfaces on vo
 
 test('nature: the biome predicate drives the story through rt.step', () => {
   const doc = isle(); doc.systems = [{ use: 'plot.storyboard' }];
-  doc.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'in_plains', when: { biome: 'plains' }, do: [{ do: 'set_flag', flag: 'saw_plains' }] }, { id: 'in_desert', when: { biome: ['desert', 'tundra'] }, do: [{ do: 'set_flag', flag: 'saw_far' }] }] }] } };
+  doc.plot = { storyboard: { acts: [{ id: 'a', beats: [{ id: 'in_plains', when: { biome: ['plains'] }, do: [{ do: 'set_flag', flag: 'saw_plains' }] }, { id: 'in_desert', when: { biome: ['desert', 'tundra'] }, do: [{ do: 'set_flag', flag: 'saw_far' }] }] }] } };
   const { rt } = make(doc);
   rt.step();
   assert.equal(rt.state.flags.saw_plains, true);
