@@ -162,9 +162,12 @@ export async function ensureAgency({ decomposition, selection, registry, logic, 
       // The idea's primary view decides the kind of movement (td -> top-down, side -> platformer...): a mover must support
       // it. Ties go to the mover that asks least of the space, never to the one with the biggest jump.
       const primary = (decomposition.views || []).find(v => v !== 'ui') || null;
+      // The medium the idea moves through (cards declare medium): ground unless the idea is about flying, swimming or a track.
+      const text = JSON.stringify(decomposition.mechanics || []).toLowerCase();
+      const wanted = /\b(fly|flying|flight|soar|jetpack)\b/.test(text) ? 'air' : /\b(swim|underwater|dive)\b/.test(text) ? 'water' : /\b(runner|lanes?)\b/.test(text) ? 'track' : 'ground';
       const movers = registry.cards('gameplay').filter(c => c.locomotion === 'base' && (c.envelope || registry.get(c.id).envelope) && !current.systems.includes(c.id) && (c.requires?.capabilities || []).every(x => caps.has(x))
           && (!primary || (c.views || []).includes(primary) || (c.views || []).includes('any')))
-        .map(c => ({ id: c.id, score: ((c.views || []).includes(primary) ? 10 : 1) - (c.requires?.capabilities || []).length * 0.1 }))
+        .map(c => ({ id: c.id, score: ((c.views || []).includes(primary) ? 10 : 1) + (c.medium === wanted ? 5 : 0) - (c.requires?.capabilities || []).length * 0.1 }))
         .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, 3);
       let moved = null;
       for (const m of movers) {

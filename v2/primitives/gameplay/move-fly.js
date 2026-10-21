@@ -21,7 +21,7 @@ function envelope(config, abilities = new Set()) {
 export default {
   id: ID,
   card: {
-    locomotion: 'base', // base: moves the player on its own; modifier: adds a move on top of base locomotion
+    locomotion: 'base', medium: 'air', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     intent: 'Flight: free 3D/side flight with ascend and descend, or jetpack thrust against gravity, always on or toggled by a verb or a double jump, optionally burning fuel. Use it for creative-mode flying, wings, jetpacks, flying NPCs and drones.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
