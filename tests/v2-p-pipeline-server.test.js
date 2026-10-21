@@ -95,7 +95,7 @@ test('the server builds kernel games, revises them, and refuses to route anythin
   const cat = await call('GET', '/api/v2/catalog');
   assert.ok(cat.json.primitives.some(p => p.id === 'plot.storyboard'));
   assert.equal(cat.json.writers.spec, 'fake-writer');
-  const { json: created } = await call('POST', '/api/v2/games', { prompt: 'a lighthouse mystery with tides: find the key' });
+  const { json: created } = await call('POST', '/api/v2/games', { prompt: 'a mystery in a lighthouse: find the key' });
   const finished = done(created.gameId);
   assert.equal((await finished).type, 'job_done');
   const { json: game } = await call('GET', `/api/v2/games/${created.gameId}`);

@@ -109,7 +109,7 @@ const MAX_CONCEPTS = 8, MAX_MECHANICS = 16;
 /** @typedef {{ name: string, schema: Record<string, any> }} StepSchema */
 
 const PREAMBLE = `You decompose a player's game idea into what it is made of, one small step at a time; the earlier steps are given. Example names are illustrations only; decompose THIS idea.`;
-const STEP_CONCEPTS = `Step: the idea's source concepts. List every game, genre, theme, setting or character the idea names or clearly implies, each as its own concept: an idea that joins two games has two concepts, and "X in a haunted library" has X and the haunted library. id: a lowercase slug. name: as the idea names it. quote: the words of the idea that name or imply it, verbatim. kind: game, genre, theme, setting, character or other. brings: "loop" when the idea plays that concept's own core loop (how a round of it is played out and won: a chess match, a creature battle, a race), "content" when it only brings theme, setting, cast or look (themes, settings and characters always bring content). keeps: what the idea takes from it.`;
+const STEP_CONCEPTS = `Step: the idea's source concepts. references: every game, genre, theme, setting or character the idea names or clearly implies, as the idea names it, each with the id of the concept it belongs to. concepts: what those references bring to the idea; a game, genre or theme the idea joins is a concept of its own (an idea that joins two games has two concepts, and "X in a haunted library" has X and the haunted library), while a feature of one concept ("a platformer with double jumps") is not. id: a lowercase slug. name: as the idea names it. quote: the words of the idea that name or imply it, verbatim. kind: game, genre, theme, setting, character or other. brings: "loop" when the idea plays that concept's own core loop (how a round of it is played out and won: a chess match, a creature battle, a race), "content" when it only brings theme, setting, cast or look (themes, settings and characters always bring content). keeps: what the idea takes from it.`;
 const STEP_MECHANICS = `Step: the mechanics ONE concept brings to this idea, as short verb-led phrases that make sense in any game ("catch wild creatures and keep a party", "turn-based battles between party members", "drive vehicles"). Only this concept's own mechanics (every one has from = this concept's id); the other concepts give theirs separately. A concept that brings a loop has exactly one mechanic with role "loop": its own core loop as played in this idea (how a round of it is played out and won), then its other defining mechanics the idea keeps (role core, supporting or flavor). A concept that brings only content has no loop mechanic: only the mechanics its content needs, often none ([]). Don't invent mechanics the idea doesn't need. id: a lowercase slug, unique in the game.`;
 const STEP_SPEC = `Step: the play spec, in the idea's own terms. interaction: how the player plays (avatar-realtime: steers a character in real time; avatar-grid: a character stepping cell by cell; pieces-turns: moves pieces in turns; cursor-board: picks cells or pieces on a board; menu: picks options). opponent: who plays against the player. loop: the loop mechanic the game is built around (the primary concept's). win and lose: each a sentence in the game's own terms saying how the player wins and how the player loses ("checkmate the rival's king", "your king is checkmated"), never an id; lose is '' only when the game cannot be lost. theme: a few words. narrative: true only when the idea has a story told in acts. mashup: when two or more concepts bring their own loop, one entry per joined concept relating mechanics ACROSS concepts: first the primary concept's mechanic it joins into, then the joined concept's own mechanics, its loop first; relation nested (its loop is entered from the other, e.g. a creature battle deciding a chess capture), union (both loops run in one space) or skin (only its content and cast fill the other's slots, e.g. creatures as the chess pieces). A concept that brings only content joins as skin or not at all. [] for an idea with one loop and nothing to skin.`;
 /** The SYSTEM rules for the rest (spaces, views, movement, acts and zones, title), one source for both prompts. @param {string[]} keys */
@@ -117,7 +117,9 @@ const rules = keys => SYSTEM.split('\n').filter(l => keys.some(k => l.startsWith
 
 /** Step 1's form. @returns {StepSchema} */
 export function conceptsSchema() {
-  return { name: 'idea_concepts', schema: { type: 'object', additionalProperties: false, required: ['concepts'], properties: {
+  return { name: 'idea_concepts', schema: { type: 'object', additionalProperties: false, required: ['references', 'concepts'], properties: {
+    references: { type: 'array', description: 'every game, genre, theme, setting or character the idea names or clearly implies, as the idea names it, with the id of the concept it belongs to', items: { type: 'object', additionalProperties: false, required: ['name', 'concept'], properties: {
+      name: str, concept: { type: 'string', description: 'the id of the concept (concepts[].id) it belongs to' } } } },
     concepts: { type: 'array', description: 'every game, genre, theme, setting or character the idea names or clearly implies, each its own concept', items: { type: 'object', additionalProperties: false, required: ['id', 'name', 'quote', 'kind', 'brings', 'keeps'], properties: {
       id: { type: 'string', description: 'a lowercase slug' }, name: str, quote: { type: 'string', description: 'the words of the idea that name or imply it, verbatim' },
       kind: { type: 'string', enum: CONCEPT_KINDS }, brings: { type: 'string', enum: BRINGS, description: 'loop: the idea plays its own core loop; content: only its theme, setting, cast or look' },
@@ -154,53 +156,32 @@ export function restSchemas(avatar) {
 
 /** Lowercase words without diacritics (Pokémon = pokemon). @param {unknown} text @returns {string[]} */
 const wordsOf = text => String(text || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().match(/[a-z0-9]+/g) || [];
-/** Words that join or frame an idea and name no concept. */
-const STOP = new Set('a an the of in on at to for and or but with without into onto by from as is are be it its this that these those which where who what when while you your game games gaming style like version edition meets plus vs versus set'.split(' '));
-/** The words of a text that can name a concept. @param {unknown} text */
-const contentWords = text => wordsOf(text).filter(w => w.length > 1 && !STOP.has(w));
-/** The words that join concepts in an idea ("chess but with pokemon", "Pac-Man in a haunted library", "A × B"). */
-const JOINS = /\s*(?:×|\+|&|\/|\bx\b|\bmeets\b|\bcrossed with\b|\bmixed with\b|\bbut with\b|\bbut\b|\bwith\b|\bin the style of\b|\bplus\b|\bvs\b\.?|\bversus\b|\bset in\b|\bin (?:a|an|the)\b)\s*/i;
-
 /**
- * The parts of an idea its joining words separate, each with the words that can name a concept (parts naming none are
- * left out). "chess but with pokemon" has two parts; "a farming game" one. @param {string} prompt @returns {Array<{ text: string, words: string[] }>}
+ * Step 1's check, on declarations and the answer alone: concepts exist (at most MAX_CONCEPTS) with unique ids and a known
+ * kind; themes, settings and characters bring no loop, and at least one concept does; and every reference the answer
+ * itself names (references[].concept) maps to one of its concepts, so a model that names Pokémon but folds it into
+ * chess is asked again.
+ * @param {Concept[]} concepts @param {Array<{ name: string, concept: string }>} references @returns {StepProblem[]}
  */
-export const ideaParts = prompt => prompt.split(JOINS).map(text => ({ text: text.trim(), words: contentWords(text) })).filter(p => p.words.length);
-
-/**
- * Step 1's check: concepts exist (at most MAX_CONCEPTS) with unique ids; themes, settings and characters bring no loop;
- * at least one concept brings a loop; and every part of the idea its joining words separate is named (name or quote) by
- * a concept of its own (a matching: one concept cannot stand for two parts), so an idea naming two games yields ≥ 2.
- * @param {Concept[]} concepts @param {string} prompt @returns {StepProblem[]}
- */
-export function conceptProblems(concepts, prompt) {
+export function conceptProblems(concepts, references) {
   /** @type {string[]} */
   const why = [];
   if (!concepts.length) why.push('no concept: list the games, genres, themes or settings the idea names or implies');
   if (concepts.length > MAX_CONCEPTS) why.push(`${concepts.length} concepts: at most ${MAX_CONCEPTS}`);
   const dup = concepts.map(c => c.id).filter((id, i, a) => a.indexOf(id) !== i);
   if (dup.length) why.push(`ids ${[...new Set(dup)].join(', ')} are used twice: each concept has its own id`);
+  const kindless = concepts.filter(c => !CONCEPT_KINDS.includes(c.kind));
+  if (kindless.length) why.push(`${kindless.map(c => `${c.id} ('${c.kind.slice(0, 30)}')`).join(', ')} ha${kindless.length === 1 ? 's' : 've'} no kind (${CONCEPT_KINDS.join(', ')})`);
   for (const c of concepts) if (c.brings === 'loop' && CONTENT_KINDS.includes(c.kind)) why.push(`${c.id} is a ${c.kind} but brings a loop: a ${c.kind} brings content only`);
   if (concepts.length && !concepts.some(c => c.brings === 'loop')) why.push('no concept brings a loop: the concept whose game the idea plays brings its loop');
-  const parts = ideaParts(prompt);
-  if (parts.length >= 2 && concepts.length) {
-    const names = concepts.map(c => new Set(contentWords(`${c.name} ${c.quote}`)));
-    /** @type {number[]} part index -> concept index */
-    const match = parts.map(() => -1);
-    /** Kuhn's augmenting path over concepts. @param {number} ci @param {Set<number>} seen @returns {boolean} */
-    const assign = (ci, seen) => {
-      for (let pi = 0; pi < parts.length; pi++) {
-        if (seen.has(pi) || !parts[pi].words.some(w => names[ci].has(w))) continue;
-        seen.add(pi);
-        if (match[pi] < 0 || assign(match[pi], seen)) { match[pi] = ci; return true; }
-      }
-      return false;
-    };
-    concepts.forEach((_, ci) => assign(ci, new Set()));
-    const unnamed = parts.filter((_, pi) => match[pi] < 0).map(p => `'${p.text}'`);
-    if (unnamed.length) why.push(`the idea joins ${parts.map(p => `'${p.text}'`).join(' and ')}, but ${unnamed.join(' and ')} ${unnamed.length === 1 ? 'is' : 'are'} named by no concept of its own (name or quote): give each game, genre or theme the idea joins its own concept`);
-  }
-  return why.map(message => ({ field: 'concepts', message }));
+  /** @type {StepProblem[]} */
+  const out = why.map(message => ({ field: 'concepts', message }));
+  if (!references.length) out.push({ field: 'references', message: 'empty: name every game, genre, theme, setting or character the idea names or implies, with its concept' });
+  const ids = new Set(concepts.map(c => c.id));
+  const unmapped = references.filter(r => !ids.has(r.concept));
+  // Re-asked together: the missing concept is added, or the reference names the concept it belongs to.
+  if (unmapped.length) for (const field of ['concepts', 'references']) out.push({ field, message: `${unmapped.map(r => `'${r.name}' (concept '${r.concept}')`).join(', ')} map${unmapped.length === 1 ? 's' : ''} to no concept: every reference the idea names belongs to one of the concepts (give it its own concept, or the id of the one it belongs to)` });
+  return out;
 }
 
 /**
@@ -267,9 +248,10 @@ export function specProblems(spec, { concepts, mechanics }) {
   return out;
 }
 
-/** Step 1's reply, narrowed. @param {unknown} v @returns {{ concepts: Concept[] }} */
-const narrowConcepts = v => ({ concepts: objects(prop(v, 'concepts')).map(c => ({ id: slug(c.id || c.name), name: String(c.name || c.id || '').slice(0, 80), quote: String(c.quote || '').slice(0, 120),
-  kind: isStr(c.kind) && CONCEPT_KINDS.includes(c.kind) ? String(c.kind) : 'other', brings: c.brings === 'loop' ? /** @type {const} */ ('loop') : /** @type {const} */ ('content'), keeps: list(c.keeps).map(String).slice(0, 8) })) });
+/** Step 1's reply, narrowed (a kind is kept as written: the check reports an unknown one). @param {unknown} v @returns {{ references: Array<{ name: string, concept: string }>, concepts: Concept[] }} */
+const narrowConcepts = v => ({ references: objects(prop(v, 'references')).map(r => ({ name: String(r.name || '').slice(0, 80), concept: slug(r.concept) })),
+  concepts: objects(prop(v, 'concepts')).map(c => ({ id: slug(c.id || c.name), name: String(c.name || c.id || '').slice(0, 80), quote: String(c.quote || '').slice(0, 120),
+  kind: String(c.kind || ''), brings: c.brings === 'loop' ? /** @type {const} */ ('loop') : /** @type {const} */ ('content'), keeps: list(c.keeps).map(String).slice(0, 8) })) });
 /** Step 2's reply, narrowed. @param {unknown} v @returns {{ mechanics: ConceptMechanic[] }} */
 const narrowMechanics = v => ({ mechanics: objects(prop(v, 'mechanics')).map(m => ({ id: slug(m.id || m.verb || m.description), verb: String(m.verb || '').slice(0, 60), description: String(m.description || m.verb || '').slice(0, 240), from: String(m.from || ''), role: String(m.role || '') })) });
 /** Step 3's reply, narrowed (relations kept as written: the check reports an unknown one, nothing drops it). @param {unknown} v @returns {SpecDraft} */
@@ -342,7 +324,7 @@ export async function decomposeIdea({ writer = null, escalate = null, prompt, an
   const base = { writer, escalate, attempts, calls };
 
   // 1. Concepts.
-  const { concepts } = await askStep({ ...base, step: 'concepts', system: `${PREAMBLE}\n${STEP_CONCEPTS}`, user: idea, schema: conceptsSchema(), narrow: narrowConcepts, check: v => conceptProblems(v.concepts, prompt) });
+  const { concepts } = await askStep({ ...base, step: 'concepts', system: `${PREAMBLE}\n${STEP_CONCEPTS}`, user: idea, schema: conceptsSchema(), narrow: narrowConcepts, check: v => conceptProblems(v.concepts, v.references) });
   const conceptList = concepts.map(c => `- ${c.id} (${c.kind}, brings ${c.brings}): ${c.name}${c.keeps.length ? `; keeps ${c.keeps.join(', ')}` : ''}`).join('\n');
 
   // 2. Each concept's mechanics, in parallel; then ids unique across concepts (a clash re-asks the later concept).

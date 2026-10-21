@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { decomposeIdea, conceptProblems, ideaParts, notASentence } from '../v2/planner/decompose.js';
+import { decomposeIdea, conceptProblems, notASentence } from '../v2/planner/decompose.js';
 import { conceptMashupProblem } from '../v2/planner/play-spec.js';
 import { worklist, loopMechanicOf } from '../v2/planner/build.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
@@ -33,16 +33,19 @@ const CHESS_PLAN = { concepts: [CHESS, POKEMON], mechanics: { chess: CHESS_MECHA
   about: { title: 'Pocket Gambit', premise: 'Chess where every capture is a creature battle. Win the battle, take the square.', tone: 'bright, tactical' },
   where: { spaces: [{ role: 'board', kind: 'board', description: '8x8' }, { role: 'arena', kind: 'none', description: 'the battle screen' }], views: ['board', 'ui'] } };
 
-test('the check behind step 1: the joining words split an idea into parts, each named by a concept of its own', () => {
-  assert.deepEqual(ideaParts('chess but with pokemon').map(p => p.text), ['chess', 'pokemon']);
-  assert.deepEqual(ideaParts('Pac-Man in a haunted library').map(p => p.text), ['Pac-Man', 'haunted library']);
-  assert.equal(ideaParts('a farming game').length, 1);
-  assert.deepEqual(conceptProblems([CHESS, POKEMON], 'chess but with pokemon'), []);
-  // One concept cannot stand for two parts, even when its name or quote spans them.
-  const one = conceptProblems([{ ...CHESS, quote: 'chess but with pokemon' }], 'chess but with pokemon');
-  assert.equal(one.length, 1);
-  assert.match(one[0].message, /'pokemon' is named by no concept/);
-  assert.match(conceptProblems([{ ...CHESS, kind: 'setting' }], 'chess').map(p => p.message).join(), /a setting brings content only/);
+test('the check behind step 1 reads only the answer and the declarations, never the idea\'s words', () => {
+  const refs = [{ name: 'Chess', concept: 'chess' }, { name: 'Pokémon', concept: 'pokemon' }];
+  assert.deepEqual(conceptProblems([CHESS, POKEMON], refs), []);
+  // A reference the answer names but folds into no concept of its own: concepts and references are asked again.
+  const folded = conceptProblems([CHESS], refs);
+  assert.deepEqual(folded.map(p => p.field), ['concepts', 'references']);
+  assert.match(folded[0].message, /'Pokémon' \(concept 'pokemon'\) maps to no concept/);
+  // A feature of one concept is not a concept: one reference, one concept, no problem.
+  assert.deepEqual(conceptProblems([{ ...CHESS, id: 'platformer', name: 'platformer', kind: 'genre' }], [{ name: 'a platformer', concept: 'platformer' }]), []);
+  assert.match(conceptProblems([{ ...CHESS, kind: 'setting' }], refs.slice(0, 1)).map(p => p.message).join(), /a setting brings content only/);
+  assert.match(conceptProblems([{ ...CHESS, kind: 'franchise' }], refs.slice(0, 1)).map(p => p.message).join(), /chess \('franchise'\) has no kind/);
+  assert.match(conceptProblems([{ ...CHESS, brings: 'content' }], refs.slice(0, 1)).map(p => p.message).join(), /no concept brings a loop/);
+  assert.match(conceptProblems([CHESS, CHESS], refs.slice(0, 1)).map(p => p.message).join(), /ids chess are used twice/);
   assert.equal(notASentence('checkmate-win-condition', new Set()), "'checkmate-win-condition' is an id-like token");
   assert.equal(notASentence('checkmate', new Set()), "'checkmate' is an id-like token");
   assert.equal(notASentence("checkmate the rival's king", new Set()), null);
@@ -94,14 +97,15 @@ test('(a) a mashup that leaves a loop-bringing concept unlinked is re-asked as t
 });
 
 test('(b) a model that tags everything with one concept is re-asked at step 1 and step 2 only', async () => {
-  // Step 1: one concept for two games; step 2: Pokémon's form answered with chess's mechanics (from chess).
+  // Step 1: Pokémon named as a reference but folded into chess; step 2: Pokémon's form answered with chess's mechanics.
+  const refs = [{ name: 'chess', concept: 'chess' }, { name: 'pokemon', concept: 'pokemon' }];
   const writer = writerOf({ ...CHESS_PLAN,
-    concepts: (req, n) => ({ concepts: n === 0 ? [{ ...CHESS, quote: 'chess but with pokemon' }] : [CHESS, POKEMON] }),
+    concepts: (req, n) => ({ references: refs, concepts: n === 0 ? [{ ...CHESS, quote: 'chess but with pokemon' }] : [CHESS, POKEMON] }),
     mechanics: (req, n, concept) => ({ mechanics: concept === 'chess' ? CHESS_MECHANICS : n === 0 ? CHESS_MECHANICS : POKEMON_MECHANICS }) });
   const d = await decomposeIdea({ writer, prompt: 'chess but with pokemon', registry });
   assert.deepEqual(forms(writer), ['idea_concepts', 'idea_concepts_fields', 'concept_mechanics:chess', 'concept_mechanics:pokemon', 'concept_mechanics_fields:pokemon', 'play_spec', 'idea_about', 'idea_spaces']);
-  assert.deepEqual(slotsOf(writer.calls[1]), ['concepts']);
-  assert.match(writer.calls[1].user, /'pokemon' is named by no concept of its own/);
+  assert.deepEqual(slotsOf(writer.calls[1]), ['concepts', 'references']);
+  assert.match(writer.calls[1].user, /'pokemon' \(concept 'pokemon'\) maps to no concept/);
   const pokemon = writer.calls.find(c => c.schema.name === 'concept_mechanics_fields');
   assert.match(pokemon.user, /chess_match \(from 'chess'\).*not pokemon's/);
   assert.deepEqual(d.concepts.map(c => c.id), ['chess', 'pokemon']);

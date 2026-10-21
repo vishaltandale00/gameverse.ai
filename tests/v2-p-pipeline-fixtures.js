@@ -132,9 +132,11 @@ export function decomposer(plan) {
     const n = asked.get(tag) || 0;
     asked.set(tag, n + 1);
     const given = plan[key] ?? DECOMPOSE_DEFAULTS[key];
-    const v = typeof given === 'function' ? given(req, n, concept)
+    let v = typeof given === 'function' ? given(req, n, concept)
       : key === 'concepts' ? { concepts: given } : key === 'mechanics' ? { mechanics: given[concept] || [] } : given;
     if (typeof v === 'string') return v;
+    // Step 1 names its references: unless the plan scripts them, one per concept, by its name.
+    if (key === 'concepts' && !v.references) v = { references: v.concepts.map(c => ({ name: c.name, concept: c.id })), ...v };
     if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, v[p.description.split(':')[0]]])));
     return JSON.stringify(v);
   };
