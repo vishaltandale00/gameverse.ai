@@ -134,7 +134,10 @@ test('blocks.place: replay and bad config codes', () => {
 });
 
 // ---------- farming ----------
-const farm = () => world([{ use: 'gameplay.farming', with: { crops: [{ item: 'wheat', seed: 'seeds', days: 2, seasons: ['spring', 'summer'], yield: [2, 3], block: 'crop_wheat', regrow: 1 }], tillable: ['dirt'] } }], [{ item: 'hoe' }, { item: 'seeds', count: 3 }]);
+// A side-on world (the test space with depth has up = y, card.frame): the stage block goes in the cell above the farmland.
+// (Corrected expectation: this world was a plane seen from above, where [2, 1, 0] is the neighbouring field cell, not
+// the cell above; the plane case is the farm template test below.)
+const farm = () => { const d = world([{ use: 'gameplay.farming', with: { crops: [{ item: 'wheat', seed: 'seeds', days: 2, seasons: ['spring', 'summer'], yield: [2, 3], block: 'crop_wheat', regrow: 1 }], tillable: ['dirt'] } }], [{ item: 'hoe' }, { item: 'seeds', count: 3 }]); d.spaces[0].with.size = [32, 16, 2]; return d; };
 
 test('farming: till, plant, water, grow by day and season, harvest, regrow, wither', () => {
   assert.ok(checkWith(farm()).ok, JSON.stringify(checkWith(farm()).errors));
@@ -169,6 +172,31 @@ test('farming: till, plant, water, grow by day and season, harvest, regrow, with
   rt.run([{ do: 'take_item', item: 'hoe' }]);
   rt.step({ actions: { till: { cell: [3, 0, 0] } } });
   assert.equal(rt.state.events.find(e => e.name === 'farm_denied').reason, 'tool');
+});
+
+test('farming on a plane seen from above (the farm template): a crop\'s stage block never lands on another cell; its mark shows the stage', async () => {
+  const { default: tpl } = await import('../v2/templates/farm.js');
+  const d = structuredClone(tpl.doc), sid = d.spaces[0].id;
+  d.content.blocks.push({ id: 'sprout', name: 'Sprout', solid: false, tile: 'grass', color: '#7ac050' });
+  const farming = d.systems.find(s => s.use === 'gameplay.farming');
+  for (const c of farming.with.crops) { c.block = 'sprout'; c.water = false; }
+  farming.with.daySec = 1;
+  const { rt } = make(d), sp = rt.space(sid), [w, h] = d.spaces[0].with.size;
+  const cells = () => { const out = {}; for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) out[`${x},${y}`] = sp.getCell([x, y, 0]); return out; };
+  // Every cell next to the player gets a plot, so a stage block written "above" any of them would land on a plot or the field.
+  const p = rt.player().at, plots = [[1, 0], [0, 1], [-1, 0], [0, -1]].map(([dx, dy]) => [p[0] + dx, p[1] + dy, 0]).filter(c => c[0] >= 0 && c[1] >= 0 && c[0] < w && c[1] < h && farming.with.tillable.includes(sp.getCell(c)));
+  assert.ok(plots.length >= 2, 'the yard has grass next to the farmer');
+  for (const c of plots) { rt.step({ actions: { till: { cell: c } } }); rt.step({ actions: { plant: { cell: c } } }); }
+  // Bare cells (no block) around the plots: a write "above" a plot would fill one.
+  for (const c of plots) for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) { const n = [c[0] + dx, c[1] + dy, 0]; if (n[0] >= 0 && n[1] >= 0 && n[0] < w && n[1] < h && !plots.some(q => q[0] === n[0] && q[1] === n[1]) && (n[0] !== p[0] || n[1] !== p[1])) sp.setCell(n, null, rt); }
+  const planted = cells();
+  for (const c of plots) assert.equal(planted[`${c[0]},${c[1]}`], 'farmland', `the plot at ${c} stays farmland`);
+  steps(rt, 60 * 4);
+  assert.ok(rt.state.counts.ripened >= 1, 'crops ripened');
+  assert.deepEqual(cells(), planted, 'growing and ripening wrote no cell: no stage block on a neighbouring cell');
+  const marks = rt.service('farming').marks(sid);
+  assert.equal(marks.length, plots.length);
+  for (const m of marks) assert.ok(m.stage >= 1 && m.stages >= m.stage, 'the mark carries the growth stage');
 });
 
 test('farming: internal day clock, replay and bad config codes', () => {
