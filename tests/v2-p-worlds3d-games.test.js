@@ -88,7 +88,7 @@ test('games: Emberfall generates its realm and the undercroft headless', t => {
 });
 
 test('games: generators on a non-3D space (Hollow Lantern tilemap) record why they did nothing', () => {
-  const doc = worldOnly(load('hollow-lantern.json'), registry);
+  const doc = worldOnly(load('hollow-lantern.json'), registry, { systems: ['gameplay.inventory', 'gameplay.progression.abilities', 'plot.gate'] }); // the gates' predicate owners are stated explicitly
   const checked = preflight(doc, registry, logic);
   assert.ok(checked.ok, JSON.stringify(checked.errors.slice(0, 5)));
   const rt = createWorld(checked.doc, registry, logic);
