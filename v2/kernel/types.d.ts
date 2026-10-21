@@ -34,6 +34,8 @@ export interface ParamSchema {
   required?: boolean;
   /** What the param does, for the planner model (also the hint on param_missing). */
   effect?: string;
+  /** A declared example value (or list entries) the planner may take structure from (planner/presets.js repairLoop). */
+  example?: unknown;
   [extra: string]: unknown;
 }
 /** card.params: param name -> schema. */

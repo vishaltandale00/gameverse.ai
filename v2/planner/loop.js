@@ -13,6 +13,8 @@
 //             ending a plot ending section wins (the story);
 //             scope  'encounter' when the win resolves one encounter (a battle) rather than the game (default 'game');
 //             applies { param, field?, is }: the win exists only when the instance config matches (the preset makes it);
+//             reads  the state the win condition tests (planner/loop-check.js): { component, of: opponents|player } | { event } | { var }
+//                    (a `when` template's count or var is its read when none is declared);
 //   lose?:    the same, for defeat;
 //   needs?:   { content: [document sections], participants: param | null };
 // }
@@ -21,7 +23,7 @@
 import { isObj, isList, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
-/** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, applies?: { param: string, field?: string, is: unknown } }} LoopEnd */
+/** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, applies?: { param: string, field?: string, is: unknown }, reads?: { component?: string, of?: string, event?: string, var?: string } }} LoopEnd */
 /**
  * A primitive's loop declaration (card.loop merged over card.mode).
  * @typedef {{ verbs: string[], progress: string[], win: LoopEnd | null, lose: LoopEnd | null, needs: { content: string[], participants: unknown },
