@@ -70,7 +70,7 @@ Example names are illustrations only; decompose THIS idea.`;
 
 const CORE = `- core: the play spec. mode: the loop the game is built around, from the listed modes (story: a game whose loop is its story, walking places, talking and questing). interaction: how the player plays it (avatar-realtime, avatar-grid, pieces-turns, cursor-board, menu). opponent: who plays against the player. win / lose: how the core loop is won and lost, in the game's own terms (checkmate, finish first, clear every line, catch the culprit). narrative: true only when the idea has a story told in acts. secondary: for a mashup, the other ideas' modes and how they join the primary: nested (a sub-mode entered from the primary, e.g. a creature battle resolving a capture), union (both loops in one space), skin (only its content and cast). A mashup keeps BOTH ideas.`;
 
-/** The decomposition schema; with a registry it includes the play spec (`core`) whose mode enum is the catalogue's. */
+/** The decomposition schema; with a registry it includes the play spec (`core`) whose mode enum is the catalogue's. @param {RegistryLike | null} [registry] */
 export function decompositionSchema(registry = null) {
   if (!registry) return DECOMPOSITION_SCHEMA;
   return { ...DECOMPOSITION_SCHEMA, required: [...DECOMPOSITION_SCHEMA.required, 'core'], properties: { ...DECOMPOSITION_SCHEMA.properties, core: coreSchema(registry) } };
@@ -88,7 +88,7 @@ export async function decomposeIdea({ writer = null, prompt, answers = [], regis
     try {
       const modes = registry ? modeCatalogue(registry).map(m => `- ${m.id}: ${String(m.intent || registry.get(m.use)?.card.intent || '').replace(/\s+/g, ' ').slice(0, 140)}${m.interaction ? ` (interaction ${m.interaction}${m.opponent ? `, opponent ${m.opponent}` : ''})` : ''}`).join('\n') : '';
       const ask = registry ? `${user}\n\nModes in the catalogue:\n${modes || '(none declared)'}\n- story: a game whose loop is its story (places, characters, quests)` : user;
-      const reply = await writer.complete({ system: registry ? `${SYSTEM}\n${CORE}` : SYSTEM, user: ask, schema: { name: 'decomposition', schema: decompositionSchema(registry) } });
+      const reply = await writer.complete({ system: registry ? `${SYSTEM}\n${CORE}` : SYSTEM, user: ask, schema: { name: 'decomposition', schema: registry ? decompositionSchema(registry) : DECOMPOSITION_SCHEMA } });
       const d = normalize(parseReply(reply.text), prompt, registry);
       return { ...d, source: reply.model, ms: Math.round(performance.now() - started) };
     } catch (error) {

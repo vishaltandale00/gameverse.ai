@@ -13,7 +13,7 @@ import { movementFrom } from './decompose.js';
 import { cardText, vocabulary, isSpace, defaultsOf, dataShapes } from './catalog.js';
 import { vocabIndex, selectPrimitives, baseLocomotion } from './select.js';
 import { outlineForm, formPath } from './outline-form.js';
-import { preset, coreOf, zoneStart } from './presets.js';
+import { preset, coreOf, zoneStart, wireCore } from './presets.js';
 import { populateProblems, placeContent, unreadReaders, contractText } from './content.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
@@ -44,7 +44,7 @@ import { isObj, isList, obj, list, objects, str, prop } from '../kernel/guards.j
 /**
  * One entry of writeOutline's round log.
  * @typedef {{ kind: string, ok?: boolean, errors?: number, error?: string, codes?: string[], fixes?: number, form?: boolean, worldAdded?: string[], placed?: number,
- *   viable?: boolean, staticErrors?: number, content?: number, removed?: unknown[], ms?: number }} OutlineRound
+ *   viable?: boolean, staticErrors?: number, content?: number, completed?: boolean | null, removed?: unknown[], ms?: number }} OutlineRound
  */
 /** A problem as repair feedback reads it (preflight, boot, verification, content). @typedef {{ code: string, path?: string, message: string, hint?: unknown }} ProblemLike */
 /** @typedef {import('./content.js').ContentProblem} ContentProblem */
@@ -82,7 +82,8 @@ const PLACES = ['Gate', 'Hollow', 'Market', 'Spire', 'Vault', 'Ruins', 'Harbor',
  * The procedural skeleton: the preset the play spec and the chosen cards compose (presets.js). Without a play spec
  * it is the story preset (zones visited in act order, gated progression, a finale), as before.
  */
-export function proceduralOutline(spec) { return preset(spec); }
+/** @param {{ decomposition: Decomposition, selection: Selection, registry: RegistryLike, logic: LogicLike, seed: number, prompt?: string }} spec @returns {ProceduralOutline} */
+export function proceduralOutline(spec) { return /** @type {ProceduralOutline} */ (/** @type {unknown} */ (preset(spec))); }
 
 /**
  * Player agency, checked empirically: the skeleton is booted headless and must offer the player
@@ -309,6 +310,8 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
     const draft = isDocShape(value) ? value : form.toDoc(value);
     draft.schema = DOC_SCHEMA; draft.seed = seed;
     keepPlayer(draft, skeleton.doc);
+    // The core loop's wiring is code's: whatever the model wrote, the mode applies and its win/lose end the game.
+    Object.assign(draft, wireCore(draft, decomposition, registry).doc);
     // Data nobody reads (quests with no quest runner): add the primitive that reads it.
     for (const u of unreadReaders(draft, registry)) if (u.reader && Array.isArray(draft.systems) && !draft.systems.some(x => prop(x, 'use') === u.reader)) draft.systems.push({ use: u.reader });
     if (draft.spaces && Array.isArray(draft.spaces)) try { configureGenerators(draft, registry); } catch { /* malformed spaces: repair reports them */ }
@@ -357,12 +360,18 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
       entry.staticErrors = staticErrors.length;
       const content = populateProblems(playable, registry);
       entry.content = content.length;
+      // Completion is a quality signal, not the gate: a game the playtest agent cannot finish goes back to the model with
+      // what the agent saw (no ending reached, events that never happened, a stuck opponent...).
+      const play = /** @type {any} */ (g.v)?.playtest;
+      const unfinished = verify && g.viable && play && !play.winnable ? [{ code: 'playtest_not_completed', path: 'plot.endings', message: `the playtest agent explored ${play.explored ?? '?'} states and reached no winning ending`,
+        hint: `what it found: ${[...new Set((/** @type {any} */ (g.v)?.problems || []).filter((/** @type {any} */ p) => ['playtest', 'strategy', 'plot', 'spatial'].includes(p.stage)).map((/** @type {any} */ p) => `${p.code}${p.message ? ` (${String(p.message).slice(0, 80)})` : ''}`))].slice(0, 6).join('; ') || 'no goal progress'}; make the core loop winnable: reachable targets, an opponent that acts, legal moves, a win wired to an ending` }] : [];
+      entry.completed = play ? Boolean(play.winnable) : null;
       if (g.viable) {
-        const score = content.length + staticErrors.length * 2;
+        const score = content.length + staticErrors.length * 2 + unfinished.length * 3;
         if (!best || score < best.score) best = { score, doc: playable, removed: repaired.removed, verification: g.v, content, round };
         if (!score) break;
       }
-      problems = g.viable ? [...staticNew, ...content] : [...(g.problems || []), ...staticNew];
+      problems = g.viable ? [...staticNew, ...unfinished, ...content] : [...(g.problems || []), ...staticNew];
     } else problems = repaired.errors;
     lastProblems = problems;
     if (round === maxRounds) break;

@@ -32,7 +32,7 @@ import { objects, prop, strings, str, isStr, messageOf } from '../kernel/guards.
  * @typedef {{ mechanic: string, description: string, importance: string, kind: 'no_primitive' | 'capability' | 'adapter', why: string, primitive?: string, signature?: string, verdict?: string, adapter?: AdapterSpec }} Gap
  */
 /** @typedef {{ view: string | null, medium: string | null, removed: string[], added: string | null }} LocomotionResult */
-/** @typedef {{ mechanic: string, added?: string, removed?: string, why: string }} MappingChange */
+/** @typedef {{ mechanic: string, added?: string, removed?: string, gap?: boolean, why: string }} MappingChange */
 /** @typedef {{ checked: string[], changes: MappingChange[], ms?: number | null, error?: string }} MappingCheck */
 /** @typedef {{ id: string, space: string | undefined, auto?: boolean }} GeneratorChoice */
 /** @typedef {{ primitives: string[], covered: boolean, why: string }} MechanicMapping */
@@ -320,7 +320,7 @@ export async function selectPrimitives({ decomposition, registry, decisions = nu
       m.primitives = map.covered ? map.primitives : [];
       m.source = 'catalogue-model'; m.score = map.covered ? 1 : 0;
       m.primitives.forEach(id => chosen.add(id));
-      if (!map.covered) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: map.why || 'no catalogue primitive implements it' });
+      if (!map.covered) gaps.push({ mechanic: m.id, description: m.description, importance: m.importance, kind: 'no_primitive', why: map.why || 'no catalogue primitive implements it', ...(map.why && /Spec: /.test(map.why) ? { spec: map.why.split('Spec: ')[1] } : {}) });
       continue;
     }
     const top = m.candidates[0];
@@ -526,9 +526,9 @@ export async function checkMapping({ writer, decomposition, mechanics, mapped, c
     const alts = [...new Set([...m.candidates.map(c => c.id), ...cards.filter(c => domains.has(c.id.split('.').slice(0, 2).join('.'))).map(c => c.id)])].filter(id => !have.includes(id) && !isGraphics(id)).slice(0, 14);
     return `Mechanic ${m.id}: ${m.description}\n  mapped:\n${have.map(id => `    ${line(id)}`).join('\n') || '    (none)'}\n  alternatives:\n${alts.map(id => `    ${line(id)}`).join('\n') || '    (none)'}`;
   }).join('\n\n');
-  const system = 'You check a mechanic mapping for a game built from composable primitives. For each core mechanic decide which single primitive DEFINES it (the one without which the mechanic is not there at all: platforming needs the platformer movement, falling-block stacking needs the falling-pieces primitive, catching creatures needs the catch primitive). It may be one already mapped or one of the alternatives. Also list mapped primitives that implement a DIFFERENT mechanic than this one (a wrong sibling, e.g. grid steps for a jump-and-run, flying for a walking dungeon); supporting primitives that help are not wrong. Use exact ids from the lists.';
+  const system = 'You check a mechanic mapping for a game built from composable primitives. For each core mechanic decide which single primitive DEFINES it (the one without which the mechanic is not there at all: platforming needs the platformer movement, falling-block stacking needs the falling-pieces primitive, catching creatures needs the catch primitive). It may be one already mapped or one of the alternatives. Also list mapped primitives that implement a DIFFERENT mechanic than this one (a wrong sibling, e.g. grid steps for a jump-and-run, flying for a walking dungeon); supporting primitives that help are not wrong. Use exact ids from the lists. When none of them implements the mechanic as the game needs it (e.g. chess piece movement and checkmate), answer central "none" and write the spec of the primitive that would.';
   const user = `Game idea: ${decomposition.premise}\nMain view: ${primaryOf(decomposition) || 'any'}; the avatar moves: ${decomposition.movement || 'unknown'}\n\n${blocks}`;
-  const schema = { name: 'mapping_check', schema: { type: 'object', additionalProperties: false, required: ['checks'], properties: { checks: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['mechanic', 'central', 'wrong', 'why'], properties: { mechanic: { type: 'string' }, central: { type: 'string' }, wrong: { type: 'array', items: { type: 'string' } }, why: { type: 'string' } } } } } } };
+  const schema = { name: 'mapping_check', schema: { type: 'object', additionalProperties: false, required: ['checks'], properties: { checks: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['mechanic', 'central', 'wrong', 'why', 'spec'], properties: { mechanic: { type: 'string' }, central: { type: 'string', description: 'the defining primitive id, or "none" when no listed primitive implements this mechanic' }, wrong: { type: 'array', items: { type: 'string' } }, why: { type: 'string' }, spec: { type: 'string', description: 'when central is "none": what a new primitive must do (its rules, inputs, state, events and win condition), precise enough to build it; else empty' } } } } } } };
   try {
     const reply = await writer.complete({ system, user, schema });
     /** @type {MappingChange[]} */
@@ -542,6 +542,8 @@ export async function checkMapping({ writer, decomposition, mechanics, mapped, c
       if (central && !entry.primitives.includes(central)) { entry.primitives = [central, ...entry.primitives]; entry.covered = true; changes.push({ mechanic: m.id, added: central, why: String(c.why || '').slice(0, 160) }); }
       for (const w of strings(c.wrong)) if (w !== central && entry.primitives.includes(w)) { entry.primitives = entry.primitives.filter(x => x !== w); changes.push({ mechanic: m.id, removed: w, why: String(c.why || '').slice(0, 160) }); }
       if (!entry.primitives.length) entry.covered = false;
+      // Nothing in the catalogue defines it: a core gap with a precise spec (the gap layer writes the primitive), never dropped.
+      if (named === 'none' && str(c.spec).trim()) { entry.covered = false; entry.why = `no catalogue primitive implements it. Spec: ${str(c.spec).slice(0, 600)}`; changes.push({ mechanic: m.id, gap: true, why: str(c.spec).slice(0, 160) }); }
     }
     return { checked: core.map(m => m.id), changes, ms: reply.ms ?? null };
   } catch (error) { log(`mapping check failed: ${messageOf(error)}`); return { checked: [], changes: [], error: String(messageOf(error) || error).slice(0, 120) }; }

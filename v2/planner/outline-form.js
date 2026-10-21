@@ -391,6 +391,8 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
     const base = skelSys.get(id) || {};
     // Spawn-rule params keep what the scaffold had (start spawns are re-derived by engage); the form's spawns are added below.
     for (const k of spawnParams(/** @type {RegisteredPrimitive} */ (registry.get(id)).card)) if (base.with?.[k] !== undefined) w[k] = structuredClone(base.with[k]);
+    // The scaffold's configuration (the preset's mode wiring, engagement) stays unless the model sets a param itself.
+    for (const [k, v] of Object.entries(base.with || {})) if (w[k] === undefined) w[k] = structuredClone(v);
     out.systems.push({ use: id, ...(base.space ? { space: base.space } : {}), ...(Object.keys(w).length ? { with: w } : {}) });
   }
   for (const x of listOf(f.extra_systems)) if (isObj(x) && typeof x.use === 'string' && registry.has(x.use) && !out.systems.some(s => s.use === x.use) && !isSpace(x.use) && !isGenerator(x.use) && !isGraphics(x.use)) {

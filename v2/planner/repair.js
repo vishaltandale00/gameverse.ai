@@ -249,16 +249,18 @@ export function normalizeShape(doc, fixes = []) {
  * their field defaults applied (a card default like [{id:'attack', hit:{...}}] that omits a defaulted field), and an
  * unset list the card needs at least one entry of (min >= 1, no default) gets a synthesized entry, so validators
  * never run on undefined. Instances only; values the document sets are left alone.
+ * @param {any} doc @param {RegistryLike} registry @param {Fix[]} fixes
  */
 function materializeLists(doc, registry, fixes) {
-  const all = [...(doc.spaces || []).flatMap((s, i) => (s.generators || []).map((g, j) => [g, `spaces[${i}].generators[${j}]`])), ...(doc.systems || []).map((x, i) => [x, `systems[${i}]`])];
+  /** @type {Array<[any, string]>} */
+  const all = [...(doc.spaces || []).flatMap((/** @type {any} */ s, /** @type {number} */ i) => (s.generators || []).map((/** @type {any} */ g, /** @type {number} */ j) => [g, `spaces[${i}].generators[${j}]`])), ...(doc.systems || []).map((/** @type {any} */ x, /** @type {number} */ i) => [x, `systems[${i}]`])];
   for (const [inst, path] of all) {
     const params = registry.get(inst?.use)?.card.params || {};
     for (const [k, spec] of Object.entries(params)) {
       if (spec.type !== 'list' || inst.with?.[k] !== undefined) continue;
       const fields = spec.of?.type === 'object' ? spec.of.fields : null;
       if (Array.isArray(spec.default) && spec.default.length && fields) {
-        const filled = spec.default.map(item => (item && typeof item === 'object' ? checkFields(fields, structuredClone(item), '', [], null) : item));
+        const filled = spec.default.map((/** @type {unknown} */ item) => (item && typeof item === 'object' ? checkFields(fields, structuredClone(item), '', [], null) : item));
         if (JSON.stringify(filled) !== JSON.stringify(spec.default)) { inst.with = { ...(inst.with || {}), [k]: filled }; fixes.push({ code: 'list_defaults', path: `${path}.with.${k}`, action: 'filled the default entries\' field defaults' }); }
       } else if (spec.default === undefined && (spec.min || 0) > 0) {
         inst.with = { ...(inst.with || {}), [k]: synthesize({ ...spec, min: spec.min }, { ensureId: kind => `${kind}_1` }) };
@@ -526,8 +528,8 @@ export function repairDocument(input, { registry, logic, rounds = 6, fallbackSpa
           if (/has no (\w+) component/.test(String(e.message || '')) && /archetype '([^']+)'/.test(String(e.message || ''))) {
             const comp = /has no (\w+) component/.exec(String(e.message))?.[1] || '', id = /archetype '([^']+)'/.exec(String(e.message))?.[1] || '';
             const owner = registry.cards().find(c => c.components?.[comp]);
-            const arch = (doc.content?.archetypes || []).find(a => a?.id === id);
-            if (owner && arch) { arch.components = arch.components && typeof arch.components === 'object' ? arch.components : {}; arch.components[comp] = synthesize(owner.components[comp], ctx); fix(`gave '${id}' a ${comp} component (${owner.id})`); break; }
+            const arch = /** @type {any[]} */ (/** @type {any} */ (doc.content)?.archetypes || []).find(a => a?.id === id);
+            if (owner?.components && arch) { arch.components = arch.components && typeof arch.components === 'object' ? arch.components : {}; arch.components[comp] = synthesize(owner.components[comp], ctx); fix(`gave '${id}' a ${comp} component (${owner.id})`); break; }
           }
           // A primitive's own validate() code inside an instance's params: fall back to the param's default.
           if (loc?.schema && !loc.schema.required && loc.rest.length > 1) { removals.push(keys); fix(`reset ${e.code} param to default`); }

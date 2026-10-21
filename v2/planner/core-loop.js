@@ -22,6 +22,8 @@ function winsWired(doc) {
   /** @param {unknown} v */
   const walk = v => { if (found) return; if (Array.isArray(v)) { for (const x of v) walk(x); return; } if (!isObj(v)) return; if (wins(v)) { found = true; return; } for (const x of Object.values(v)) walk(x); };
   walk(doc);
+  // A plot ending with a trigger (`when`, evaluated by the endings runner) and a won outcome also ends the game with a win.
+  if (!found) found = objects(prop(doc.plot, 'endings')).some(e => isObj(e.when) && (e.outcome ?? 'won') === 'won');
   return found;
 }
 

@@ -62,6 +62,13 @@ export function contractsOf(registry, id) {
     const part = card.engage?.participants?.param;
     if (part) list.push({ need: 'param', param: part, min: 2, why: `${id} needs participants besides the player` });
   }
+  // The mode's declared needs (card.mode.needs.content): document sections its loop cannot run without.
+  const needs = /** @type {{ needs?: { content?: unknown } } | undefined} */ (card.mode)?.needs?.content;
+  if (Array.isArray(needs)) for (const at of needs) {
+    if (typeof at !== 'string' || at === 'spaces.zones' || list.some(c => c.at === at)) continue;
+    if (at === 'content.archetypes') { if (!list.some(c => c.need === 'archetypes')) list.push({ need: 'archetypes', min: 1, placed: 1, why: `the ${id} loop needs its pieces, units or targets placed in the world` }); continue; }
+    if (/^(plot|content)\.[a-zA-Z]+$/.test(at)) list.push({ need: 'section', at, min: 1, why: `the ${id} loop runs on ${at}` });
+  }
   return list.map((c, i) => ({ ...c, use: id, key: `${id}#${c.need}:${c.component || c.at || c.param || i}` }));
 }
 
@@ -128,7 +135,7 @@ export function populateProblems(doc, registry, { contracts = null } = {}) {
   for (const c of needs) {
     if (c.need === 'archetypes') {
       const have = archetypesWith(doc, c);
-      const what = `archetypes with a "${c.component}" component${c.kinds?.length ? ` (kind ${c.kinds.join('|')})` : ''}`;
+      const what = `archetypes${c.component ? ` with a "${c.component}" component` : ''}${c.kinds?.length ? ` (kind ${c.kinds.join('|')})` : ''}`;
       if (have.length < (c.min || 1)) { push(have.length ? 'content_thin' : 'content_missing', 'content.archetypes', c, `${c.uses.join(', ')} need${c.uses.length > 1 ? '' : 's'} at least ${c.min || 1} ${what}; the document has ${have.length}`, { kind: 'archetypes', count: (c.min || 1) - have.length }); continue; }
       if (!c.placed) continue;
       let total = 0, unknown = 0;
@@ -250,7 +257,7 @@ export function describeContent(problems, limit = 12) {
 /** Model-facing text: the content the chosen primitives need, with the exact shapes. @param {MergedContract[]} contracts @returns {string} */
 export function contractText(contracts) {
   return contracts.map(c => {
-    const what = c.need === 'archetypes' ? `≥${c.min || 1} archetypes with a "${c.component}" component${c.kinds?.length ? ` (kind ${c.kinds.join('|')})` : ''}${c.placed ? `, ≥${c.placed} placed by spawns${c.zones ? ` across ≥${c.zones} zones` : ''}` : ''}`
+    const what = c.need === 'archetypes' ? `≥${c.min || 1} archetypes${c.component ? ` with a "${c.component}" component` : ''}${c.kinds?.length ? ` (kind ${c.kinds.join('|')})` : ''}${c.placed ? `, ≥${c.placed} placed by spawns${c.zones ? ` across ≥${c.zones} zones` : ''}` : ''}`
       : c.need === 'section' ? `${c.at}: ≥${c.min || 1} entries` : c.need === 'param' ? `${c.use} with.${c.param}: ≥${c.min || 1} entries` : `content.items: ≥${c.min || 1} items`;
     return `- ${c.uses.join(', ')}: ${what}.${c.why ? ` ${c.why}.` : ''}${shape(c.example)}`;
   }).join('\n');
