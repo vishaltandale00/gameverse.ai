@@ -1582,7 +1582,7 @@
    "generators": [
     {
      "use": "engine.generate.terrain.noise",
-     "with": {"octaves":5,"scale":160,"amplitude":36,"ridged":0.3,"falloff":"island","seaLevel":56,"rivers":3,"erosion":1,"warp":0.2}
+     "with": {"octaves":5,"scale":160,"amplitude":36,"ridged":0.3,"falloff":"island","seaLevel":56,"rivers":3,"erosion":1,"warp":0.2,"blocks":{"surface":"grass","sub":"dirt","stone":"stone","bedrock":"bedrock","shore":"sand","underwater":"gravel"}}
     },
     {
      "use": "engine.generate.biomes",
@@ -1605,21 +1605,21 @@
     },
     {
      "use": "engine.generate.caves",
-     "with": {"density":0.35,"minY":4,"maxY":54,"worms":220,"caverns":40,"lavaLevel":12,"rooms":[{"zone":"the_deep_works","at":[0,24,-420],"size":[40,20]}]}
+     "with": {"density":0.35,"minY":4,"maxY":54,"worms":220,"caverns":40,"lavaLevel":12,"lavaBlock":"lava","rooms":[{"zone":"the_deep_works","at":[0,24,-420],"size":[40,20]}]}
     },
     {
      "use": "engine.generate.ores",
      "with": {
       "veins": [
-       {"block":"coal_ore","minY":8,"maxY":80,"size":12,"perChunk":8},
-       {"block":"iron_ore","minY":8,"maxY":64,"size":8,"perChunk":5},
-       {"block":"copper_ore","minY":8,"maxY":60,"size":8,"perChunk":4},
-       {"block":"gold_ore","minY":4,"maxY":30,"size":6,"perChunk":1.5},
-       {"block":"crystal_ore","minY":4,"maxY":24,"size":4,"perChunk":0.7}
+       {"block":"coal_ore","minY":8,"maxY":80,"size":12,"perChunk":8,"replace":["stone"]},
+       {"block":"iron_ore","minY":8,"maxY":64,"size":8,"perChunk":5,"replace":["stone"]},
+       {"block":"copper_ore","minY":8,"maxY":60,"size":8,"perChunk":4,"replace":["stone"]},
+       {"block":"gold_ore","minY":4,"maxY":30,"size":6,"perChunk":1.5,"replace":["stone"]},
+       {"block":"crystal_ore","minY":4,"maxY":24,"size":4,"perChunk":0.7,"replace":["stone"]}
       ]
      }
     },
-    {"use":"engine.generate.water","with":{"level":56,"lakes":3,"flow":true}},
+    {"use":"engine.generate.water","with":{"level":56,"lakes":3,"flow":true,"block":"water"}},
     {
      "use": "engine.generate.city",
      "with": {
@@ -1680,7 +1680,10 @@
        {"from":"greenmeadow","to":"quarry_hills","width":6,"surface":"gravel","curviness":0.45,"bridge":false},
        {"from":"quarry_hills","to":"the_deep_works","width":5,"surface":"rail","curviness":0.5,"bridge":false}
       ],
-      "snapToTerrain": true
+      "snapToTerrain": true,
+      "lineBlock": "road_line",
+      "sidewalkBlock": "concrete",
+      "deckBlock": "planks"
      }
     },
     {

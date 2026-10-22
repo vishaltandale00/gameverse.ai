@@ -104,7 +104,7 @@ export default {
       support: { type: 'boolean', default: true, effect: 'prove structure pieces rest on the ground (y 0 in layout) or another piece' },
       sealing: { type: 'list', of: { type: 'string' }, default: ['m'], effect: 'row chars that block the ball (unbreakable)' },
       openSide: { type: 'string', options: ['bottom', 'top'], default: 'bottom', effect: 'side of a row picture the ball comes from' },
-      archetype: { type: 'ref', to: 'archetype', default: 'piece', effect: 'archetype of pieces whose group names none' },
+      archetype: { type: 'ref', to: 'archetype', effect: 'archetype of pieces whose group names none (unset: such pieces are made of their body and piece components alone)' },
     },
     provides: { content: ['structures', 'entities'], extent: 'overlay', events: ['generated', 'generated:*', 'generate_problem'], services: ['generation', 'layout'] },
     requires: { capabilities: ['position'] },

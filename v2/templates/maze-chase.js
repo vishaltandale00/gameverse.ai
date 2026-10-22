@@ -11,7 +11,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'maze-chase', title: 'Maze Chase', seed: 3, views: { primary: 'td' },
     spaces: [{ id: 'maze', use: 'engine.space.grid', with: { size: [28, 31], wrap: 'x', rules: { house_door: { pass: ['hunter'] } } },
-      generators: [{ use: 'engine.generate.grid.maze', with: { size: 'classic', style: 'classic', density: 0.6 } }] }],
+      generators: [{ use: 'engine.generate.grid.maze', with: { size: 'classic', style: 'classic', density: 0.6, palette: { wall: 'wall', houseWall: 'house_wall', door: 'house_door' }, pellet: 'pellet', power: 'power_pellet' } }] }],
     systems: [
       { use: 'gameplay.move.grid', with: { mode: 'lane' } },
       { use: 'gameplay.combat.health' }, { use: 'gameplay.combat.status' }, { use: 'gameplay.score' },

@@ -37,17 +37,17 @@ export default {
       kind: { type: 'string', options: ['tactics', 'lanes', 'match', 'hex-continent'], default: 'tactics' },
       size: { type: 'list', of: { type: 'integer', min: 2, max: 256 }, min: 2, max: 2, scale: 'world', effect: 'board [w,h]; default: the space size' },
       origin: { type: 'list', of: { type: 'integer' }, default: [0, 0], scale: 'world' },
-      fill: { type: 'list', of: piece, default: [{ piece: 'red' }, { piece: 'blue' }, { piece: 'green' }, { piece: 'yellow' }, { piece: 'purple' }], effect: 'match: weighted pieces' },
+      fill: { type: 'list', of: piece, effect: 'match: weighted pieces (named on a match board)' },
       fillNoMatch: { type: 'boolean', default: true }, matchLength: { type: 'integer', min: 2, max: 6, default: 3 }, ensureMove: { type: 'boolean', default: true },
-      terrain: { type: 'list', of: terrain, default: [{ block: 'rock', weight: 1, blocks: true }, { block: 'forest', weight: 2 }], effect: 'tactics: obstacle/feature terrain' },
+      terrain: { type: 'list', of: terrain, effect: 'tactics: obstacle/feature terrain (named on a tactics board)' },
       density: { type: 'number', min: 0, max: 0.8, default: 0.18, effect: 'tactics: share of cells given terrain; lanes: field fill' },
       ground: { type: 'ref', to: 'block', effect: 'tactics: the block of every open cell no terrain covers, the deploy strips included (a walkable floor such as grass); unset: open cells stay empty' },
       symmetry: { type: 'string', options: ['none', 'mirror', 'rotate'], default: 'rotate' },
       teams: { type: 'integer', min: 1, max: 4, default: 2 }, deployDepth: { type: 'integer', min: 1, max: 8, default: 2 },
-      lanes: { type: 'integer', min: 1, max: 5, default: 3 }, laneWidth: { type: 'integer', min: 1, max: 4, default: 1 }, wall: { type: 'ref', to: 'block', default: 'jungle', effect: 'lanes: field block' },
+      lanes: { type: 'integer', min: 1, max: 5, default: 3 }, laneWidth: { type: 'integer', min: 1, max: 4, default: 1 }, wall: { type: 'ref', to: 'block', effect: 'lanes: field block (named on a lanes board)' },
       continents: { type: 'integer', min: 1, max: 12, default: 2 }, land: { type: 'number', min: 0.1, max: 0.9, default: 0.45 },
-      water: { type: 'ref', to: 'block', default: 'ocean', effect: 'hex-continent: sea cells' },
-      biomes: { type: 'list', of: biome, default: [{ block: 'coast', elevation: [0, 0.15] }, { block: 'desert', elevation: [0.15, 0.7], moisture: [0, 0.3] }, { block: 'plains', elevation: [0.15, 0.7], moisture: [0.3, 0.65] }, { block: 'forest', elevation: [0.15, 0.7], moisture: [0.65, 1] }, { block: 'hills', elevation: [0.7, 0.9] }, { block: 'mountain', elevation: [0.9, 1], blocks: true }] },
+      water: { type: 'ref', to: 'block', effect: 'hex-continent: sea cells (named on a hex-continent board)' },
+      biomes: { type: 'list', of: biome, effect: 'hex-continent: land cells by elevation and moisture (named on a hex-continent board; a hex matching none takes the first non-blocking biome)' },
       starts: { type: 'integer', min: 0, max: 16, default: 2 }, minStartDistance: { type: 'integer', min: 1, max: 64, default: 6 }, landPerStart: { type: 'integer', min: 1, default: 20 },
       attempts: { type: 'integer', min: 0, max: 16, default: 8 },
     },
@@ -55,8 +55,11 @@ export default {
     requires: { capabilities: ['position', 'editCells'] },
     problems: ['board_has_match', 'board_no_move', 'cells_disconnected', 'deploy_unreachable', 'lane_broken', 'start_on_water', 'start_crowded', 'start_land_short', 'board_fallback'],
     rules: {
+      board_fill_missing: { fields: ['kind', 'fill'], message: 'a match board lists fill pieces, at least one of weight > 0' },
       board_pieces_few: { fields: ['kind', 'fillNoMatch', 'fill[].weight'], message: 'a match board with fillNoMatch has at least 3 fill pieces of weight > 0', example: { kind: 'match', fill: [{ piece: 'pillar', weight: null }] } },
       board_terrain_open: { fields: ['kind', 'terrain'], message: 'a tactics board lists at least one terrain' },
+      board_wall_missing: { fields: ['kind', 'wall'], message: 'a lanes board names the wall block of its field' },
+      board_hex_blocks_missing: { fields: ['kind', 'water', 'biomes'], message: 'a hex-continent board names its water block and at least one biome' },
       board_ground_blocks: { fields: ['ground', 'terrain[].block', 'terrain[].blocks'], message: 'ground is not a blocking terrain block (open cells are walkable)' },
     },
   },
@@ -70,12 +73,26 @@ export default {
     const w = Math.floor(rect[2] - rect[0]), h = Math.floor(rect[3] - rect[1]);
     return w >= 2 && h >= 2 && w <= 256 && h <= 256 ? { origin: [Math.ceil(rect[0]), Math.ceil(rect[1])], size: [w, h] } : null;
   },
+  /**
+   * Planner hook (v2/planner/world.js): a tactics board (the default kind) whose obstacle terrain is the document's
+   * first plain solid block, else a declared 'rock'.
+   */
+  scaffold(space, doc) {
+    if (!this.card.spaces.includes(space.use)) return null;
+    const blocks = doc.content?.blocks || [];
+    const plain = blocks.find(b => b?.id && b.solid !== false && !(b.tags || []).some(t => ['hazard', 'liquid', 'one_way', 'oneway'].includes(t)))?.id;
+    return { with: { kind: 'tactics', terrain: [{ block: plain ?? 'rock', weight: 1, blocks: true }] }, ...(plain ? {} : { content: { blocks: [{ id: 'rock', name: 'Rock', solid: true }] } }) };
+  },
   validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
     const errors = [];
-    if (config.kind === 'match' && config.fillNoMatch && config.fill.filter(p => p.weight > 0).length < 3) errors.push(problem('board_pieces_few', 'fill', 'a no-match fill needs at least 3 pieces'));
-    if (config.kind === 'tactics' && !config.terrain.length) errors.push(problem('board_terrain_open', 'terrain', 'tactics boards need terrain'));
-    if (config.kind === 'tactics' && config.ground != null && config.terrain.some(t => t.blocks && t.block === config.ground)) errors.push(problem('board_ground_blocks', 'ground', `ground '${config.ground}' is a blocking terrain block; open cells must be walkable`));
+    const weighted = (config.fill || []).filter(p => p.weight > 0).length, terrain = config.terrain || [];
+    if (config.kind === 'match' && !weighted) errors.push(problem('board_fill_missing', 'fill', 'a match board needs fill pieces'));
+    else if (config.kind === 'match' && config.fillNoMatch && weighted < 3) errors.push(problem('board_pieces_few', 'fill', 'a no-match fill needs at least 3 pieces'));
+    if (config.kind === 'tactics' && !terrain.length) errors.push(problem('board_terrain_open', 'terrain', 'tactics boards need terrain'));
+    if (config.kind === 'tactics' && config.ground != null && terrain.some(t => t.blocks && t.block === config.ground)) errors.push(problem('board_ground_blocks', 'ground', `ground '${config.ground}' is a blocking terrain block; open cells must be walkable`));
+    if (config.kind === 'lanes' && config.wall == null) errors.push(problem('board_wall_missing', 'wall', 'a lanes board names no wall block'));
+    if (config.kind === 'hex-continent' && (config.water == null || !config.biomes?.length)) errors.push(problem('board_hex_blocks_missing', config.water == null ? 'water' : 'biomes', 'a hex-continent board needs its water block and biomes'));
     return errors;
   },
   install(rt, raw, instance) {
@@ -126,7 +143,7 @@ export function hasMove(g, n) {
 }
 
 function match(config, W, H, r) {
-  const g = new Raster(W, H, null), pieces = config.fill.filter(p => p.weight > 0), n = config.matchLength;
+  const g = new Raster(W, H, null), pieces = (config.fill || []).filter(p => p.weight > 0), n = config.matchLength;
   const makes = (x, y, v) => [[1, 0], [0, 1]].some(([dx, dy]) => { let k = 1; for (let i = 1; g.get(x - dx * i, y - dy * i) === v; i++) k++; return k >= n; });
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const ok = config.fillNoMatch ? pieces.filter(p => !makes(x, y, p.piece)) : pieces;
@@ -213,7 +230,7 @@ function hex(config, W, H, r) {
     if (land.get(x, y) < 0) continue;
     const e = (dist.get(x, y) - 1) / Math.max(1, maxD - 1), m = (moist.get(x, y) - mlo) / Math.max(1e-9, mhi - mlo);
     const b = config.biomes.find(b => e >= b.elevation[0] && e <= b.elevation[1] && m >= b.moisture[0] && m <= b.moisture[1]) || config.biomes.find(b => !b.blocks) || config.biomes[0];
-    g.set(x, y, b?.block ?? 'land');
+    g.set(x, y, b.block);
   }
   // Starts: farthest-point picks over walkable land, largest continents first.
   const walk = (x, y) => land.get(x, y, -1) >= 0 && !blocking.has(g.get(x, y));

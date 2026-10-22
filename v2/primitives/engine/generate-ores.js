@@ -1,7 +1,7 @@
 // Ore veins for voxel worlds. Each 16x16 column region gets `perChunk`
 // veins of each ore (fractional counts are probabilities) at a hashed
 // position between minY and maxY; a vein is a compact random-walk blob of
-// `size` cells that only replaces host blocks (stone by default). Veins are
+// `size` cells that only replaces the host blocks it names. Veins are
 // pure functions of (seed, region), so chunks place them lazily and veins
 // that straddle a chunk border come out whole.
 import { hash3, Rng } from './worlds3d-lib-noise.js';
@@ -18,7 +18,7 @@ const card = {
       of: { type: 'object', fields: {
         block: { type: 'ref', to: 'block', required: true }, minY: { type: 'integer', min: 0, max: 512, default: 1 }, maxY: { type: 'integer', min: 0, max: 512, default: 64 },
         size: { type: 'integer', min: 1, max: 64, default: 8, unit: 'cells' }, perChunk: { type: 'number', min: 0, max: 40, default: 2, effect: 'veins per 16x16 column' },
-        biome: { type: 'ref', to: 'biome', effect: 'only under this biome' }, replace: { type: 'list', of: { type: 'ref', to: 'block' }, default: ['stone'], effect: 'host blocks the vein may replace' },
+        biome: { type: 'ref', to: 'biome', effect: 'only under this biome' }, replace: { type: 'list', of: { type: 'ref', to: 'block' }, min: 1, required: true, effect: 'host blocks the vein may replace' },
       } },
     },
   },

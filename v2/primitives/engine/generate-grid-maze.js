@@ -249,6 +249,10 @@ export function generateMaze(params, seed, body = [1, 1, 1]) {
   return best;
 }
 
+/** The scaffold's blocks (palette wall, houseWall, door) and pickups (pellet, power), [id, name]. */
+const MAZE_BLOCKS = [['wall', 'Wall'], ['house_wall', 'House wall'], ['house_door', 'House door']];
+const MAZE_PICKUPS = [['pellet', 'Pellet'], ['power_pellet', 'Power pellet']];
+
 export default {
   id: ID,
   card: {
@@ -267,9 +271,9 @@ export default {
       } }, effect: 'extra sizes by name (size names one of them)' },
       origin: { type: 'list', of: { type: 'integer' }, default: [0, 0], scale: 'world', effect: 'space cell of the maze corner' },
       yUp: { type: 'boolean', default: true, effect: 'maze row 0 is the top row of the space region' },
-      palette: { type: 'object', default: {}, fields: { wall: { type: 'ref', to: 'block', default: 'wall', effect: 'maze walls' }, houseWall: { type: 'ref', to: 'block', default: 'house_wall', effect: 'hunter house walls' }, door: { type: 'ref', to: 'block', default: 'house_door', effect: 'hunter house doors' } } },
-      pellet: { type: 'ref', to: 'archetype', default: 'pellet', effect: 'archetype spawned on pellet tiles' },
-      power: { type: 'ref', to: 'archetype', default: 'power_pellet', effect: 'archetype spawned on power-pellet tiles' },
+      palette: { type: 'object', required: true, fields: { wall: { type: 'ref', to: 'block', required: true, effect: 'maze walls' }, houseWall: { type: 'ref', to: 'block', required: true, effect: 'hunter house walls' }, door: { type: 'ref', to: 'block', required: true, effect: 'hunter house doors' } }, effect: 'the blocks the maze is built of' },
+      pellet: { type: 'ref', to: 'archetype', effect: 'archetype spawned on pellet tiles (unset: no pellets)' },
+      power: { type: 'ref', to: 'archetype', effect: 'archetype spawned on power-pellet tiles (unset: no power pellets)' },
       pelletCounter: { type: 'string', default: 'pellets', effect: 'collectible counter of pellets (component collectible.counter)' },
       powerCounter: { type: 'string', default: 'power_pellets', effect: 'collectible counter of power pellets' },
       placePlayer: { type: 'boolean', default: true, effect: 'move the player to the maze start when it spawns' },
@@ -302,6 +306,20 @@ export default {
     const name = `fit_${w}x${h}`;
     return { size: name, sizes: { ...(raw?.sizes || {}), [name]: { w, h, houses: structuredClone(preset.houses) } }, origin: [Math.ceil(rect[0]), Math.ceil(rect[1])] };
   },
+  /**
+   * Planner hook (v2/planner/world.js): a maze of the document's 'wall', 'house_wall' and 'house_door' blocks with
+   * 'pellet' and 'power_pellet' pickups, declaring those the document lacks. Its size comes from fit().
+   */
+  scaffold(space, doc) {
+    if (!this.card.spaces.includes(space.use)) return null;
+    const blocks = new Set((doc.content?.blocks || []).map(b => b?.id)), archetypes = new Set((doc.content?.archetypes || []).map(a => a?.id));
+    const add = {
+      blocks: MAZE_BLOCKS.filter(([id]) => !blocks.has(id)).map(([id, name]) => ({ id, name, solid: true })),
+      archetypes: MAZE_PICKUPS.filter(([id]) => !archetypes.has(id)).map(([id, name]) => ({ id, name, kind: 'pickup', components: {} })),
+    };
+    const content = Object.fromEntries(Object.entries(add).filter(([, v]) => v.length));
+    return { with: { palette: { wall: 'wall', houseWall: 'house_wall', door: 'house_door' }, pellet: 'pellet', power: 'power_pellet' }, ...(Object.keys(content).length ? { content } : {}) };
+  },
   validate(raw, doc, ctx, inst = {}) {
     const config = withDefaults(this.card, raw);
     const errors = [], sizes = { ...SIZES, ...config.sizes }, spec = sizes[config.size];
@@ -323,7 +341,7 @@ export default {
     for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) writer.set(toAt(x, y), block[maze.cells[y * MW + x]] ?? null);
     writer.flush();
     const powerSet = new Set(maze.power);
-    for (const i of maze.pellets) { const arch = powerSet.has(i) ? config.power : config.pellet; spawnAt(rt, space, arch, toAt(i % MW, Math.floor(i / MW)), { collectible: { counter: powerSet.has(i) ? config.powerCounter : config.pelletCounter, value: 1 } }); }
+    for (const i of maze.pellets) { const arch = powerSet.has(i) ? config.power : config.pellet; if (arch != null) spawnAt(rt, space, arch, toAt(i % MW, Math.floor(i / MW)), { collectible: { counter: powerSet.has(i) ? config.powerCounter : config.pelletCounter, value: 1 } }); }
     const pt = p => toAt(p.x, p.y);
     addZones(rt, space, maze.houses.map((q, i) => {
       const a = toAt(q.x0, q.y0), b = toAt(q.x1, q.y1);

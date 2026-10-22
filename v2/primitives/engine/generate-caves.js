@@ -19,7 +19,7 @@ const card = {
     worms: { type: 'integer', min: 0, max: 2000, default: 0, scale: 'world', per: 'area', effect: 'winding tunnels across the world' },
     caverns: { type: 'integer', min: 0, max: 200, default: 0, scale: 'world', per: 'area', effect: 'large ellipsoid chambers' },
     lavaLevel: { type: 'integer', min: 0, max: 512, unit: 'cells', effect: 'carved cells below this become lava' },
-    lavaBlock: { type: 'ref', to: 'block', default: 'lava', effect: 'block used for lava' },
+    lavaBlock: { type: 'ref', to: 'block', effect: 'block the lava cells are made of (named with lavaLevel)' },
     rooms: {
       type: 'list', default: [], effect: 'pinned chambers: floor centre `at` (m) and size [width, height] or [width, height, depth] (m)',
       of: { type: 'object', fields: { zone: { type: 'ref', to: 'zone', required: true }, at: { type: 'list', of: { type: 'number' }, min: 3, max: 3 }, size: { type: 'list', of: { type: 'number', min: 2, max: 400 }, min: 2, max: 3, default: [24, 12] }, connect: { type: 'boolean', default: true, effect: 'dig a walkable tunnel from the room to the surface' } } },
@@ -31,7 +31,10 @@ const card = {
   },
   provides: { content: ['caves'], extent: 'space', services: ['caves'], events: [] },
   reads: [],
-  rules: { range_reversed: rangeRule(['minY', 'maxY']) },
+  rules: {
+    range_reversed: rangeRule(['minY', 'maxY']),
+    lava_block_missing: { fields: ['lavaLevel', 'lavaBlock'], message: 'a lava level names the lavaBlock its cells are made of' },
+  },
 };
 
 export default {
@@ -39,7 +42,8 @@ export default {
   card,
   validate(raw) {
     const config = withDefaults(card, raw);
-    return reversedRanges([['with.minY', [config.minY, config.maxY]]]);
+    const lava = config.lavaLevel != null && config.lavaBlock == null ? [{ code: 'lava_block_missing', path: 'with.lavaBlock', message: `lava below ${config.lavaLevel} names no lavaBlock` }] : [];
+    return [...reversedRanges([['with.minY', [config.minY, config.maxY]]]), ...lava];
   },
   install(rt, raw, instance) {
     const config = withDefaults(card, raw), model = generatorModel(rt, instance);

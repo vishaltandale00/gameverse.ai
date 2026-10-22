@@ -88,8 +88,8 @@ const HOSTS = {
   'none-ui': { view: 'ui', space: { use: 'engine.space.none', zones: [{ id: 'start' }, { id: 'mid' }, { id: 'goal' }] }, at: 'start', move: ['plot.dialogue'], dialogue: true },
   'mesh3d-3p': { view: '3p', space: { use: 'engine.space.mesh3d', with: { size: [128, 128], baseHeight: 10 }, zones: discs }, at: [20, 20], move: ['gameplay.move.walk', 'gameplay.vehicle.core', 'gameplay.vehicle.car'], vehicle: true },
   'mesh3d-1p': { view: '1p', space: { use: 'engine.space.mesh3d', with: { size: [128, 128], baseHeight: 10 }, zones: discs }, at: [20, 20], move: ['gameplay.move.walk'] },
-  'voxel-3p': { view: '3p', space: { use: 'engine.space.voxel', with: { chunk: [16, 32, 16], height: 64, ground: 4 }, zones: boxes }, at: [8.5, 4.9, 8.5], move: ['gameplay.move.walk'] },
-  'voxel-1p': { view: '1p', space: { use: 'engine.space.voxel', with: { chunk: [16, 32, 16], height: 64, ground: 4 }, zones: boxes }, at: [8.5, 4.9, 8.5], move: ['gameplay.move.walk'] },
+  'voxel-3p': { view: '3p', space: { use: 'engine.space.voxel', with: { chunk: [16, 32, 16], height: 64, ground: 4, groundBlock: 'stone' }, zones: boxes }, at: [8.5, 4.9, 8.5], move: ['gameplay.move.walk'] },
+  'voxel-1p': { view: '1p', space: { use: 'engine.space.voxel', with: { chunk: [16, 32, 16], height: 64, ground: 4, groundBlock: 'stone' }, zones: boxes }, at: [8.5, 4.9, 8.5], move: ['gameplay.move.walk'] },
 };
 // Cheap hosts first: a non-space primitive is composed on the first host it fits.
 const HOST_ORDER = ['tilemap-side', 'tilemap-td', 'grid-board', 'arena2d-side', 'physics2d-side', 'track-3p', 'graph-text', 'none-ui', 'mesh3d-3p', 'voxel-3p', ...Object.keys(HOSTS)];

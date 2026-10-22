@@ -13,7 +13,7 @@ const doc = ({ space = 'engine.space.test', size = 'classic', w = {}, seed = 4 }
   const s = SIZES[size];
   return {
     schema: 'gameverse.v2.game/0.2', id: 'maze', title: 'Maze', seed,
-    spaces: [{ id: 'm', use: space, with: space === 'engine.space.test' ? { size: [s.w, s.h, 1] } : { size: [s.w, s.h], wrap: 'x' }, generators: [{ use: 'engine.generate.grid.maze', with: { size, ...w } }] }],
+    spaces: [{ id: 'm', use: space, with: space === 'engine.space.test' ? { size: [s.w, s.h, 1] } : { size: [s.w, s.h], wrap: 'x' }, generators: [{ use: 'engine.generate.grid.maze', with: { size, palette: { wall: 'wall', houseWall: 'house_wall', door: 'house_door' }, pellet: 'pellet', power: 'power_pellet', ...w } }] }],
     content: { archetypes: [{ id: 'hero', components: {} }, { id: 'pellet', components: {} }, { id: 'power_pellet', components: {} }], blocks: [{ id: 'wall', solid: true }, { id: 'house_wall', solid: true }, { id: 'house_door', solid: true }] },
     player: { archetype: 'hero' },
   };

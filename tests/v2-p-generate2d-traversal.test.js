@@ -37,14 +37,14 @@ const FIXTURES = {
   'engine.generate.grid.maze': () => [
     { space: { id: 'w', use: 'engine.space.tilemap', with: { size: [28, 31], mode: 'topdown' } }, view: 'td', with: {} },
     { space: { id: 'w', use: 'engine.space.grid', with: { size: [28, 31], wrap: 'x', rules: { house_door: { pass: ['hunter'] } } } }, view: 'td', with: {} },
-  ].map(f => ({ ...f, blocks: solid(['wall', 'house_wall', 'house_door']), archetypes: [{ id: 'pellet', components: {} }, { id: 'power_pellet', components: {} }] })),
+  ].map(f => ({ ...f, with: registry.get('engine.generate.grid.maze').scaffold(f.space, { content: { blocks: solid(['wall', 'house_wall', 'house_door']) } }).with, blocks: solid(['wall', 'house_wall', 'house_door']), archetypes: [{ id: 'pellet', components: {} }, { id: 'power_pellet', components: {} }] })),
   'engine.generate.dungeon.rooms': () => [
     { id: 'w', use: 'engine.space.tilemap', with: { size: [40, 40], mode: 'topdown' } },
     { id: 'w', use: 'engine.space.grid', with: { size: [40, 40] } },
   ].map(space => {
     const doc = { content: { blocks: solid(['stone', 'locked_door']), archetypes: [] }, player: { archetype: 'hero' } };
     const made = registry.get('engine.generate.dungeon.rooms').scaffold(space, doc, { registry });
-    return { space, view: 'td', with: { ...made.with, keys: ['k1'], palette: { ...made.with.palette, door: 'locked_door' } }, blocks: doc.content.blocks, archetypes: [{ id: 'key', components: {} }, { id: 'locked_door', components: {} }, ...(made.content?.archetypes || [])], items: [{ id: 'k1', name: 'Key' }] };
+    return { space, view: 'td', with: { ...made.with, keys: ['k1'], palette: { ...made.with.palette, door: 'locked_door' }, archetypes: { ...made.with.archetypes, key: 'key', lock: 'locked_door' } }, blocks: doc.content.blocks, archetypes: [{ id: 'key', components: {} }, { id: 'locked_door', components: {} }, ...(made.content?.archetypes || [])], items: [{ id: 'k1', name: 'Key' }] };
   }),
   'engine.generate.tilemap.overworld': () => [{
     space: { id: 'w', use: 'engine.space.tilemap', with: { size: [256, 256], mode: 'topdown' } }, view: 'td',

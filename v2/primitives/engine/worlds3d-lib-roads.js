@@ -171,13 +171,18 @@ export function surfaceBlocks(surface, known, blockDefs) {
   return { base: top, over: null };
 }
 
-/** Voxel paving layer for every edge in the net (idempotent per model build). */
-export function ensureRoadLayer(m, rt, { lineBlock = 'road_line', sidewalkBlock = 'concrete', deckBlock = 'planks', clearance = 4 } = {}) {
+/**
+ * Voxel paving layer for every edge in the net (idempotent per model build). `blocks` are the ids a generator's card
+ * declares ({ line, sidewalk, deck }; an unset one is not written: no centre line, unpaved sidewalks, no deck). Without
+ * `blocks` (engine.generate.city, whose card declares none) the layer picks road blocks by name from content.blocks.
+ * @param {any} m @param {any} rt @param {{ blocks?: { line?: string, sidewalk?: string, deck?: string } | null, clearance?: number }} [options]
+ */
+export function ensureRoadLayer(m, rt, { blocks: given = null, clearance = 4 } = {}) {
   if (m.kind !== 'voxel' || m.data.roadLayer) return;
   m.data.roadLayer = true;
   const blocks = rt.doc.content?.blocks || [], known = new Set(blocks.map(b => b.id)), defs = new Map(blocks.map(b => [b.id, b]));
   const pick = (want, ...alts) => [want, ...alts].find(c => known.has(c)) ?? (known.size ? undefined : want);
-  const sidewalk = pick(sidewalkBlock, 'stone'), deck = pick(deckBlock, 'planks', 'stone'), line = known.size ? (known.has(lineBlock) ? lineBlock : undefined) : lineBlock;
+  const { sidewalk, deck, line } = given ?? { sidewalk: pick('concrete', 'stone'), deck: pick('planks', 'stone'), line: known.size ? (known.has('road_line') ? 'road_line' : undefined) : 'road_line' };
   m.addLayer({
     id: 'roads', order: 40,
     chunk(ctx) {

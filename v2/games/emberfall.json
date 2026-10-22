@@ -1710,7 +1710,7 @@
    "generators": [
     {
      "use": "engine.generate.dungeon.rooms",
-     "with": {"rooms":34,"branching":0.35,"keys":["karth_furnace_key"],"loot":"loot_chest_rare","boss":"barrow_wight","zone":"hollow_barrow","plane":"xz","floor":0,"roomSize":[8,16],"corridor":2}
+     "with": {"rooms":34,"branching":0.35,"keys":["karth_furnace_key"],"loot":"loot_chest_rare","boss":"barrow_wight","zone":"hollow_barrow","plane":"xz","floor":0,"roomSize":[8,16],"corridor":2,"archetypes":{"key":"barrow_key","lock":"barrow_lock","chest":"barrow_chest"}}
     },
     {
      "use": "engine.generate.structures",
@@ -3664,6 +3664,24 @@
     "id": "chest_rare",
     "kind": "prop",
     "components": {"model":"chest","container":{"slots":8,"table":"loot_chest_rare"},"interact":{"prompt":"Open","range":2.2},"lock":{"key":"wardens_seal_ring"}}
+   },
+   {
+    "id": "barrow_key",
+    "name": "Furnace key",
+    "kind": "prop",
+    "components": {}
+   },
+   {
+    "id": "barrow_lock",
+    "name": "Furnace door",
+    "kind": "prop",
+    "components": {}
+   },
+   {
+    "id": "barrow_chest",
+    "name": "Barrow chest",
+    "kind": "prop",
+    "components": {"model":"chest"}
    },
    {
     "id": "forage_plant",

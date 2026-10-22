@@ -6,7 +6,7 @@
 // water layer fills empty cells under the surface with the water block.
 // Provides the `waterDepthAt` service (depth, level, flow along rivers).
 import { Rng, smoothstep, subSeed } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, sharedService, segDist2, zoneDistance, rangeRule, reversedRanges } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, sharedService, segDist2, zoneDistance, rangeRule, reversedRanges, fillsVoxel } from './worlds3d-lib-world.js';
 
 const card = {
   intent: 'Water: sea up to a level, inland lakes carved into basins, and river water (with flow direction). Fills voxel worlds with water blocks; answers waterDepthAt for swimming, boats and navigation.',
@@ -20,18 +20,31 @@ const card = {
     lakeRadius: { type: 'list', of: { type: 'number', min: 2, max: 2000 }, min: 2, max: 2, default: [16, 60], unit: 'm', scale: 'world', effect: 'lake radius range' },
     lakeDepth: { type: 'number', min: 0.5, max: 100, default: 5, unit: 'm', effect: 'depth at a lake centre' },
     flowSpeed: { type: 'number', min: 0, max: 20, default: 1.5, unit: 'm/s', effect: 'river current speed at the source (slows toward the mouth)' },
-    block: { type: 'ref', to: 'block', default: 'water', effect: 'voxel block used for water cells' },
+    block: { type: 'ref', to: 'block', effect: 'voxel: the block water cells are made of (named on a voxel space)' },
   },
   provides: { content: ['water'], extent: 'space', services: ['waterDepthAt'], events: [] },
   reads: [],
-  rules: { range_reversed: rangeRule(['lakeRadius']) },
+  rules: {
+    range_reversed: rangeRule(['lakeRadius']),
+    water_block_missing: { fields: ['block'], message: 'water on a voxel space names the block its cells are made of', example: { at: 'spaces[0].generators[0].with.block', doc: {
+      spaces: [{ id: 'world', use: 'engine.space.voxel', generators: [{ use: 'engine.generate.water' }] }], systems: [],
+    } } },
+  },
 };
 
 export default {
   id: 'engine.generate.water',
   card,
-  validate(config) {
-    return reversedRanges([['with.lakeRadius', config.lakeRadius]]);
+  /** Planner hook (v2/planner/world.js): on a voxel space, water cells of a 'water' block (declared when the document lacks it). */
+  scaffold(space, doc) {
+    if (!card.spaces.includes(space.use)) return null;
+    if (space.use !== 'engine.space.voxel') return { with: {} };
+    const known = (doc.content?.blocks || []).some(b => b?.id === 'water');
+    return { with: { block: 'water' }, ...(known ? {} : { content: { blocks: [{ id: 'water', name: 'Water', solid: false, transparent: true, color: '#2a5ad8', tags: ['liquid'] }] } }) };
+  },
+  validate(config, doc, ctx, inst) {
+    const block = fillsVoxel(doc, inst) && config?.block == null ? [{ code: 'water_block_missing', path: 'with.block', message: 'water on a voxel space names no block' }] : [];
+    return [...reversedRanges([['with.lakeRadius', config.lakeRadius]]), ...block];
   },
   install(rt, raw, instance) {
     const config = withDefaults(card, raw), model = generatorModel(rt, instance);

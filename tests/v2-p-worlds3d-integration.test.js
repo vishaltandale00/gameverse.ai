@@ -7,7 +7,7 @@ import { PRIMITIVES } from '../v2/primitives/index.js';
 
 const voxelDoc = () => ({
   schema: 'gameverse.v2.game/0.2', id: 'dig', title: 'Dig', seed: 2,
-  spaces: [{ id: 'w', use: 'engine.space.voxel', with: { chunk: [16, 32, 16], height: 64, ground: 8 }, zones: [{ id: 'pit', bounds: { min: [0, 0, 0], max: [16, 64, 16] } }] }],
+  spaces: [{ id: 'w', use: 'engine.space.voxel', with: { chunk: [16, 32, 16], height: 64, ground: 8, groundBlock: 'stone' }, zones: [{ id: 'pit', bounds: { min: [0, 0, 0], max: [16, 64, 16] } }] }],
   systems: [{ use: 'engine.physics.character', with: { stepHeight: 1.05 } }, { use: 'gameplay.inventory' }, { use: 'gameplay.blocks.mine', with: { reach: 6, hardnessScale: 0.1 } }],
   content: {
     blocks: [{ id: 'stone', solid: true, hardness: 1.5, drops: [{ item: 'cobble', count: [1, 1] }] }],

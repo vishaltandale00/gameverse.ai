@@ -144,9 +144,9 @@ const town = () => ({
     id: 'town', use: 'engine.space.voxel', with: { chunk: [16, 64, 16], height: 128, seaLevel: 10 },
     zones: [{ id: 'center', bounds: { min: [-60, 0, -60], max: [60, 128, 60] }, tags: ['start'] }, { id: 'fields', bounds: { min: [100, 0, -40], max: [180, 128, 40] } }],
     generators: [
-      { use: 'engine.generate.terrain.noise', with: { octaves: 3, scale: 128, amplitude: 4, seaLevel: 10, landBias: 1 } },
+      { use: 'engine.generate.terrain.noise', with: { octaves: 3, scale: 128, amplitude: 4, seaLevel: 10, landBias: 1, blocks: { surface: 'grass', sub: 'dirt', stone: 'stone', bedrock: 'bedrock', shore: 'sand', underwater: 'gravel' } } },
       { use: 'engine.generate.city', with: { districts: [{ zone: 'center', density: 0.9, floors: [1, 3], style: 'brick', grid: 'organic', landmarks: ['hall'] }], block: [32, 32], roadWidth: 6, sidewalk: 1, interiors: true, streetProps: ['lamp'] } },
-      { use: 'engine.generate.roads', with: { links: [{ from: 'center', to: 'fields', width: 5, surface: 'gravel' }] } },
+      { use: 'engine.generate.roads', with: { links: [{ from: 'center', to: 'fields', width: 5, surface: 'gravel' }], lineBlock: 'road_line', sidewalkBlock: 'concrete', deckBlock: 'planks' } },
       { use: 'engine.generate.structures', with: { place: [{ id: 'barn', kind: 'house', zone: 'fields', at: [140, 0], size: [10, 8], floors: [1, 1], style: 'timber', interior: true }] } },
       { use: 'engine.generate.scatter', with: { props: [{ block: 'log', shape: 'tree', crown: 'leaves', per100m2: 2, zones: ['fields'], minSpacing: 4 }] } },
     ],

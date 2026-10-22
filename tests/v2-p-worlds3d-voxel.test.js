@@ -6,7 +6,7 @@ import { PRIMITIVES } from '../v2/primitives/index.js';
 // Flat stone ground (cells y < 4), 64 cells tall; a yard zone and a high loft zone.
 const flat = (withExtra = {}, extra = {}) => ({
   schema: 'gameverse.v2.game/0.2', id: 'vox', title: 'Voxel', seed: 7,
-  spaces: [{ id: 'world', use: 'engine.space.voxel', with: { chunk: [16, 32, 16], height: 64, ground: 4, ...withExtra }, zones: [{ id: 'yard', bounds: { min: [0, 0, 0], max: [8, 64, 8] } }, { id: 'loft', bounds: { min: [40, 10, 40], max: [44, 14, 44] } }] }],
+  spaces: [{ id: 'world', use: 'engine.space.voxel', with: { chunk: [16, 32, 16], height: 64, ground: 4, groundBlock: 'stone', ...withExtra }, zones: [{ id: 'yard', bounds: { min: [0, 0, 0], max: [8, 64, 8] } }, { id: 'loft', bounds: { min: [40, 10, 40], max: [44, 14, 44] } }] }],
   systems: [],
   content: { blocks: [{ id: 'stone', solid: true }, { id: 'water', solid: false, transparent: true }, { id: 'ladder', solid: false, tags: ['climbable'] }, { id: 'lamp', solid: true, light: 14 }], archetypes: [{ id: 'hero', components: {} }, { id: 'crate', components: { body: { size: [1, 1, 1] } } }] },
   player: { archetype: 'hero', at: [20.5, 4.9, 20.5] },
