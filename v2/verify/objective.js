@@ -4,6 +4,7 @@
 // Used as the best-first heuristic of the plot solver, the cell score of the
 // Go-Explore playtester and the reward of greedy strategies.
 import { instancesOf } from './util.js';
+import { onPlayerSide } from '../kernel/sides.js';
 
 const COMPARATORS = ['gte', 'gt', 'lte', 'lt', 'eq', 'ne'];
 /** Events that mean the player advanced, with weights (wildcards end in ':'). */
@@ -76,13 +77,16 @@ const DIRECTION = { gte: 1, gt: 1, lte: -1, lt: -1 };
  * The quantity the core loop's win reads, as a measurement of play: `win` is { event } | { var } | { component, of }
  * (card.loop.win.reads of the loop that owns the win, planner/verify-adapter.js winQuantity) with { cmp, target } when
  * the document's won ending declares one. Its `advance` is how far play moved it toward the win from where it started:
- *   event      occurrences since the start (typed `event:x` occurrences count when the bare name is not counted);
+ *   event      occurrences since the start (typed `event:x` occurrences count when the bare name is not counted); a
+ *              read of the player's side (`of: 'player'`, with `subjects`) counts only `event:<subject>` of those
+ *              subjects (the player's laps, its team's goals), never a rival's;
  *   var        the change toward the target (gte/gt up, lte/lt down, eq closer to it), any change without a target;
- *   component  how many of the entities it reads ('opponents': non-player entities carrying it, 'player': the player)
+ *   component  how many of the entities it reads ('opponents': entities carrying it not on the player's side, 'player': the
+ *              player and its side; kernel/sides.js)
  *              had it changed from how they first carried it, plus those removed during play (`carry`: per path).
  * track(rt) is taken before a stretch of play and carry(c, token, rt) after it, so removals count along a path.
  * -> null when there is no win quantity.
- * @param {{ event?: string, var?: string, component?: string, of?: string, cmp?: string, target?: number } | null | undefined} win
+ * @param {{ event?: string, var?: string, component?: string, of?: string, subjects?: string[], cmp?: string, target?: number } | null | undefined} win
  */
 export function winMeasure(win) {
   if (!win || typeof win !== 'object') return null;
@@ -94,11 +98,14 @@ export function winMeasure(win) {
   };
   if (typeof win.event === 'string' || typeof win.var === 'string') {
     const name = String(win.event ?? win.var), isEvent = typeof win.event === 'string';
-    const q = isEvent
+    const mine = isEvent && win.of === 'player' && Array.isArray(win.subjects) ? win.subjects.map(s => `${name}:${s}`) : null;
+    const q = mine
+      ? rt => mine.reduce((n, k) => n + (rt.state.counts[k] || 0), 0)
+      : isEvent
       ? rt => { const c = rt.state.counts; if (c[name] !== undefined) return c[name]; let n = 0; for (const k in c) if (k.startsWith(name + ':')) n += c[k]; return n; }
       : rt => { const v = Number(rt.state.vars[name]); return Number.isFinite(v) ? v : 0; };
     return {
-      label: `${isEvent ? 'event' : 'var'} ${name}`, target,
+      label: `${isEvent ? 'event' : 'var'} ${name}${mine ? ` (${win.subjects.join(', ')})` : ''}`, target,
       start: rt => ({ q0: q(rt) }), track: () => null, carry: c => c,
       advance: (rt, c) => (isEvent ? q(rt) - c.q0 : towards(q(rt), c.q0)),
     };
@@ -107,7 +114,9 @@ export function winMeasure(win) {
   const C = win.component, of = win.of || 'opponents';
   /** How each entity first carried the component (ids are deterministic per seed). */
   const first = new Map();
-  const carriers = rt => Object.values(rt.state.entities).filter(e => e?.components?.[C] !== undefined && (of === 'player' ? e.id === 'player' : of === 'opponents' ? e.id !== 'player' : true));
+  // Sides are the kernel's one reading of the cards' side declarations (kernel/sides.js): 'opponents' are the entities
+  // not on the player's side (never its own pieces), 'player' the player and its side.
+  const carriers = rt => Object.values(rt.state.entities).filter(e => e?.components?.[C] !== undefined && (of === 'player' ? onPlayerSide(rt, e) : of === 'opponents' ? !onPlayerSide(rt, e) : true));
   const changed = rt => { let n = 0; for (const e of carriers(rt)) { const j = JSON.stringify(e.components[C]); if (!first.has(e.id)) first.set(e.id, j); else if (first.get(e.id) !== j) n++; } return n; };
   return {
     label: `${of}' component ${C}`, target: null,
@@ -131,6 +140,16 @@ export function plotZones(doc) {
   (doc.plot?.quests || []).forEach((q, i) => (q.objectives || []).forEach((o, j) => visit(o, `plot.quests[${i}].objectives[${j}]`)));
   (doc.plot?.endings || []).forEach((e, i) => visit(e.when, `plot.endings[${i}].when`));
   return out;
+}
+
+/**
+ * Has play shown the loop (ARCHITECTURE §6.3: the core loop's declared events fire from play)? One of `loop`'s events
+ * (a name ending in ':' matches every typed form) fired in `fired` more often than idling fired it (`idle`). The gate's
+ * reading (planner/verify-adapter.js) and the explorer's stop (playtest.js opts.prove) are this one function.
+ * @param {string[]} loop @param {Record<string, number>} fired @param {Record<string, number>} idle
+ */
+export function loopShown(loop, fired, idle) {
+  return loop.some(e => Object.keys(fired).some(k => (e.endsWith(':') ? k.startsWith(e) : k === e) && (fired[k] || 0) > (idle[k] || 0)));
 }
 
 /**

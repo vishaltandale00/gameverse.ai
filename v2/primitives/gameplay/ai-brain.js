@@ -12,6 +12,7 @@ import {
 } from './ai-lib.js';
 import { touchDefeats } from './combat-lib.js';
 import { stepsFrom } from '../../kernel/testing.js';
+import { opposed } from '../../kernel/sides.js';
 
 const ID = 'gameplay.ai.brain';
 export const KINDS = ['wander', 'patrol', 'chase', 'flee', 'follow', 'guard', 'flyer', 'circle', 'ambush', 'sit', 'work', 'target-tile', 'sight-challenge', 'goto'];
@@ -93,6 +94,9 @@ export function hostile(rt, a, b) {
   if (s.grudges?.[a.id]?.[b.id] !== undefined) return true;
   const o = s.overrides?.[`${fa}>${fb}`];
   if (o !== undefined) return o;
+  // Both on declared sides (kernel/sides.js): an agent never targets its own side, and every other side is hostile.
+  const sides = opposed(rt, a, b);
+  if (sides !== null) return sides;
   const table = rt.caches.aiFactions || DEFAULT_FACTIONS;
   return Boolean(table[fa]?.hostile?.includes(fb));
 }

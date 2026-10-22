@@ -8,6 +8,10 @@
 //   union    for every ordered pair, composition never throws: it composes into a document that passes the checks and
 //            keeps both loops, or fails with a named problem (the adapter compose-check names, the zone it cannot
 //            re-bind, the instance both would share);
+//   world    every template's world, and every composed pair's, at the start of play (content.js startProblems): every
+//            participant its loops declare (sides, teams, racers, fighters) is an entity of the world as generated, and
+//            the player stands inside its space where it can; a pair whose world has no place for them fails with
+//            compose_participants_absent or compose_player_misplaced (a board's pieces on a board of gems);
 //   play     the representative pairs (board × creature-battle nested, platformer ∪ race union) through the gate and
 //            the bots their loops name, on world seeds 1-3, with replay;
 //   create   "chess but with pokemon" and "Sonic racing" through createKernelPipeline with a fake writer.
@@ -25,7 +29,8 @@ import { verifyDocument } from '../v2/planner/verify-adapter.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { composeTemplates, tuneTarget } from '../v2/planner/templates.js';
 import { composeNested, composeUnion, prefixDocument, definedIds, entryTriggers, innerLoops, prefixOf, COMPOSE_RULES } from '../v2/planner/compose.js';
-import { playContext, SEEDS, GATE, BOT_BUDGET_MS } from '../v2/templates/contract.js';
+import { startProblems } from '../v2/planner/content.js';
+import { playContext, SEEDS, GATE, BOT_STEPS } from '../v2/templates/contract.js';
 import { strategies, select, modeBots } from '../v2/verify/strategies/index.js';
 import { modesIn } from '../v2/primitives/gameplay/modes-lib-mode.js';
 import { fakeWriter } from './v2-p-pipeline-fixtures.js';
@@ -44,6 +49,11 @@ const NESTED = PAIRS.filter(([a, b]) => entryTriggers(templateById(a).doc, regis
 /** Problems that say two documents cannot share one instance of a primitive (one loop each, one value each, one id each). */
 const SHARED = new Set(['compose_loop_shared', 'compose_param_conflict', 'compose_id_collision']);
 const timings = {};
+/** The start-of-play problems of a document on a seed, as text (empty when its world seats everything it declares). */
+const startOf = (doc, seed) => { const r = startProblems(doc, registry, logic, seed); return [...r.absent, ...r.misplaced].map(p => p.message); };
+/** Composition problems that say the composed world has no place for what the document declares. */
+const PLACELESS = new Set(['compose_participants_absent', 'compose_player_misplaced']);
+
 
 test('prefix: every template\'s document prefixed preflights, defines only prefixed ids and keeps its loops', () => {
   const t0 = performance.now();
@@ -83,7 +93,7 @@ test(`nested: every ordered pair with an entry event and an enterable inner loop
     const label = `${a} × ${b}`;
     if (!r.doc) {
       assert.ok(r.problems.length, `${label}: no document and no problem`);
-      for (const p of r.problems) assert.ok(SHARED.has(p.code), `${label}: ${p.code} ${p.message}`);
+      for (const p of r.problems) assert.ok(SHARED.has(p.code) || PLACELESS.has(p.code), `${label}: ${p.code} ${p.message}`);
       refused.push(`${label}: ${[...new Set(r.problems.map(p => p.code))].join(', ')}`);
       continue;
     }
@@ -91,6 +101,7 @@ test(`nested: every ordered pair with an entry event and an enterable inner loop
     const pre = preflight(structuredClone(r.doc), registry, logic);
     assert.ok(pre.ok, `${label}: ${JSON.stringify(pre.errors.slice(0, 4))}`);
     assert.deepEqual(loopProblems(pre.doc, registry, { logic }), [], `${label}: the loop check`);
+    assert.deepEqual(startOf(r.doc, r.doc.seed), [], `${label}: the world seats what it declares`);
     // Both loops are there, the inner one entered on the outer's declared event with its declared outcomes.
     for (const u of [...loopsOf(templateById(a).doc), ...loopsOf(templateById(b).doc)]) assert.ok(uses(r.doc).has(u), `${label}: ${u} is in the composed document`);
     const nested = r.doc.systems.filter(s => s.use === 'engine.adapt.nested');
@@ -146,12 +157,33 @@ test(`union: every ordered pair (${PAIRS.length}) composes into a document that 
     assert.ok(pre.ok, `${label}: ${JSON.stringify(pre.errors.slice(0, 4))}`);
     assert.deepEqual(checkComposition(pre.doc, registry, { logic }).failures, [], label);
     assert.deepEqual(loopProblems(pre.doc, registry, { logic }), [], label);
+    assert.deepEqual(startOf(r.doc, r.doc.seed), [], `${label}: the world seats what it declares`);
     assert.deepEqual(r.doc.spaces.map(s => s.id), templateById(a).doc.spaces.map(s => s.id), `${label}: one world, the primary's`);
     for (const u of [...loopsOf(templateById(a).doc), ...loopsOf(templateById(b).doc)]) assert.ok(uses(r.doc).has(u), `${label}: ${u} in the united document`);
   }
   t.diagnostic(`composed ${composed.length}: ${composed.join('; ')}`);
   for (const [code, labels] of Object.entries(failed)) t.diagnostic(`${code} ${labels.length}: ${labels.join('; ')}`);
   timings.unionMs = Math.round(performance.now() - t0);
+});
+
+// Placement is decided on the world as generated (engine.spawner rule.band, content.js placeParticipants): a seat guessed
+// before the world exists (a board's pieces on a maze's walls) never spawns, and every static check passes.
+test('world: every template seats every participant its loops declare, and its player where it can stand, at the start of play on world seeds 1-3', () => {
+  const t0 = performance.now();
+  for (const t of TEMPLATES) for (const seed of SEEDS) assert.deepEqual(startOf(t.doc, seed), [], `${t.id} seed ${seed}`);
+  timings.worldTemplatesMs = Math.round(performance.now() - t0);
+});
+
+// Every composed pair's world is judged where the pair is composed (the nested and union tests below assert startOf on
+// each composed document); here the two ends of the class: a maze's open cells seat a board's pieces, a board of gems
+// has none for them.
+test('world: a board game on a maze chase seats its pieces on the maze\'s open cells; on a board of gems it fails naming the pieces with no place', () => {
+  const maze = composeUnion(part('maze-chase'), part('board'), cat);
+  assert.ok(maze.doc, JSON.stringify(maze.problems));
+  assert.deepEqual(startOf(maze.doc, maze.doc.seed), []);
+  const gems = composeUnion(part('match-board'), part('board'), cat);
+  assert.equal(gems.doc, null);
+  assert.ok(gems.problems.length && gems.problems.every(p => p.code === 'compose_participants_absent'), JSON.stringify(gems.problems));
 });
 
 /** The gate and the bots the document's loops name: viable, the gate plays those bots, and each of `run` (default: all of them) wins on SEEDS and replays. */
@@ -162,7 +194,7 @@ async function plays(doc, run = null) {
   const named = modeBots(ctx).map(x => x.s.id);
   assert.deepEqual(select(ctx).chosen.map(c => c.s.id), named, 'the gate plays the bots the loops name');
   for (const id of run ?? named) {
-    const opts = { budgetMs: BOT_BUDGET_MS, seeds: [...SEEDS] };
+    const opts = { maxSteps: BOT_STEPS, seeds: [...SEEDS] };
     const a = strategies.get(id).run(ctx, opts), b = strategies.get(id).run(ctx, opts);
     assert.equal(a.ok, true, `${id}: ${JSON.stringify(a.problems).slice(0, 400)}`);
     const runs = a.metrics.runs ?? a.metrics.matches;
@@ -202,11 +234,25 @@ test('play: platformer ∪ race on the level; the gate finds it viable and the p
   timings.playUnionMs = Math.round(performance.now() - t0);
 });
 
-// The race bot plays a race on foot with held move directions only (v2/verify/strategies/race.js raceMacros); on a
-// side-view level the route to the next checkpoint crosses pits that only the jump verb the controls give clears, so it
-// holds 'move 1,0' against the first gap until its budget runs out ("budget_exhausted: the race driver ran out of budget
-// before the race ended", lap 0). Not run here: it spends its whole budget.
-test('play: platformer ∪ race: the race bot wins the race on foot through the level\'s controls', { todo: 'bot defect (v2/verify, controls agent): the race bot\'s on-foot macros are held directions only; it never presses jump, so it cannot pass the level\'s pits (budget_exhausted, lap 0)' });
+// The race on the platformer's level is run on foot: the course crosses pits and hazards that only the jump key clears,
+// so the race bot runs to each checkpoint zone the way the platformer bot runs to its goal (race.js: platformRunner on a
+// space with gravity and paths), through the level's controls. The race's win ends nothing in the union (the game's win
+// is the primary's goal), so winning the race is finishing first: place 1 after every lap, on world seeds 1-3, the
+// same runs on a second play.
+test('play: platformer ∪ race: the race bot wins the race on foot through the level\'s controls on world seeds 1-3', () => {
+  const t0 = performance.now();
+  const r = composeUnion(part('platformer'), part('race'), cat);
+  const ctx = playContext(preflight(structuredClone(r.doc), registry, logic), registry, logic);
+  const race = r.doc.systems.find(s => s.use === 'gameplay.race').with;
+  const opts = { maxSteps: BOT_STEPS, seeds: [...SEEDS] };
+  const a = strategies.get('race').run(ctx, opts), b = strategies.get('race').run(ctx, opts);
+  assert.equal(a.ok, true, JSON.stringify(a.problems).slice(0, 400));
+  assert.deepEqual(a.metrics.runs.map(x => [x.seed, x.place, x.lap]), SEEDS.map(s => [s, 1, race.laps]), JSON.stringify(a.metrics.runs.map(({ path, ...x }) => x)));
+  assert.ok(a.metrics.runs.every(x => x.path.some(m => m.startsWith('run '))), 'on foot: the platform runner ran the course');
+  const strip = rs => rs.map(({ budget, ...x }) => x);
+  assert.deepEqual(strip(b.metrics.runs), strip(a.metrics.runs), 'replays');
+  timings.playUnionRaceMs = Math.round(performance.now() - t0);
+});
 
 // ---------- create, end to end, with a fake writer ----------
 

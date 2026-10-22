@@ -30,8 +30,6 @@ import { isStr, isObj } from '../kernel/guards.js';
 
 /** At most this many primitives in one bundle (the seed, its companions and its adapter instances). */
 export const MAX_BUNDLE = 4;
-/** Ranking penalty per primitive a bundle adds beyond its seed (declaredFit units). */
-export const BUNDLE_PENALTY = 1;
 /** At most this many declared companions are searched for one seed. */
 export const COMPANION_POOL = 6;
 

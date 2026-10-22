@@ -6,7 +6,8 @@
 // of the course (the far edge of its zones, a distance, or a win). When it
 // fails, the problem names the zone ("chunk") the furthest survivor was in.
 import { inputMacros, hold, applyOption, optionLabels, vitality, posOf } from '../drive.js';
-import { budget as makeBudget, problem } from '../util.js';
+import { problem } from '../util.js';
+import { seedBudgets } from './common.js';
 
 /** Run axis and direction from an idle probe; null when the player does not drift. */
 export function runAxis(rt, frames = 30) {
@@ -42,8 +43,8 @@ export function prove(rt, { done, macros, every = 6, beam = 16, maxFrames = 3600
       for (const m of here) {
       rt.restore(node.snap);
       const v0 = vitality(rt);
-      if (m.option !== undefined) { const opts = rt.availableOptions(), o = opts[optionLabels(opts).indexOf(m.label)]; if (!o) continue; applyOption(rt, o, b); }
-      else hold(rt, m.input, every, b);
+      if (m.option !== undefined) { const opts = rt.availableOptions(), o = opts[optionLabels(opts).indexOf(m.label)]; if (!o) continue; applyOption(rt, o); }
+      else hold(rt, m.input, every);
       const path = [...node.path, m.label];
       if (done(rt)) return { ok: true, frames: f + every, best: { snap: rt.snapshot(), path, sc: score(rt) }, path };
       const v = vitality(rt);
@@ -65,13 +66,15 @@ export default {
   intent: 'Auto-scrolling courses (runners, flappers, scrolling shooters): a beam prover must find a line through every zone to the end of the course.',
   requires: { capabilities: ['position'] },
   detect(ctx) { const rt = ctx.make(ctx.seed); return Boolean(runAxis(rt)); },
-  run(ctx, { every = 6, beam = 16, maxFrames = 3600, distance = null, budgetMs = 2000, maxSteps = Infinity, quantum = 0.5, seeds = [ctx.seed] } = {}) {
-    const b = makeBudget({ ms: budgetMs, steps: maxSteps });
+  run(ctx, { every = 6, beam = 16, maxFrames = 3600, distance = null, maxSteps = Infinity, quantum = 0.5, seeds = [ctx.seed] } = {}) {
+    const sb = seedBudgets(maxSteps);
+    /** The budget of the seed being played (seedBudgets: one per seed). @type {any} */
+    let b = null;
     const probe = ctx.make(seeds[0]), dir = runAxis(probe);
-    if (!dir) return { ok: true, proven: [], problems: [], metrics: { skipped: 'no run axis' }, exhaustive: false, budget: b.report() };
+    if (!dir) return { ok: true, proven: [], problems: [], metrics: { skipped: 'no run axis' }, exhaustive: false, budget: sb.report() };
     /** One seed: the beam from that world's start; the run it found (or the furthest survivor) as a result record. */
     const play = seed => {
-      const rt = ctx.make(seed);
+      const rt = (b = sb.budget()).meter(ctx.make(seed));
       const p = rt.player(), sIdx = ctx.doc.spaces.findIndex(s => s.id === p.space), space = ctx.doc.spaces[sIdx], api = rt.space(p.space);
       const start = posOf(rt)[dir.axis];
       // Course end: given distance, else the far edge of the zones along the run axis, else the space size.
@@ -107,7 +110,7 @@ export default {
       problems,
       metrics: { axis: dir.axis, goal: first.goal, frames: first.frames, reached: first.won ? first.goal : null, failedZone: first.zone, path: first.path,
         runs: runs.map(({ sIdx, space, zone, timeout, ...r }) => ({ ...r, ...(zone ? { zone } : {}) })) },
-      exhaustive: false, budget: b.report(),
+      exhaustive: false, budget: sb.report(),
     };
   },
 };

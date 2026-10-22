@@ -18,6 +18,9 @@ export default {
     loop: { shows: ['entities', 'zones'], verbs: [], progress: ['checkpoint', 'lap', 'race_finished'],
       // As an encounter (engine.adapt.nested): finishing first beats the rivals; finishing below first, timing out or a DNF loses to them.
       outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onWin', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onLose', player: 'defeated', opponent: 'keeps' } } } },
+    // Whose side its entities are on, for every consumer: wins, bots, combat teams, AI, renderers (kernel/sides.js):
+    // every racer races for itself (each racers entry a side of its own).
+    sides: { param: 'racers', each: true },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "racers", "min": 3, "why": "a race needs rivals: racers lists the player and at least two other racer ids or archetypes", "example": ["player", "rival_1", "rival_2", "rival_3"]},
@@ -47,7 +50,7 @@ export default {
       onLose: { type: 'effects', default: [], effect: 'run when the player finishes below first, runs out of time or DNFs' },
     },
     provides: {
-      events: ['race_countdown', 'race_start', 'checkpoint', 'checkpoint:*', 'lap', 'best_lap', 'race_finished', 'race_finished:*', 'wrong_way', 'race_timeout', 'race_dnf', 'ghost_saved', 'position_changed'],
+      events: ['race_countdown', 'race_start', 'checkpoint', 'checkpoint:*', 'lap', 'lap:*', 'best_lap', 'race_finished', 'race_finished:*', 'wrong_way', 'race_timeout', 'race_dnf', 'ghost_saved', 'position_changed'],
       vars: ['race.position', 'race.lap', 'race.time', 'race.timer', 'race.best'],
       actions: [],
       services: ['race.targets'],
@@ -59,7 +62,7 @@ export default {
     engage: { participants: { param: 'racers' }, encounter: { start: [{ do: 'start_race' }], config: { autoStart: false } } },
     // Race mode: laps through checkpoint zones against rivals (and the clock with timeLimit).
     // Its target service (mode.targets): each AI-controlled racer's next checkpoint zone while the race runs.
-    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, targets: 'race.targets', win: { param: 'onWin', shown: { var: 'race.lap', max: 'race.laps' }, reads: { event: 'lap', by: { movement: true } } }, lose: { param: 'onLose', once: true, reads: { event: 'race_finished', by: { movement: true } } }, bot: 'race' },
+    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, targets: 'race.targets', win: { param: 'onWin', shown: { var: 'race.lap', max: 'race.laps' }, reads: { event: 'lap', of: 'player', by: { movement: true } } }, lose: { param: 'onLose', once: true, reads: { event: 'race_finished', by: { movement: true } } }, bot: 'race' },
   },
   logic(logic) {
     logic.predicate('race', {
@@ -142,7 +145,7 @@ export default {
       if (id === 'player' && s.timer !== null) s.timer += frames(config.checkpointBonus);
       if (r.next === 0) {
         const time = s.t - r.lapStart; r.laps.push(time); r.lapStart = s.t; r.lap++;
-        rt.emit('lap', { race: config.id, who: id, lap: r.lap, time: r6(time / 60) });
+        rt.emitTyped('lap', id, { race: config.id, who: id, lap: r.lap, time: r6(time / 60) });
         if (id === 'player') lapVars(r);
         if (r.best === null || time < r.best) {
           r.best = time;

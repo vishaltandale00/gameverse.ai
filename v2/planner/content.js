@@ -26,7 +26,12 @@ import { placements, spawnRules, spawnEffects } from './census.js';
 import { spawnerId } from './engage.js';
 import { cardLoop } from './loop.js';
 import { spaceExtent } from './world.js';
+import { matches } from '../primitives/gameplay/modes-lib-util.js';
+import { createWorld } from '../kernel/world.js';
+import { preflight } from '../kernel/document.js';
+import { standable } from '../primitives/engine/runtime-lib.js';
 import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
+import { sideDecl } from '../kernel/sides.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /**
@@ -268,16 +273,13 @@ export const SEAT = 'seat_';
  *   members: string | null, placed: number, space: Record<string, unknown> | null }} Participants
  */
 /**
- * The component field that names a participant's group: a string field of the component whose name is the
- * group param's singular or whose declaration names the param ("the sides[] id this unit fights for").
+ * The component field that names a participant's group: the field the card's side declaration names (card.sides
+ * { param, component, field }: kernel/sides.js) for that param and component, else none.
  * @param {unknown} card @param {string} component @param {string} param @returns {string | null}
  */
 export function groupField(card, component, param) {
-  const fields = prop(prop(prop(card, 'components'), component), 'fields');
-  if (!isObj(fields)) return null;
-  const one = param.replace(/s$/, ''), named = new RegExp(`\\b(${param}|${one})\\b`, 'i');
-  const hit = Object.entries(fields).find(([k, f]) => prop(f, 'type') === 'string' && (k === one || named.test(String(prop(f, 'effect') || ''))));
-  return hit ? hit[0] : null;
+  const d = sideDecl(card);
+  return d && d.param === param && d.component === component && isStr(d.field) ? d.field : null;
 }
 /**
  * Every loop of a document that declares group participants and the archetypes they are made of.
@@ -303,32 +305,12 @@ export function participantsOf(doc, registry) {
   return out;
 }
 /**
- * Cells of one group's band at the edge of [x0, y0, x1, y1): group 0 the far row, 1 the near row, 2 and 3 the side
- * columns (a fifth group starts a band further in), lines from the edge inward, each from its middle out.
- * @param {number} g @param {number[]} area @param {number} n @param {Set<string>} taken @returns {number[][]}
- */
-function band(g, area, n, taken) {
-  const [x0, y0, x1, y1] = area.map(Math.floor), W = x1 - x0, H = y1 - y0, side = g % 4, ring = Math.floor(g / 4);
-  const rows = side < 2, len = rows ? W : H, depth = Math.max(1, Math.floor((rows ? H : W) / 2));
-  const order = Array.from({ length: len }, (_, i) => i).sort((a, b) => Math.abs(a - (len - 1) / 2) - Math.abs(b - (len - 1) / 2) || a - b);
-  /** @type {number[][]} */
-  const cells = [];
-  for (let r = ring * depth; r < depth * (ring + 1) && cells.length < n; r++) for (const i of order) {
-    if (cells.length >= n) break;
-    const line = side === 0 ? y1 - 1 - r : side === 1 ? y0 + r : side === 2 ? x0 + r : x1 - 1 - r;
-    const at = rows ? [x0 + i, line] : [line, y0 + i];
-    if (at[0] < x0 || at[1] < y0 || at[0] >= x1 || at[1] >= y1 || taken.has(at.join())) continue;
-    taken.add(at.join()); cells.push(at);
-  }
-  return cells;
-}
-/**
  * Seat every loop's participants (participantsOf): their archetypes placed for their groups by spawn rules the
  * placement owns (ids `seat_...`); rules others wrote for those archetypes are replaced. A group's archetypes are
  * the ones whose group field (or the group's members) names it; a group named by none takes the archetypes no group
  * claims (their distinct group values matched to such groups in order when they line up), else all of them, with
  * the group field set on its entities. Each group gets at least its archetypes once and its share of the contract's
- * `placed`. Cells on a cell space without enough zones, else one zone per group. Idempotent; input untouched.
+ * `placed`. An edge band of a cell space without enough zones (spawner rule.band, resolved on the generated world), else one zone per group. Idempotent; input untouched.
  * @template T @param {T} input @param {RegistryLike} registry @returns {{ doc: T, added: Placement[] }}
  */
 export function placeParticipants(input, registry) {
@@ -342,7 +324,6 @@ export function placeParticipants(input, registry) {
   const rules = [];
   /** @type {Set<string>} */
   const seated = new Set();
-  const playerAt = prop(doc.player, 'at');
   for (const L of loops) {
     const pieces = archetypesWith(doc, { need: 'archetypes', component: L.component });
     const space = L.space;
@@ -356,21 +337,20 @@ export function placeParticipants(input, registry) {
     const values = [...new Set(free.map(value).filter(isStr))];
     empty.forEach((g, j) => of.set(g.id, values.length === empty.length && free.every(a => isStr(value(a))) ? free.filter(a => value(a) === values[j]) : free.length ? free : pieces));
     const zones = objects(space.zones).filter(z => isStr(z.id));
-    const cellSpace = (registry.get(String(space.use))?.card.needs?.content || []).includes('cells');
-    const area = cellSpace ? spaceExtent(registry, space) : null;
-    if (zones.length < L.groups.length && !area) continue;
-    const taken = new Set(Array.isArray(playerAt) ? [playerAt.slice(0, 2).map(Number).join()] : []);
-    for (const r of rules) if (Array.isArray(r.at)) taken.add(r.at.join());
+    // A cell space seats each group at its own edge band (spawner rule.band), resolved by the spawner on the world as
+    // generated: which cells the space's generators leave open is the world's, never guessed here.
+    const cellSpace = (registry.get(String(space.use))?.card.needs?.content || []).includes('cells') && Boolean(spaceExtent(registry, space));
+    if (zones.length < L.groups.length && !cellSpace) continue;
     L.groups.forEach((g, gi) => {
       const mine = of.get(g.id) || [];
       const n = Math.max(mine.length, Math.ceil(L.placed / L.groups.length));
-      const cells = zones.length >= L.groups.length ? null : band(gi, /** @type {number[]} */ (area), n, taken);
-      for (let k = 0; k < (cells ? cells.length : n); k++) {
+      const byZone = zones.length >= L.groups.length;
+      for (let k = 0; k < n; k++) {
         const a = mine[k % mine.length], comp = prop(a.components, L.component);
         const id = `${SEAT}${g.id}_${a.id}_${k + 1}`.slice(0, 60);
         const own = L.field && value(a) !== g.id ? { components: { [L.component]: { ...(isObj(comp) ? comp : {}), [L.field]: g.id } } } : {};
-        rules.push({ id, archetype: a.id, space: space.id, ...(cells ? { at: cells[k] } : { zone: zones[gi].id }), unique: true, activation: 'always', respawnSec: 0, ...own });
-        added.push({ rule: id, archetype: a.id, zone: cells ? null : zones[gi].id, count: 1, contract: `${L.use}#participants:${L.param}` });
+        rules.push({ id, archetype: a.id, space: space.id, ...(byZone ? { zone: zones[gi].id } : { band: gi }), unique: true, activation: 'always', respawnSec: 0, ...own });
+        added.push({ rule: id, archetype: a.id, zone: byZone ? zones[gi].id : null, count: 1, contract: `${L.use}#participants:${L.param}` });
         seated.add(String(a.id));
         // Without a group field, the group lists its entities (the loop's members field).
         if (!L.field && L.members) { const inst = list(doc.systems)[Number(L.path.slice(8, -1))], grp = list(prop(prop(inst, 'with'), L.param)).find(x => prop(x, 'id') === g.id); if (isObj(grp)) { const m = list(grp[L.members]); if (!m.includes(id)) grp[L.members] = [...m, id]; } }
@@ -385,6 +365,82 @@ export function placeParticipants(input, registry) {
   // Participant placement is code's: earlier seats and any other rule for a seated archetype make way.
   spawner.with.rules = [...list(spawner.with.rules).filter(r => !String(prop(r, 'id')).startsWith(SEAT) && !seated.has(String(prop(r, 'archetype')))), ...rules];
   return { doc: /** @type {T} */ (doc), added };
+}
+
+/** A declared participant absent from the world at the start of play (absentParticipants). @typedef {{ use: string, path: string, param: string, entry: string, message: string }} AbsentParticipant */
+/**
+ * The participants a document's loops declare (card.loop needs.participants, card.engage.participants: sides, teams,
+ * racers, fighters...) that no entity of the world stands for in any of `worlds` (the entity maps of the states at the
+ * start of play). A group entry ({ id }) is present when an entity is on it: its group field (participantsOf) names the
+ * group, or the group's members (card.engage.join.field) select it; a group neither reading can judge is left to the
+ * loop check. A selector entry (an entity id, archetype or tag) is present when an entity matches it.
+ * @param {unknown} doc @param {RegistryLike} registry @param {Array<Record<string, any>>} worlds @returns {AbsentParticipant[]}
+ */
+export function absentParticipants(doc, registry, worlds) {
+  const seated = participantsOf(doc, registry);
+  const entities = worlds.flatMap(w => Object.values(isObj(w) ? w : {})).filter(isObj);
+  /** @type {AbsentParticipant[]} */
+  const out = [];
+  const visit = (/** @type {unknown} */ inst, /** @type {string} */ path) => {
+    const use = prop(inst, 'use'), card = isStr(use) ? registry.get(use)?.card : null;
+    if (!card || !isStr(use)) return;
+    const params = new Set([cardLoop(card)?.needs.participants, prop(prop(card.engage, 'participants'), 'param')].filter(isStr).filter(P => card.params?.[P]));
+    for (const P of params) {
+      const given = prop(prop(inst, 'with'), P), entries = list(given !== undefined ? given : card.params?.[P]?.default);
+      const S = seated.find(x => x.path === path && x.param === P);
+      const join = prop(card.engage, 'join'), members = prop(join, 'param') === P && isStr(prop(join, 'field')) ? String(prop(join, 'field')) : null;
+      for (const e of entries) {
+        if (isStr(e)) {
+          if (!entities.some(x => matches(x, e))) out.push({ use, path, param: P, entry: e, message: `${use}: '${e}' (with.${P}) is no entity of the world at the start of play` });
+          continue;
+        }
+        const id = prop(e, 'id'); if (!isStr(id)) continue;
+        const sel = members ? list(prop(e, members)).filter(isStr) : [];
+        if (!(S?.field) && !sel.length && !members) continue;
+        const on = (/** @type {Record<string, any>} */ x) => (S?.field ? prop(prop(prop(x, 'components'), S.component), S.field) === id : false) || sel.some(m => matches(x, m));
+        if (!entities.some(on)) out.push({ use, path, param: P, entry: id, message: `${use}: ${P} '${id}' has no entity in the world at the start of play${S ? ` (none with ${S.component}.${S.field || '?'} '${id}')` : ''}${sel.length ? ` (none of its ${members}: ${sel.slice(0, 6).join(', ')})` : ''}` });
+      }
+    }
+  };
+  list(prop(doc, 'systems')).forEach((s, i) => visit(s, `systems[${i}]`));
+  list(prop(doc, 'spaces')).forEach((sp, i) => list(prop(sp, 'generators')).forEach((g, j) => visit(g, `spaces[${i}].generators[${j}]`)));
+  return out;
+}
+
+/** The frames of the start of play a participant must be in the world by (an intro or a countdown runs then). */
+export const START_FRAMES = Object.freeze([0, 2, 30, 60]);
+/**
+ * The entity maps of a world at the start of play (START_FRAMES; idle input, while it plays); `seen(frame)` is called
+ * at each of those frames with the world there.
+ * @param {{ state: any, step: (input: {}) => void }} rt @param {(frame: number) => void} [seen] @returns {Array<Record<string, any>>}
+ */
+export function startOfPlay(rt, seen) {
+  seen?.(0);
+  const out = [structuredClone(rt.state.entities)];
+  for (let f = 1; f <= START_FRAMES[START_FRAMES.length - 1] && rt.state.status === 'playing'; f++) { rt.step({}); if (START_FRAMES.includes(f)) { seen?.(f); out.push(structuredClone(rt.state.entities)); } }
+  return out;
+}
+/** The player standing where it cannot at the start of play (engine runtime-lib standable). @typedef {{ id: string, space: string, at: unknown, message: string }} Misplaced */
+/**
+ * Boot a document on `seed` and judge its world at the start of play: the participants its loops declare that are
+ * absent (absentParticipants), and the player when, once play has begun (START_FRAMES[1]), it stands outside its space
+ * or in a cell it cannot stand in (a start carried from a world the composition replaced, a board filled with tiles).
+ * A document that does not preflight has nothing to judge here (preflight reports it).
+ * @param {unknown} doc @param {RegistryLike} registry @param {import('../kernel/types.js').LogicLike} logic @param {number} [seed]
+ * @returns {{ absent: AbsentParticipant[], misplaced: Misplaced[] }}
+ */
+export function startProblems(doc, registry, logic, seed = 1) {
+  const pre = preflight(structuredClone(doc), registry, logic);
+  if (!pre.ok) return { absent: [], misplaced: [] };
+  const rt = createWorld(pre.doc, registry, logic, { seed });
+  /** @type {Misplaced[]} */
+  const misplaced = [];
+  const worlds = startOfPlay(rt, f => {
+    if (f !== START_FRAMES[1]) return;
+    const p = rt.player(), api = p?.space ? rt.space(p.space) : null;
+    if (p && api && !standable(rt, api, p.space, p.at, p)) misplaced.push({ id: p.id, space: String(p.space), at: p.at, message: `the player stands at ${JSON.stringify(p.at)} in ${p.space}, outside it or in a cell it cannot stand in` });
+  });
+  return { absent: absentParticipants(pre.doc, registry, worlds), misplaced };
 }
 
 /** Problems as model-facing text, grouped (each with the shape to add). @param {Array<{ code: string, path: string, message: string, hint?: string }>} problems @param {number} [limit] */

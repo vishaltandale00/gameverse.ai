@@ -1,24 +1,38 @@
-// Generation quality: content contracts, the strict outline form, selection completeness, per-zone detail,
-// core-primitive protection and world-size revisions. Offline: fake and replayed writers, real catalogue.
+// Generation quality: content contracts, the strict outline form, selection completeness, core-primitive protection
+// and world-size revisions. Offline: fake and replayed writers, real catalogue.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildCatalogue } from '../v2/planner/catalog.js';
+import { buildCatalogue, spaceVariants } from '../v2/planner/catalog.js';
 import { contractsFor, populateProblems, placeContent, unreadReaders, placementCounts } from '../v2/planner/content.js';
 import { outlineForm, decode, specSchema } from '../v2/planner/outline-form.js';
 import { proceduralOutline, writeOutline, coreOf } from '../v2/planner/outline.js';
-import { selectPrimitives, locomotionCompleteness, baseLocomotion } from '../v2/planner/select.js';
-import { decomposeOffline, normalize } from '../v2/planner/decompose.js';
+import { locomotionCompleteness, baseLocomotion } from '../v2/planner/select.js';
+import { normalize } from '../v2/planner/decompose.js';
 import { repairDocument } from '../v2/planner/repair.js';
 import { firstPlayable } from '../v2/planner/first-playable.js';
-import { detailForm, detailTasks, mergeDetail, proceduralDetail, sanitizePatch } from '../v2/planner/detail.js';
-import { tweakDocument, worldScaleRequest, routeWorldScale } from '../v2/planner/doc-revise.js';
+import { tweakDocument, routeWorldScale, WORLD_SIZE } from '../v2/planner/doc-revise.js';
 import { contentGrowth } from '../v2/planner/revision-check.js';
 import { census, kindViewPreserved } from '../v2/planner/census.js';
 import { preflight } from '../v2/kernel/document.js';
 import { fakeWriter, testCatalogue, picky } from './v2-p-pipeline-fixtures.js';
 
 const { registry, logic } = buildCatalogue();
+/**
+ * The selection these outline and form tests start from (selection itself is the model's build, tested in
+ * v2-p-pipeline-build*.test.js): a space and the primitives the idea's mechanics map to.
+ */
+const selectionFor = ({ space, systems, generators = [], mechanics }) => ({ version: 'test', systems, generators: generators.map(id => ({ id, space: 'world' })), graphics: [], bind: {}, gaps: [], provider: 'test', ms: 0,
+  spaces: [{ id: 'world', use: space, with: {}, role: 'world', caps: [...spaceVariants(registry, space)[0].caps] }],
+  mechanics: mechanics.map((m, i) => ({ ...m, primitives: i === 0 ? [...systems] : [], candidates: [], source: 'test', score: 1 })), completeness: { locomotion: { view: null, medium: null, removed: [], added: null } } });
+/** A decomposition of one idea (the model's, as normalize narrows it). */
+const ideaOf = (prompt, mechanics, extra = {}) => normalize({ title: prompt, premise: prompt, mechanics: mechanics.map(m => ({ id: m.split(' ')[0], verb: m.split(' ')[0], description: m, importance: 'core' })), views: [], spaces: [], ...extra }, prompt);
+/** Three ideas the forms are derived for: a dungeon, a creature RPG, a kart race. */
+const FORM_IDEAS = [
+  { prompt: 'A Zelda dungeon: explore rooms, fight monsters, find keys and beat the boss', mechanics: ['explore rooms', 'fight monsters', 'collect keys'], space: 'engine.space.tilemap', systems: ['gameplay.move.walk', 'gameplay.combat.melee', 'gameplay.combat.health', 'gameplay.inventory'], generators: ['engine.generate.dungeon.rooms'] },
+  { prompt: 'A Pokémon-style creature RPG: catch wild creatures, build a party and battle trainers', mechanics: ['catch wild creatures', 'battle trainers'], space: 'engine.space.tilemap', systems: ['gameplay.move.walk', 'gameplay.creature.catch', 'gameplay.creature.party', 'gameplay.creature.battle', 'gameplay.progression.level'], generators: ['engine.generate.tilemap.rooms'] },
+  { prompt: 'Mario Kart with shopping carts', mechanics: ['drive carts'], space: 'engine.space.track', systems: ['gameplay.vehicle.car', 'gameplay.race'] },
+];
 const fixture = name => JSON.parse(readFileSync(new URL(`./fixtures/v2-live/${name}.json`, import.meta.url), 'utf8'));
 
 /** Every object closed, every property required: what OpenAI strict json_schema accepts. */
@@ -68,9 +82,10 @@ test('placeContent spreads defined-but-unplaced archetypes over the zones, hosti
 });
 
 test('the outline form is a strict schema derived from exactly the chosen cards, and converts to a valid document', async () => {
-  for (const prompt of ['A Zelda dungeon: explore rooms, fight monsters, find keys and beat the boss', 'A Pokémon-style creature RPG: catch wild creatures, build a party and battle trainers', 'Mario Kart with shopping carts']) {
-    const d = decomposeOffline(prompt);
-    const sel = await selectPrimitives({ decomposition: d, registry });
+  for (const idea of FORM_IDEAS) {
+    const { prompt } = idea;
+    const d = ideaOf(prompt, idea.mechanics);
+    const sel = selectionFor({ ...idea, mechanics: d.mechanics });
     const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 3, prompt }).doc;
     const form = outlineForm({ registry, skeleton: sk, selection: sel });
     assert.deepEqual(strictProblems(form.schema.schema), [], prompt);
@@ -80,8 +95,8 @@ test('the outline form is a strict schema derived from exactly the chosen cards,
     assert.ok(form.schema.schema.properties.archetypes.items.properties.components.properties, 'archetypes have component slots');
   }
   // A filled form: components decode (strict ones from JSON text), spawns land in the spawner, quests and dialogue appear.
-  const d = { ...decomposeOffline('fight monsters in a dungeon and talk to villagers on quests'), views: ['td'], movement: 'ground' };
-  const sel = await selectPrimitives({ decomposition: d, registry });
+  const d = ideaOf('fight monsters in a dungeon and talk to villagers on quests', ['fight monsters', 'talk to villagers', 'quests from villagers'], { views: ['td'], movement: 'ground' });
+  const sel = selectionFor({ space: 'engine.space.graph', systems: ['gameplay.move.grid', 'gameplay.combat.melee', 'gameplay.combat.health', 'gameplay.inventory', 'plot.character', 'plot.dialogue', 'plot.quest', 'engine.spawner'], mechanics: d.mechanics });
   const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 4 }).doc;
   const form = outlineForm({ registry, skeleton: sk, selection: sel });
   const space = sk.spaces[0];
@@ -119,9 +134,10 @@ test('decode: JSON text fields become values; strict ones never become strings; 
 });
 
 test('writeOutline with a replayed form: the model fills content, populate problems go back, the result is the model\'s game', async () => {
-  const d = { ...decomposeOffline('fight monsters in a dungeon with a sword'), views: ['td'], movement: 'ground' };
-  // A fixed selection (the offline lexical one is not the point here): melee combat with an inventory and a story.
-  const sel = { ...(await selectPrimitives({ decomposition: d, registry })), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
+  const d = ideaOf('fight monsters in a dungeon with a sword', ['fight monsters'], { views: ['td'], movement: 'ground' });
+  // A fixed selection: melee combat with an inventory. (No story runner: this idea tells no story, and the preset no
+  // longer drops a primitive the selection chose because the play spec's narrative flag says so.)
+  const sel = { ...selectionFor({ space: 'engine.space.tilemap', systems: [], mechanics: d.mechanics }), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
   const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
   const form = outlineForm({ registry, skeleton: sk, selection: sel });
   const needsEnemies = form.contracts.some(c => c.need === 'archetypes' && c.component === 'health');
@@ -148,8 +164,8 @@ test('writeOutline with a replayed form: the model fills content, populate probl
 });
 
 test('small forms: each checked as soon as it is written; a repair re-asks only the failing fields (fieldForm); a form the default model fails twice escalates', async () => {
-  const d = { ...decomposeOffline('fight monsters in a dungeon with a sword'), views: ['td'], movement: 'ground', core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'escape the dungeon', lose: '', theme: '', narrative: true, mashup: [] } };
-  const sel = { ...(await selectPrimitives({ decomposition: d, registry })), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
+  const d = { ...ideaOf('fight monsters in a dungeon with a sword', ['fight monsters']), views: ['td'], movement: 'ground', core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'escape the dungeon', lose: '', theme: '', narrative: true, mashup: [] } };
+  const sel = { ...selectionFor({ space: 'engine.space.tilemap', systems: [], mechanics: d.mechanics }), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
   const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
   const form = outlineForm({ registry, skeleton: sk, selection: sel });
   assert.ok(form.groups.length >= 4 && form.groups.every(g => strictProblems(g.schema.schema).length === 0), 'each small form is strict');
@@ -199,7 +215,8 @@ test('small forms: each checked as soon as it is written; a repair re-asks only 
 test('content packs: the preset ships valid species, moves, types and cards; the model only themes them', async () => {
   const d = normalize({ title: 'Pokemon chess', premise: 'chess with creatures', mechanics: [{ id: 'turns', verb: 'move', description: 'move pieces in turns', importance: 'core' }, { id: 'battle', verb: 'battle', description: 'captures are creature battles', importance: 'core' }], views: ['board'], acts: 2, zones: 4,
     core: { mode: 'tactics', interaction: 'pieces-turns', opponent: 'ai-side', win: 'checkmate', lose: 'checkmated', theme: '', narrative: false, secondary: [{ mode: 'creature-battle', relation: 'nested', why: '' }] } }, 'chess with pokemon', registry);
-  const sel = await selectPrimitives({ decomposition: d, registry });
+  const sel = { ...selectionFor({ space: 'engine.space.grid', systems: ['gameplay.turns', 'gameplay.creature.battle', 'gameplay.creature.party'], mechanics: d.mechanics }) };
+  sel.mechanics[0].primitives = ['gameplay.turns']; sel.mechanics[1].primitives = ['gameplay.creature.battle'];
   const p = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 3 });
   assert.ok(p.structure.packs.includes('content.species') && p.structure.packs.includes('content.moves'), JSON.stringify(p.structure));
   const doc = /** @type {any} */ (p.doc);
@@ -230,20 +247,6 @@ test('selection completeness: base locomotion follows the view and the medium (t
   assert.ok(baseLocomotion(registry, { caps: tile.caps, view: 'td', medium: 'ground' }).every(c => registry.get(c.id).card.views.includes('td') || registry.get(c.id).card.views.includes('any')));
 });
 
-test('a core mechanic primitive the chosen spaces cannot host becomes a "needs adapter" core gap, never a quiet downgrade', async () => {
-  const { registry: reg } = testCatalogue();
-  // The dash needs gravity: only spaces without it are on offer, though a registered space could host it (so an adapter can).
-  const d = normalize({ title: 'T', premise: 'p', mechanics: [{ id: 'dash', verb: 'dash', description: 'dash through enemies with a burst of speed', importance: 'core' }], views: ['board'] });
-  const sel = await selectPrimitives({ decomposition: d, registry: reg, excludeSpaces: ['engine.space.flatx', 'engine.space.tilemap'] });
-  const g = sel.gaps.find(x => x.mechanic === 'dash');
-  assert.equal(g?.kind, 'adapter', JSON.stringify(sel.gaps));
-  assert.equal(g.importance, 'core');
-  assert.match(g.description, /^needs adapter: gameplay\.test\.dash -> /);
-  // When no registered space provides the capability at all, it is a capability gap instead.
-  const w = await selectPrimitives({ decomposition: normalize({ title: 'T', premise: 'p', mechanics: [{ id: 'warp', verb: 'warp', description: 'warp through wormholes between distant stars', importance: 'core' }] }), registry: reg });
-  assert.equal(w.gaps.find(x => x.mechanic === 'warp')?.kind, 'capability');
-});
-
 test('repair synthesizes a required archetype component field from the owning card (no param_missing loop)', () => {
   const clock = fixture('clock-dungeon').doc;
   const doc = structuredClone(clock);
@@ -268,45 +271,12 @@ test('repair never removes a primitive to pass: a validate() error only the mode
   assert.deepEqual([...coreOf({ mechanics: [{ importance: 'core', primitives: ['gameplay.combat.melee'] }, { importance: 'supporting', primitives: ['gameplay.score'] }], systems: ['gameplay.combat.melee', 'gameplay.combat.health', 'gameplay.score'] }, registry)].sort(), ['gameplay.combat.health', 'gameplay.combat.melee'], 'what a core primitive requires is core too');
 });
 
-test('detail: the per-zone form adds spawns to the spawner and residents with their own lines; zones differ', async () => {
-  const lantern = JSON.parse(readFileSync(new URL('../v2/games/hollow-lantern.json', import.meta.url), 'utf8'));
-  const task = detailTasks(lantern)[2];
-  const form = detailForm({ registry, doc: lantern, task });
-  assert.deepEqual(strictProblems(form.schema.schema), []);
-  assert.equal(form.schema.schema.properties.spawns.items.properties.zone, undefined, 'spawns are fixed to the zone');
-  const comps = form.schema.schema.properties.archetypes.items.properties.components.properties;
-  const blank = Object.fromEntries(Object.keys(comps).map(k => [k, null]));
-  const patch = form.toPatch({
-    archetypes: [{ id: 'moth_swarm', kind: 'enemy', name: 'Moth swarm', components: { ...blank, health: { max: 3, hp: null, regen: null, iframeSec: null, respawn: null, resist: null, armor: null } } }],
-    spawns: [{ id: 'moths', archetype: 'moth_swarm', min: 3, max: 4, respawnSec: 0, when_json: null }, { id: 'more_moss', archetype: 'mossling', min: 2, max: 2, respawnSec: null, when_json: null }],
-    items: [], characters: [{ id: 'hermit', name: 'Hermit', role: 'local', bio: 'b', archetype: null, dialogue: [] }], dialogue: [], quests: [], beats: [], generators_json: null,
-  });
-  const clean = sanitizePatch(patch, task, lantern);
-  assert.ok(clean.spawns.every(r => r.zone === task.zone && r.id.startsWith(`${task.zone}_`)));
-  assert.equal(clean.spawns[0].archetype, `${task.zone}_moth_swarm`, 'new archetype ids are namespaced and spawns follow them');
-  assert.equal(clean.spawns[1].archetype, 'mossling', 'existing archetypes keep their ids');
-  assert.equal(clean.plot.characters[0].home, task.zone);
-  // Merge + repair (acceptPatch's checks before verification; verifying this full-scale game takes minutes in the strategies stage).
-  const merged = mergeDetail(lantern, clean, registry);
-  assert.deepEqual(merged.added.spawns, clean.spawns.map(x => x.id));
-  const r = repairDocument(merged.doc, { registry, logic, rounds: 4 });
-  assert.ok(r.ok, JSON.stringify(r.errors.slice(0, 2)));
-  const rules = r.doc.systems.find(s => s.use === 'engine.spawner').with.rules.filter(x => x.zone === task.zone);
-  assert.ok(rules.some(x => x.archetype === `${task.zone}_moth_swarm`));
-  // Offline detail gives each zone its own mix of the game's pickups and enemies.
-  const base = fixture('clock-dungeon').doc;
-  const placed = placeContent(base, registry).doc;
-  const ts = detailTasks(placed);
-  const mixes = ts.map(t => JSON.stringify((proceduralDetail(placed, t, registry).spawns || []).map(s => [s.archetype, s.count])));
-  assert.ok(mixes.length < 2 || new Set(mixes).size > 1, 'not the same patch in every zone');
-});
-
 test('revisions: "Bigger world" grows the generated content, and a container-only resize is caught', async () => {
   const pac = fixture('pacman-library').doc;
-  assert.equal(worldScaleRequest('Bigger world'), 1.5);
-  assert.equal(worldScaleRequest('make the maze twice as big'), 2);
-  assert.equal(worldScaleRequest('faster ghosts'), null);
-  const t = await tweakDocument(pac, 'Bigger world', { registry });
+  // The world's size is one of the tweak's declared options (its spaces declare scale params); the model picks it and
+  // the factor. No words of the request decide it.
+  const writer = fakeWriter([req => JSON.stringify({ param: req.schema.schema.properties.param.enum.includes(WORLD_SIZE) ? WORLD_SIZE : 'none', number: 1.5, flag: null, why: 'scripted' })]);
+  const t = await tweakDocument(pac, 'Bigger world', { registry, writer });
   assert.ok(t.matched && t.scaled?.factor === 1.5, JSON.stringify(t.ops));
   const grown = contentGrowth(pac, t.doc, registry, logic);
   assert.ok(grown.grew, JSON.stringify(grown));

@@ -59,8 +59,10 @@ test('discovery: modules and promoted files are found without a list; malformed 
   await assert.rejects(loadTemplates({ dir }), e => e.code === 'template_duplicate');
 });
 
-for (const t of TEMPLATES) test(`contract: template ${t.id} passes every check against the live catalogue`, async () => {
+for (const t of TEMPLATES) test(`contract: template ${t.id} passes every check against the live catalogue`, async tc => {
   const r = await checkTemplate(t, live);
+  // With a person's hands (HUMAN_INPUT): which templates only a hand faster than a person's wins (evidence, reported).
+  for (const b of r.evidence.bots) tc.diagnostic(`human-rate ${b.humanRate}/s: ${b.id} ${(b.human || []).map(h => `seed ${h.seed} ${h.status}`).join(', ')}`);
   assert.deepEqual(r.problems, [], `${t.id}: ${JSON.stringify(r.problems).slice(0, 800)}`);
   assert.deepEqual(Object.keys(r.evidence.stages), STAGES, 'every stage ran');
   assert.ok(r.evidence.bots.length && r.evidence.bots.every(b => b.runs.map(x => x.seed).join() === SEEDS.join()), JSON.stringify(r.evidence.bots));

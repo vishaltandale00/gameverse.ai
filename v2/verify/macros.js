@@ -8,7 +8,7 @@
 //           with the jump verb (discovered by probing) when the next waypoint
 //           is higher in a gravity space. It proves the route with physics.
 // Solvers and playtesters attach them with rt.options (the public runtime API).
-import { hold, inputMacros, posOf } from './drive.js';
+import { hold, inputMacros, posOf, applyOption, pressableVerbs } from './drive.js';
 import { navOptions, navFrom } from './movement.js';
 import { instancesOf } from './util.js';
 
@@ -22,7 +22,7 @@ export function jumpVerb(rt) {
   const base = rt.snapshot(), y0 = pos()[1];
   let found = null;
   // On a controlled runtime (v2/verify/controls.js) only the verbs a key presses are tried: what a person can press.
-  for (const v of rt.controls ? rt.controls.pressable() : rt.actions()) {
+  for (const v of pressableVerbs(rt)) {
     rt.restore(base);
     hold(rt, { actions: { [v]: true }, held: { [v]: true } }, 1);
     let top = pos()?.[1] ?? y0;
@@ -113,7 +113,7 @@ export function travelOptions(registry, { mode = 'auto' } = {}) {
     const zones = rt.doc.spaces.find(s => s.id === p.space)?.zones || [];
     // A zone the game's own primitives already offer travel to (their real controllers) gets no second, generic macro.
     const offered = new Set(rt.optionsExcept(provider).filter(o => o.macro && o.actions?.travel).map(o => o.actions.travel));
-    return zones.filter(z => !api.inZone(p, z.id, rt) && !offered.has(z.id)).map(z => ({ label: `travel ${z.id}`, macro: resolved, zone: z.id, apply: r => travel(r, registry, z.id, { mode: resolved, jump }) }));
+    return zones.filter(z => !api.inZone(p, z.id, rt) && !offered.has(z.id)).map(z => ({ label: `travel ${z.id}`, macro: resolved, zone: z.id, jump, apply: r => travel(r, registry, z.id, { mode: resolved, jump }) }));
   };
   provider.resolved = () => resolved;
   return provider;
@@ -129,4 +129,23 @@ export function withTravel(make, registry, opts = {}) {
     make: seed => { const rt = make(seed); last = travelOptions(registry, opts); rt.options(last); return rt; },
     mode: () => last?.resolved() ?? null,
   };
+}
+
+/** Can a person travel on a controlled runtime by holding the move axis (travel macros realized as held input)? */
+export const steerable = rt => Boolean(rt.controls && (rt.controls.controls.map?.axes?.move || []).length);
+
+/**
+ * Take an option the way a person does. On a controlled runtime (v2/verify/controls.js) a travel macro (travelOptions'
+ * "travel <zone>", which a solver may realize by warping) is held input: the move axis (and the jump verb) along the
+ * space's path when the move axis is a control, else the travel verb toward its zone (a choice verb a mounted UI issues)
+ * and waiting until the player is there; every other option issues its actions (drive.js applyOption). Uncontrolled,
+ * the option as a solver takes it.
+ * @param {any} rt @param {any} option @param {any} registry
+ */
+export function takeOption(rt, option, registry, { travelFrames = 900 } = {}) {
+  if (!rt.controls || option.zone === undefined || typeof option.apply !== 'function') return void applyOption(rt, option);
+  if (steerable(rt)) return void travel(rt, registry, option.zone, { mode: 'steer', jump: option.jump !== undefined ? option.jump : jumpVerb(rt), controlsOnly: true });
+  hold(rt, { actions: { travel: option.zone } }, 1);
+  const there = () => { const p = rt.player(); return p && rt.space(p.space).inZone?.(p, option.zone, rt); };
+  for (let k = 0; k < travelFrames && rt.state.status === 'playing' && !there(); k++) rt.step({});
 }

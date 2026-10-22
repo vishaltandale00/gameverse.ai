@@ -30,7 +30,7 @@
 //                 the opponents do (drives.actions/effects/events/movement, and the effects in their action data) must
 //                 be something that changes what the lose reads (lose.reads.by) -> loop_lose_unaffected_by_opponent.
 // Each failure is a stable problem code with a path, a hint and `need` (what is missing, as data) that the preset's
-// structural repair (presets.js repairLoop) and the planner's re-planning (replan.js) act on. Nothing here names a
+// structural repair (presets.js repairLoop) and the build's loop steps (build-steps.js) act on. Nothing here names a
 // primitive, a genre or a game: every rule reads a card declaration.
 import { readsOf, cardLoop, endsGame, effectsIn, loopInstances, winOwner, unwired, evaluatesEndings, hostOf } from './loop.js';
 import { contractsOf, participantsOf } from './content.js';
@@ -39,6 +39,7 @@ import { defaultsOf } from './catalog.js';
 import { Logic } from '../kernel/logic.js';
 import { buildLogic } from '../kernel/world.js';
 import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
+import { staticSides, playerSides } from '../kernel/sides.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
@@ -198,6 +199,7 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
   // The primitives of the document that act for AI-controlled entities (card.drives), with the effects their action data runs.
   const drivers = driversIn(doc, registry);
   const rules = spawnRules(doc, registry);
+  const sides = staticSides(doc, registry);
   /** Does an archetype carry component C (its own components, or a spawn rule's override placing it)? @param {string} a @param {string} C */
   const carries = (a, C) => prop(prop(arches.find(x => x.id === a), 'components'), C) !== undefined || rules.some(r => prop(r, 'archetype') === a && prop(prop(r, 'components'), C) !== undefined);
   /** The drivers of a loop's AI participants (the loop, or the host it plays through, driving its own). @param {LoopInstance} l @param {Set<string>} ai @returns {DriverInstance[]} */
@@ -244,7 +246,9 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
       seated.groups.forEach((g, j) => {
         if (!(members.get(g.id)?.size)) push(LOOP_CODES.group, l, `${path}[${groups.findIndex(x => x.id === g.id) >= 0 ? groups.findIndex(x => x.id === g.id) : j}]`, `${P} '${g.id}' has no entities in the world (archetypes with a "${seated.component}" component on it, placed by spawns)`, `seat ${seated.component} archetypes for '${g.id}' (the card's content example)`, { kind: 'group', param: P, group: g.id, component: seated.component });
       });
-      opponents = new Set(seated.groups.filter(g => !(where && seats(objects(entries).find(x => x.id === g.id) || {}))).flatMap(g => [...(members.get(g.id) || [])]).filter(a => a !== 'player' && a !== playerArch));
+      // Its opponents: the groups that neither seat the player nor are the player's side (kernel/sides.js playerSides).
+      const mine = new Set(playerSides(doc, registry, l.use));
+      opponents = new Set(seated.groups.filter(g => !mine.has(g.id) && !(where && seats(objects(entries).find(x => x.id === g.id) || {}))).flatMap(g => [...(members.get(g.id) || [])]).filter(a => a !== 'player' && a !== playerArch));
       // AI control: a group that does not seat the player whose seating field (engage.join.where) is 'ai'; with no
       // `where`, every group without the player when the loop's declared opponent is AI-controlled.
       const ai = seated.groups.filter(g => {
@@ -327,8 +331,10 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
       const C = reads.component, owners = ownersOf(registry, C);
       if (!owners.some(o => used.has(o))) push(LOOP_CODES.owner, l, 'systems', `its win reads the "${C}" component, which no primitive of the document runs (owners: ${owners.join(', ') || 'none registered'})`, `add ${owners[0] || `a primitive that owns components.${C}`}`, { kind: 'owner', component: C, owners });
       // The entities the win reads carry the component: its opponents (groups), or what its archetypes contract plays with.
+      // With no participant groups seating them, its opponents are the archetypes its archetypes contract plays with that
+      // are not on the player's side (kernel/sides.js, the reading the gate's measure and the bots make).
       const of = reads.of || 'opponents';
-      const pool = of === 'opponents' ? (opponents ?? new Set(contractsOf(registry, l.use).filter(c => c.need === 'archetypes').flatMap(c => arches.filter(a => a.id !== playerArch && a.kind !== 'player' && (!c.component || prop(a.components, c.component) !== undefined) && (!c.kinds?.length || c.kinds.includes(String(a.kind)))).map(a => String(a.id))))) : null;
+      const pool = of === 'opponents' ? (opponents ?? new Set(contractsOf(registry, l.use).filter(c => c.need === 'archetypes').flatMap(c => arches.filter(a => a.id !== playerArch && a.kind !== 'player' && !sides.archetype(String(a.id))?.mine && (!c.component || prop(a.components, c.component) !== undefined) && (!c.kinds?.length || c.kinds.includes(String(a.kind)))).map(a => String(a.id))))) : null;
       if (pool) {
         const lacking = [...pool].filter(id => { const a = arches.find(x => x.id === id); return !a || prop(a.components, C) === undefined; }).filter(id => !seatOverride(doc, registry, id, C));
         if (lacking.length) push(LOOP_CODES.component, l, 'content.archetypes', `its win reads the ${of}' "${C}", which ${lacking.join(', ')} lack${lacking.length === 1 ? 's' : ''}`, `give them a ${C} component (the card's content example)`, { kind: 'component', component: C, archetypes: lacking, of });

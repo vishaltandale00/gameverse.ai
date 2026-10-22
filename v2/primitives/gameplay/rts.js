@@ -22,7 +22,7 @@ export default {
   card: {
     // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
     presents: { rts: [{ when: { building: true }, role: 'prop', prop: 'castle' }, { when: { node: true }, role: 'prop', prop: 'crystal' }, { role: 'npc' }] },
-    // Whose side its entities are on, as a person sees it (graphics/allegiance.js).
+    // Whose side its entities are on, for every consumer: wins, bots, combat teams, AI, renderers (kernel/sides.js).
     sides: { param: 'factions', control: 'player', component: 'rts', field: 'faction' },
     loop: { shows: ['entities', 'cells'], verbs: ['select', 'order', 'produce', 'rally'], progress: ['unit_produced', 'gathered', 'building_complete', 'unit_attack'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).

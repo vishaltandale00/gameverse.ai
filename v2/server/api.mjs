@@ -12,7 +12,6 @@ import { buildServices, runJob, legacyError } from './job-runner.mjs';
 import { createIsolatedPipeline } from './isolate.js';
 import { catalogHash } from '../planner/catalog.js';
 import { KERNEL_PIPELINE_VERSION } from '../planner/kernel-pipeline.js';
-import { decomposeOffline } from '../planner/decompose.js';
 import { askQuestions } from '../planner/questions.js';
 import { createImprovementService } from '../improve/promote.js';
 import { createLocalClaudeRunner } from '../improve/runners/local-claude.js';
@@ -185,12 +184,12 @@ export function createGameService({ root = fileURLToPath(new URL('../../local-da
       const prompt = String(prop(body, 'prompt') || '').trim();
       if (!prompt) throw Object.assign(Error('Describe your game first.'), { status: 400 });
       const started = performance.now();
-      // The instant (offline) decomposition frames the questions; the real one runs in the build.
-      const decomposition = decomposeOffline(prompt);
+      // The questions are the model's, from the idea itself: no words of it are read as mechanics here (the
+      // decomposition runs in the build, by the model).
       const { writers } = await ready;
-      if (!writers.spec || env.V2_QUESTIONS === 'off') return { questions: [], decomposition, ms: Math.round(performance.now() - started) };
-      try { const asked = await askQuestions(writers.spec, undefined, prompt, decomposition); return { ...asked, decomposition }; }
-      catch { return { questions: [], decomposition, ms: Math.round(performance.now() - started) }; }
+      if (!writers.spec || env.V2_QUESTIONS === 'off') return { questions: [], ms: Math.round(performance.now() - started) };
+      try { return await askQuestions(writers.spec, undefined, prompt, null); }
+      catch { return { questions: [], ms: Math.round(performance.now() - started) }; }
     }],
     ['DELETE', /^\/api\/v2\/games\/([a-z0-9-]+)$/, async (_, m) => {
       if (jobs.running().some(j => j.gameId === m[1])) throw Object.assign(Error('That game is still being built.'), { status: 409 });

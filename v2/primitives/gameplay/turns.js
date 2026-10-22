@@ -49,7 +49,7 @@ export default {
   card: {
     // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
     presents: { turns: { role: 'npc' } },
-    // Whose side its entities are on, as a person sees it (graphics/allegiance.js).
+    // Whose side its entities are on, for every consumer: wins, bots, combat teams, AI, renderers (kernel/sides.js).
     sides: { param: 'sides', control: 'player', component: 'turns', field: 'side', members: 'members' },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { turn_act: { type: 'choice', of: 'a unit, its action and the action target', pick: 'unit', from: 'options', emits: ['turn_action', 'overwatch_set', 'intent_submitted'] }, turn_move: { type: 'choice', of: 'a unit and a cell its move reaches', pick: 'unit', from: 'options', emits: ['unit_moved', 'intent_submitted'] }, select_unit: { type: 'choice', of: 'a unit of the side whose turn it is', selects: 'unit', emits: ['unit_selected'] } },

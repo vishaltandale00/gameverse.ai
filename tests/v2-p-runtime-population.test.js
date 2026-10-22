@@ -165,6 +165,46 @@ test('spawner and portal replay deterministically across snapshot/restore', () =
   assert.deepEqual(a.snapshot(), b.snapshot());
 });
 
+// Placement on the world as generated (spawner rule.band, sampled grid spawns): a generated maze, whose walls no document
+// coordinate knows, seats every band rule on cells its archetype can stand in, each group at its own edge, no two on one
+// cell, the same cells on replay and after a restore; a zone spawn sampled over walls lands on an open cell of the zone.
+test('engine.spawner: band seats and sampled grid spawns resolve on the generated world, never on a wall', async () => {
+  const { templateById } = await import('../v2/templates/registry.js');
+  const { buildCatalogue } = await import('../v2/planner/catalog.js');
+  const { createWorld } = await import('../v2/kernel/world.js');
+  const { standable } = await import('../v2/primitives/engine/runtime-lib.js');
+  const cat = buildCatalogue();
+  const base = structuredClone(templateById('maze-chase').doc);
+  const [W, H] = base.spaces[0].with.size;
+  base.spaces[0].zones = [...(base.spaces[0].zones || []), { id: 'whole', rect: [0, 0, W, H] }];
+  base.content.archetypes.push({ id: 'piece', kind: 'npc', components: { body: {} } });
+  const seats = [0, 1, 2, 3].flatMap(band => [1, 2, 3].map(k => ({ id: `seat_${band}_${k}`, archetype: 'piece', band, unique: true, activation: 'always', respawnSec: 0 })));
+  const scattered = { id: 'scattered', archetype: 'piece', zone: 'whole', activation: 'always', count: [40, 40], respawnSec: 0 };
+  base.systems.unshift({ use: 'engine.spawner', with: { intervalSec: 0, rules: [...seats, scattered] } });
+  const pre = preflight(base, cat.registry, cat.logic);
+  assert.ok(pre.ok, JSON.stringify(pre.errors.slice(0, 3)));
+  const boot = seed => { const rt = createWorld(pre.doc, cat.registry, cat.logic, { seed }); let failed = 0; rt.on('spawn_failed', () => failed++); for (let i = 0; i < 10; i++) rt.step({}); return { rt, failed }; };
+  for (const seed of [1, 2, 3]) {
+    const { rt, failed } = boot(seed), api = rt.space('maze');
+    assert.equal(failed, 0, `seed ${seed}: every spawn found a place`);
+    const placed = Object.values(rt.state.entities).filter(e => e.archetype === 'piece');
+    assert.equal(placed.length, seats.length + 40, `seed ${seed}`);
+    for (const e of placed) assert.ok(standable(rt, api, 'maze', e.at, e), `seed ${seed}: ${e.id} at ${e.at} stands in an open cell`);
+    const cells = seats.map(r => rt.entity(r.id).at.join());
+    assert.equal(new Set(cells).size, cells.length, 'one seat per cell');
+    assert.ok(!cells.includes(rt.player().at.join()), 'no seat on the player');
+    const at = band => seats.filter(r => r.band === band).map(r => rt.entity(r.id).at);
+    assert.ok(Math.min(...at(0).map(c => c[1])) > Math.max(...at(1).map(c => c[1])), 'band 0 the far rows, band 1 the near rows');
+    assert.ok(Math.max(...at(2).map(c => c[0])) < Math.min(...at(3).map(c => c[0])), 'band 2 the left columns, band 3 the right');
+  }
+  // The seats are kept in state: a replay and a restore seat the same cells.
+  const a = boot(2).rt, b = boot(2).rt, snap = b.snapshot();
+  for (let i = 0; i < 30; i++) b.step({});
+  b.restore(snap);
+  for (let i = 0; i < 30; i++) { a.step({}); b.step({}); }
+  assert.deepEqual(a.snapshot(), b.snapshot());
+});
+
 test('preflight rejects bad spawner and portal configs with stable codes', () => {
   const bad = doc([
     { use: 'engine.spawner', with: { groups: [{ id: 'g', maxAlive: 1 }], rules: [{ id: 'a', archetype: 'slime', count: [5, 2], group: 'nope', at: 'x', release: {} }, { id: 'a', archetype: 'unicorn', zone: 'mars', unique: true, count: [2, 2] }] } },

@@ -11,11 +11,11 @@
 // The attack verbs are the player verbs of the document's loops that act on the component the mode's win reads (the
 // loops requiring that component's owner, card.loop.verbs). Moves hold the axis toward the next cell; which way an
 // axis moves on the board is learned from what the held axis did, never assumed. It must win (defeat the boss).
-import { hold, posOf, threats, collectibles, hpOf } from '../drive.js';
-import { budget as makeBudget, stateHash } from '../util.js';
+import { hold, posOf, threats, collectibles, hpOf, pressableVerbs } from '../drive.js';
+import { stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
 import { stepsFrom } from '../../kernel/testing.js';
-import { multiSeed, problem, yieldToEncounter } from './common.js';
+import { multiSeed, problem, yieldToEncounter, seedBudgets } from './common.js';
 
 const LOOP = 'crawl';
 
@@ -31,7 +31,7 @@ export function attackVerbs(ctx, rt, mode) {
   const C = mode.win?.reads?.component;
   if (!C) return [];
   const owners = ctx.registry.cards().filter(c => c.components?.[C] !== undefined).map(c => c.id);
-  const actions = new Set(rt.actions());
+  const actions = new Set(pressableVerbs(rt)); // the crawler presses them: what a key presses
   const out = [];
   for (const s of ctx.doc.systems || []) {
     const card = ctx.registry.get(s.use)?.card;
@@ -63,21 +63,23 @@ export default {
   intent: 'Dungeon crawls: a crawler that walks to pickups, opens locks, and fights its way to the boss through the real controls must defeat it.',
   requires: { capabilities: ['navigate'] },
   detect(ctx) { return modesIn(ctx.doc, ctx.registry).some(m => m.mode.loop === LOOP); },
-  run(ctx, { seeds = [1], passRate = 1, maxFrames = 36000, budgetMs = 4000, maxSteps = Infinity, moveFrames = 30 } = {}) {
-    const b = makeBudget({ ms: budgetMs, steps: maxSteps });
+  run(ctx, { seeds = [1], passRate = 1, maxFrames = 36000, maxSteps = Infinity, moveFrames = 30 } = {}) {
+    const sb = seedBudgets(maxSteps);
+    /** The budget of the seed being played (seedBudgets: one per seed). @type {any} */
+    let b = null;
     const mode = modesIn(ctx.doc, ctx.registry).find(m => m.mode.loop === LOOP);
     const where = mode?.path || 'spaces';
-    if (!mode) return { ok: true, proven: [], problems: [], metrics: { skipped: 'no crawl' }, exhaustive: false, budget: b.report() };
+    if (!mode) return { ok: true, proven: [], problems: [], metrics: { skipped: 'no crawl' }, exhaustive: false, budget: sb.report() };
     const play = seed => {
-      const rt = ctx.make(seed), verbs = attackVerbs(ctx, rt, mode.mode), C = mode.mode.win?.reads?.component ?? null, counts = { fight: 0, walk: 0, open: 0, wait: 0 };
+      const rt = (b = sb.budget()).meter(ctx.make(seed)), verbs = attackVerbs(ctx, rt, mode.mode), C = mode.mode.win?.reads?.component ?? null, counts = { fight: 0, walk: 0, open: 0, wait: 0 };
       // How the move axes map onto the board: learned from what a held axis did ([sign x, sign y] per board axis).
       const axis = [1, 1];
       const tried = new Map();
       let gains = 0, lastPickups = null, blockedFor = 0;
       while (rt.state.status === 'playing' && rt.state.frame < maxFrames && !b.over()) {
-        if (yieldToEncounter(ctx, rt, ['navigate'], b)) continue; // an encounter holds this loop: play the one the player is in
+        if (yieldToEncounter(ctx, rt, ['navigate'])) continue; // an encounter holds this loop: play the one the player is in
         const p = rt.player();
-        if (!p || p.components.health?.dead) { hold(rt, {}, 1, b); counts.wait++; continue; }
+        if (!p || p.components.health?.dead) { hold(rt, {}, 1); counts.wait++; continue; }
         const api = rt.space(p.space), here = keyAt(api, posOf(rt, p));
         const pickups = collectibles(rt);
         if (lastPickups !== null && pickups.length < lastPickups) gains++;
@@ -89,7 +91,7 @@ export default {
         // Fight what stands next to the player: face it and swing.
         const adjacent = foes.find(e => near(here, e));
         if (adjacent && verbs.length) {
-          hold(rt, { axes: { move: toward(here, keyAt(api, adjacent.at)) }, actions: { [verbs[0]]: true } }, 1, b);
+          hold(rt, { axes: { move: toward(here, keyAt(api, adjacent.at)) }, actions: { [verbs[0]]: true } }, 1);
           counts.fight++; continue;
         }
         // Walk to the nearest pickup or foe, else to an obstacle; what the player stood next to without it changing
@@ -101,13 +103,13 @@ export default {
           pool = Object.values(rt.state.entities).filter(e => e !== p && e.space === p.space && !pickups.includes(e) && !foes.includes(e) && fresh(e));
           plan = pool.length ? firstStep(api, p, rt, k => pool.some(e => near(k, e))) : null;
         }
-        if (!plan) { hold(rt, {}, 6, b); counts.wait++; continue; }
-        if (!plan.first) { for (const e of pool) if (near(plan.at, e)) tried.set(e.id, gains); hold(rt, {}, 2, b); counts.open++; continue; }
+        if (!plan) { hold(rt, {}, 6); counts.wait++; continue; }
+        if (!plan.first) { for (const e of pool) if (near(plan.at, e)) tried.set(e.id, gains); hold(rt, {}, 2); counts.open++; continue; }
         // Hold the axis toward the next cell until the player is in it; learn the axis signs from where it went.
         const want = plan.first, input = { axes: { move: toward(here, want) } };
         let moved = null;
         for (let f = 0; f < moveFrames && rt.state.status === 'playing'; f++) {
-          hold(rt, input, 1, b);
+          hold(rt, input, 1);
           const q = rt.player(); if (!q) break;
           const k = keyAt(api, posOf(rt, q)); if (k !== here) { moved = k; break; }
         }
@@ -117,15 +119,15 @@ export default {
           for (const i of [0, 1]) if (Math.sign(got[i] - a[i]) === -Math.sign(w[i] - a[i]) && got[i] !== a[i]) axis[i] = -axis[i];
         }
         blockedFor = moved ? 0 : blockedFor + 1;
-        if (blockedFor > 20) { hold(rt, {}, 10, b); blockedFor = 0; }
+        if (blockedFor > 20) { hold(rt, {}, 10); blockedFor = 0; }
       }
       const won = rt.state.status === 'won';
       return { seed, won, status: rt.state.status, frames: rt.state.frame, lives: rt.state.vars.lives ?? null, hp: rt.state.vars.hp ?? null, decisions: counts, hash: stateHash(rt.state), budget: !won && rt.state.status === 'playing' && Boolean(b.hit) };
     };
-    const r = multiSeed(play, { seeds, passRate, b });
+    const r = multiSeed(play, { seeds, passRate });
     const finished = r.runs.filter(x => !x.budget), problems = [];
     if (!finished.length) problems.push(problem('budget_exhausted', where, 'the crawler ran out of budget before the crawl ended', { severity: 'warning' }));
     else if (finished.filter(x => x.won).length / finished.length < passRate) { const last = finished[finished.length - 1]; problems.push(problem('too_hard', where, `a crawler won ${finished.filter(x => x.won).length}/${finished.length} crawls (last: ${last.status} after ${last.frames} frames)`, { hint: 'fewer or weaker guards, a weaker boss, more lives or health' })); }
-    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`a crawler defeated the boss in ${r.wins}/${r.runs.length} crawls`] : [], problems, metrics: { runs: r.runs, rate: r.rate }, exhaustive: false, budget: b.report() };
+    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`a crawler defeated the boss in ${r.wins}/${r.runs.length} crawls`] : [], problems, metrics: { runs: r.runs, rate: r.rate }, exhaustive: false, budget: sb.report() };
   },
 };

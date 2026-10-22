@@ -23,20 +23,20 @@ export function arcScore(levels) {
 /** Built-in agents. Each returns { solved, actions, path }. */
 export const AGENTS = {
   /** Breadth-first plot solver: optimal option count on small levels. */
-  solver: (doc, registry, logic, { budgetMs = 2000, maxStates = 50000, seed } = {}) => {
-    const r = solve(doc, registry, logic, { budgetMs, maxStates, seed, settleSteps: 0, checkReplay: false });
+  solver: (doc, registry, logic, { maxStates = 50000, seed } = {}) => {
+    const r = solve(doc, registry, logic, { maxStates, seed, settleSteps: 0, checkReplay: false });
     const path = Object.entries(r.endings).filter(([k]) => r.outcomes[k] !== 'lost').sort((a, b) => a[1].length - b[1].length)[0]?.[1] || null;
     return { solved: Boolean(path), actions: path ? path.length : null, path, exhaustive: r.exhaustive, states: r.states };
   },
   /** Best-first solver: fewer states, not always the shortest path. */
-  'best-first': (doc, registry, logic, { budgetMs = 2000, maxStates = 50000, seed } = {}) => {
-    const r = solve(doc, registry, logic, { search: 'best-first', budgetMs, maxStates, seed, settleSteps: 0, checkReplay: false });
+  'best-first': (doc, registry, logic, { maxStates = 50000, seed } = {}) => {
+    const r = solve(doc, registry, logic, { search: 'best-first', maxStates, seed, settleSteps: 0, checkReplay: false });
     const path = Object.entries(r.endings).filter(([k]) => r.outcomes[k] !== 'lost').sort((a, b) => a[1].length - b[1].length)[0]?.[1] || null;
     return { solved: Boolean(path), actions: path ? path.length : null, path, states: r.states };
   },
   /** Go-Explore playtester restricted to options. */
-  playtest: (doc, registry, logic, { budgetMs = 2000, maxRounds = 4000, seed } = {}) => {
-    const r = playtest(doc, registry, logic, { budgetMs, maxRounds, seed, optionsOnly: true, idleSeconds: 0 });
+  playtest: (doc, registry, logic, { maxRounds = 4000, maxFrames = 200000, seed } = {}) => {
+    const r = playtest(doc, registry, logic, { maxRounds, maxFrames, seed, optionsOnly: true, idleSeconds: 0 });
     return { solved: r.winnable, actions: r.win ? r.win.path.length : null, path: r.win?.path || null };
   },
 };

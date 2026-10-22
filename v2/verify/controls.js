@@ -20,7 +20,8 @@ import { uiControls, choiceVerbs, verbControl, verbInstances, instanceVerbs } fr
 import { cardLoop } from '../planner/loop.js';
 import { hostDocument } from '../web/host-doc.js';
 
-const INPUT = 'engine.input.actions';
+/** The input primitive: the device -> verb mapping a person's keys go through (its state is what the devices held, not the game). */
+export const INPUT = 'engine.input.actions';
 export const CONTROLS_VERSION = 'controls/0.1';
 
 /** A verb, value or axis the intent asks for that no control a person has can issue. */
@@ -74,7 +75,12 @@ export function driver(rt, registry) {
   function device(intent = {}) {
     const dev = { down: new Set(), pressed: new Set(), mouse: { dx: 0, dy: 0 }, wheel: 0, sticks: { lstick: [0, 0], rstick: [0, 0] } };
     const acts = {}, missing = [];
-    for (const [verb, v] of Object.entries(intent.axes || {})) {
+    // An action whose verb is a bound input axis, with a vector value (an option's `move: [1, 0]`: what the movement
+    // primitives read), is that axis held, as a person gives it; the other actions are presses or UI choices.
+    /** @type {Record<string, unknown>} */
+    const actions = {}, axes = { ...(intent.axes || {}) };
+    for (const [verb, v] of Object.entries(intent.actions || {})) { if (Array.isArray(v) && c.axisVerbs.has(verb) && axes[verb] === undefined) axes[verb] = v; else actions[verb] = v; }
+    for (const [verb, v] of Object.entries(axes)) {
       if (!Array.isArray(v) || (!v[0] && !v[1])) continue;
       const sources = c.map?.axes?.[verb] || [];
       const [x, y] = v;
@@ -94,12 +100,12 @@ export function driver(rt, registry) {
     }
     // A UI that issues choices from the game's options (controls.choice) sends an option's whole actions record, so an
     // intent carrying one of its verbs goes to it whole, the press verbs with it, in the record's order.
-    const record = Object.entries(intent.actions || {}).filter(([, v]) => v !== undefined && v !== null && v !== false);
+    const record = Object.entries(actions).filter(([, v]) => v !== undefined && v !== null && v !== false);
     // A UI that lists the game's options (controls.options: the story's choices) sends one's whole actions record.
     if (record.length && c.ui.options.length && rt.availableOptions().some(o => same(o.actions, intent.actions))) { for (const [verb, v] of record) acts[verb] = v; return { dev, acts, missing }; }
     const viaChoice = record.some(([verb, v]) => { const u = c.uiFor(verb); return u && c.ui.choice.includes(u) && !keysSending(c.map, verb, v).length; });
     if (viaChoice) { for (const [verb, v] of record) acts[verb] = v; return { dev, acts, missing }; }
-    for (const [verb, v] of Object.entries(intent.actions || {})) {
+    for (const [verb, v] of Object.entries(actions)) {
       if (v === undefined || v === null || v === false) continue;
       const keys = keysSending(c.map, verb, v);
       if (keys.length) { dev.down.add(keys[0]); dev.pressed.add(keys[0]); continue; }
@@ -108,15 +114,23 @@ export function driver(rt, registry) {
     }
     return { dev, acts, missing };
   }
+  /**
+   * The two channels of an intent: `device`, the kernel input sampled from the devices as the browser samples them
+   * (what the host reads through view.input), and `ui`, the actions mounted UI primitives send through view.act.
+   */
+  function parts(intent) {
+    const { dev, acts, missing } = device(intent);
+    if (missing.length) throw new ControlsMissing(missing);
+    return { device: sample(c.map, dev, { ...opts, dt: rt.dt }), ui: acts };
+  }
   return {
     controls: c,
     missing: intent => device(intent).missing,
-    /** The kernel input for an intent, sampled from the devices as the browser samples them, plus the UI actions. */
+    parts,
+    /** The kernel input for an intent: the devices' sample plus the UI actions, merged as the host merges them. */
     input(intent) {
-      const { dev, acts, missing } = device(intent);
-      if (missing.length) throw new ControlsMissing(missing);
-      const live = sample(c.map, dev, { ...opts, dt: rt.dt });
-      return { ...live, actions: { ...live.actions, ...acts } };
+      const { device: live, ui } = parts(intent);
+      return { ...live, actions: { ...live.actions, ...ui } };
     },
     /** The key names the controls card shows for a verb (bindings of the primary view). */
     keysFor: verb => c.map?.keys?.[verb] || [],
@@ -132,9 +146,29 @@ export function driver(rt, registry) {
  * person's devices and UI issue. rt.controls is the driver.
  */
 export function controlled(rt, registry) {
-  const d = driver(rt, registry), step = rt.step.bind(rt);
+  const d = driver(rt, registry), step = rt.step.bind(rt), read = rt.availableOptions.bind(rt), extend = rt.extend.bind(rt);
+  const snapshot = rt.snapshot.bind(rt), restore = rt.restore.bind(rt);
+  // The options of a state, read once per state: a bot reads them to decide and the driver again to send a listed
+  // option's record when it steps, and a lookahead restores one snapshot for every option it tries. A world's state
+  // changes by step, restore and extend (and a bot re-seeding the RNG it samples chances with), so a read is kept until
+  // one of those, and with the snapshot the state is a copy of (taken or restored, nothing stepped since), so restoring
+  // it again finds them. Callers get their own array.
+  /** @type {{ frame: number, rng: unknown, options: any[] } | null} */
+  let memo = null;
+  /** @type {object | null} the snapshot the state is a copy of */
+  let from = null;
+  const bySnap = new WeakMap();
+  const valid = () => memo !== null && memo.frame === rt.state.frame && memo.rng === rt.state.rng;
+  const forget = () => { memo = null; from = null; };
+  rt.availableOptions = () => {
+    if (!valid()) { memo = { frame: rt.state.frame, rng: rt.state.rng, options: read() }; if (from) bySnap.set(from, memo); }
+    return /** @type {{ options: any[] }} */ (memo).options.slice();
+  };
+  rt.snapshot = () => { const snap = snapshot(); from = snap; if (valid()) bySnap.set(snap, memo); return snap; };
+  rt.restore = snap => { restore(snap); from = snap; memo = bySnap.get(snap) ?? null; };
+  rt.extend = (doc, added) => { forget(); return extend(doc, added); };
   rt.controls = d;
-  rt.step = (intent = {}) => step(d.input(intent));
+  rt.step = (intent = {}) => { const input = d.input(intent); forget(); try { return step(input); } finally { forget(); } };
   return rt;
 }
 

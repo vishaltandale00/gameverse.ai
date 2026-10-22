@@ -149,14 +149,28 @@ const IDEAS = {
 const ideaSpec = (x, registry) => normalize({ title: x.ref, premise: x.premise, tone: x.core.theme, references: [{ name: x.ref, kind: 'game', keeps: [] }], views: x.views, movement: x.movement, acts: 1, zones: 3,
   spaces: [{ role: 'world', kind: x.kind, description: '' }], mechanics: x.mechanics.map(([id, importance, description]) => ({ id, verb: description.split(' ')[0], description, from: x.ref, importance })), core: x.core }, x.premise, registry);
 /** A model that picks the best-ranked candidate for every question. */
-const firstWriter = () => fakeWriter([req => { const p = req.schema.schema.properties; const field = p.space ? 'space' : 'pick'; return JSON.stringify({ [field]: p[field].enum[0], why: 'first', ...(p.spec ? { spec: '' } : {}) }); }]);
+const firstWriter = () => fakeWriter([req => { const p = req.schema.schema.properties; const field = p.space ? 'space' : p.world ? 'world' : 'pick'; return JSON.stringify({ [field]: p[field].enum[0], why: 'first', ...(p.spec ? { spec: '' } : {}) }); }]);
+/**
+ * A model that picks `prefer` (mechanic id -> primitive id) for a mechanic when it is on offer (its category first, over a
+ * long list), else the first option: options come in declaration order, so the first one is no judgement of fit.
+ */
+const preferWriter = prefer => fakeWriter([req => {
+  const p = req.schema.schema.properties, name = String(req.schema.name);
+  const want = prefer[/\nMechanic (\S+) \(/.exec(req.user)?.[1]];
+  const field = p.space ? 'space' : p.world ? 'world' : 'pick';
+  let pick = p[field].enum[0];
+  if (want && name === 'pick_primitive' && p.pick.enum.includes(want)) pick = want;
+  if (want && name === 'pick_category') pick = p.pick.enum.find(cat => req.user.split('\n').some(l => l.startsWith(`- ${cat} (`) && l.split(': ').slice(1).join(': ').split(', ').includes(want))) ?? pick;
+  return JSON.stringify({ [field]: pick, why: 'scripted', ...(p.spec ? { spec: '' } : {}) });
+}]);
+const PREFER = { sides: { move_pieces: 'gameplay.turns' }, collect: { collect_gems: 'gameplay.collectible' }, race: { race: 'gameplay.race' } };
 
 test('(e) the same machinery builds a turn-based sides game, a real-time collect game and a race', async () => {
   const { registry } = buildCatalogue();
   const built = {};
   for (const [name, x] of Object.entries(IDEAS)) {
     const d = ideaSpec(x, registry);
-    const w = firstWriter();
+    const w = preferWriter(PREFER[name]);
     const b = await buildSelection({ decomposition: d, registry, writer: w });
     built[name] = b;
     // The space fits how it is played and shows the idea's view; it was chosen before the first mechanic.
@@ -173,7 +187,7 @@ test('(e) the same machinery builds a turn-based sides game, a real-time collect
     }
     // Only small strict questions: the space (when more than one fits), per mechanic its coverage question or pick (a
     // category first over a long list), one per loop step asked, and the game's win when several are declared.
-    assert.ok(w.calls.every(c => ['pick_space', 'pick_primitive', 'pick_category', 'covered_by', 'pick_win', 'pick_lose', 'pick_driver', 'pick_coverage', 'pick_game_win'].includes(c.schema.name)));
+    assert.ok(w.calls.every(c => ['pick_space', 'pick_primitive', 'pick_category', 'covered_by', 'pick_win', 'pick_lose', 'pick_driver', 'pick_coverage', 'pick_game_win'].includes(c.schema.name)), w.calls.map(c => c.schema.name).join(' '));
     assert.equal(w.calls.filter(c => /^pick_(win|lose|driver|coverage|game_win)$/.test(c.schema.name)).length, b.steps.filter(s => s.kind !== 'mechanic' && s.asks.length).length, name);
     assert.equal(w.calls.filter(c => c.schema.name === 'pick_primitive').length, mech.filter(s => s.outcome !== 'covered').length, name);
     assert.ok(b.systems.length > 0, name);

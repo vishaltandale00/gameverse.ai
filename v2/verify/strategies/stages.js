@@ -21,7 +21,7 @@ export function stagesStrategy(lookup, detected) {
       const where = pathOf(ctx.doc, [STAGES]);
       if (!inner) return { ok: false, proven: [], problems: [problem('too_hard', where, 'no bot plays the mode these stages wrap', { hint: 'add the mode the stages are levels of' })], metrics: { inner: null, runs: [] }, exhaustive: false, budget: null };
       // The stages play the world the caller names: its seeds (the gate's world) go to the wrapped bot.
-      const r = inner.run(ctx, { budgetMs: opts.budgetMs ?? 2000, ...(opts[inner.id] || {}), ...(opts.inner || {}), ...(opts.seeds ? { seeds: opts.seeds } : {}) });
+      const r = inner.run(ctx, { ...(opts.maxSteps !== undefined ? { maxSteps: opts.maxSteps } : {}), ...(opts[inner.id] || {}), ...(opts.inner || {}), ...(opts.seeds ? { seeds: opts.seeds } : {}) });
       const runs = (r.metrics?.runs || []).map(x => ({ ...x, won: x.status ? x.status === 'won' : Boolean(x.won) }));
       const wins = runs.filter(x => x.won).length, problems = [...r.problems];
       if (runs.length && !wins && !problems.some(p => p.severity === 'error')) problems.push(problem('too_hard', where, `the ${inner.id} bot never completed the stage sequence in ${runs.length} runs`, { hint: 'easier stage goals, more moves or time, or fewer stages' }));

@@ -9,7 +9,7 @@
 // space.slide; without gravity the jump height is virtual (body.lift).
 import {
   round6, mv, bodyOf, state, spaceApi, frameOf, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, controls, verbs,
-  ensureShared, motor, settle, boxHits, canProbe, v3, setFacing, COMMON_PARAMS, MACRO_PARAMS,
+  ensureShared, motor, settle, boxHits, canProbe, v3, setFacing, COMMON_PARAMS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.lanes';
@@ -61,7 +61,7 @@ export default {
       forward: { type: 'string', options: ['auto', '+x', '-x', '+y', '-y', '+z', '-z'], default: 'auto', effect: 'run direction; auto: +z in 3D, +y in 2D, or +x when that axis is the space\'s up (track: progress x, lanes y, height z)' },
       blockers: { type: 'list', of: { type: 'string' }, default: [], effect: 'archetype ids that block a lane switch (trains, walls)' },
       onCaught: { type: 'effects', default: [], effect: 'effects when the chaser catches you (an `caught` event is always emitted)' },
-      ...COMMON_PARAMS, npcs: { ...COMMON_PARAMS.npcs, default: false }, ...MACRO_PARAMS,
+      ...COMMON_PARAMS, npcs: { ...COMMON_PARAMS.npcs, default: false },
     },
     provides: { events: ['evaded', 'crashed', 'lane_switch', 'jumped', 'landed', 'slide', 'stumble', 'caught'], vars: ['move.speed', 'move.distance'], actions: ['left', 'right', 'jump', 'slide', 'crouch', 'move'] },
     requires: { capabilities: ['position'] },
@@ -101,7 +101,7 @@ export default {
   install(rt, c, instance) {
     const owner = ownerKey(instance);
     registerBase(rt, owner, 'lanes', instance);
-    ensureShared(rt, { speed: c.speed, ...c.macro, max: c.macro?.max ?? 0 });
+    ensureShared(rt, { speed: c.speed });
     verbs(rt, ['left', 'right', 'jump', 'slide', 'crouch', 'move']);
     rt.caches.moveLanes = c;
     const g = (8 * c.jumpHeight) / (c.airTime ** 2), v0 = (4 * c.jumpHeight) / c.airTime, mid = (c.lanes - 1) / 2;
@@ -167,7 +167,7 @@ export default {
       }
     }, ID);
     rt.options(rt => {
-      const p = rt.player(); if (!p || mv(p).owner !== owner) return [];
+      const p = rt.player(); if (!p || p.components.move?.owner !== owner) return []; // listing reads: no mv(), which creates the component
       return [['lane left', { left: true }], ['lane right', { right: true }], ['jump', { jump: true }], ['slide', { slide: true }], ['run on', {}]].map(([label, actions]) => ({ label, actions, steps: label === 'run on' ? 12 : 1 }));
     });
   },

@@ -20,7 +20,10 @@
 //   features     every primitive the document mixes in exists, is controllable and works when its controls are pressed
 //                from states the gate's play reached (verify/features.js; the table is in the evidence)
 //   bots         every bot the document's loops name (card.mode.bot) is the one the gate plays, wins with status 'won'
-//                on every world seed in SEEDS through the real controls, and replays to the same runs
+//                on every world seed in SEEDS through the real controls, and replays to the same runs; and, played
+//                again with a person's hands (HUMAN_INPUT's edge rate, verify/human.js), how it ends goes into the
+//                evidence (evidence.bots[].human, world seed SEEDS[0]): which templates only a hand faster than a
+//                person's can win
 //
 // Static stages stop the check when one fails (nothing simulates a document that is malformed or fails its
 // declarations); the dynamic stages (gate, bots) both run once the static ones pass.
@@ -36,6 +39,7 @@ import { strategies, select, modeBots } from '../verify/strategies/index.js';
 import { documentUncontrolled } from '../verify/controls.js';
 import { directionProblems, DIRECTION_CODES } from '../verify/directions.js';
 import { FEATURE_CODES } from '../verify/features.js';
+import { humanRate } from '../verify/human.js';
 import { presentationProblems, PRESENTATION_CODES } from '../primitives/graphics/presentation.js';
 
 export const CONTRACT_VERSION = 'template-contract/0.1';
@@ -44,11 +48,23 @@ export const LOOK_CODES = Object.freeze(['look_undeclared', 'look_untuned', 'loo
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
 /** The world seeds every named bot must win on (and replay). */
 export const SEEDS = Object.freeze([1, 2, 3]);
-/** The publish gate's budgets, as the template suite runs it. */
-export const GATE = Object.freeze({ budgetMs: 800, playtestMs: 1500 });
-/** A named bot's wall budget, and the run options particular bots take (their own params, by strategy id). */
-export const BOT_BUDGET_MS = 60000;
+/** The publish gate as the template suite runs it: the playability checks, on the gate's own budgets (verify GATE_BUDGET). */
+export const GATE = Object.freeze({ playable: true });
+/**
+ * A named bot's budget per world seed, in simulated frames (lookahead included: verify/util.js budget.meter), never wall
+ * time, so the bots stage gives the same runs on a loaded machine or across a laptop's sleep; and the run options
+ * particular bots take (their own params, by strategy id).
+ */
+export const BOT_STEPS = Infinity;
 export const BOT_OPTS = Object.freeze({ 'danger-field': Object.freeze({ maxFrames: 15000 }), dodge: Object.freeze({ seconds: 60, every: 8 }) });
+/**
+ * The fastest a person changes their input: what they hold (the move axis, the keys down) changes at most this many
+ * times a second, and a press is down for at least that long. 10 per second (a change every 100 ms, 6 frames at 60 Hz)
+ * is the edge of human speed: a single finger taps about 5-7 times a second sustained and near 10 in short bursts, and
+ * a visual reaction takes over 150 ms, so a line that needs faster changes is one only a bot plays. Used by the bots
+ * stage's human-rate replay (verify/human.js).
+ */
+export const HUMAN_INPUT = Object.freeze({ changesPerSecond: 10 });
 /** Param types a tune path may name: a single value the frame_tune form can ask for. */
 export const SCALAR_TYPES = Object.freeze(['number', 'integer', 'boolean', 'string']);
 /** A template id: a lowercase slug (a promoted template's file name and an enum value of the pick form). */
@@ -65,7 +81,7 @@ export const CODES = Object.freeze({
   loop: Object.freeze(['loop_problem']),
   presentation: Object.freeze([...Object.values(PRESENTATION_CODES), ...LOOK_CODES]),
   gate: Object.freeze(['gate_not_viable']),
-  controls: Object.freeze(['controls_missing', ...DIRECTION_CODES]),
+  controls: Object.freeze(['controls_missing', 'option_uncontrolled', ...DIRECTION_CODES]),
   features: Object.freeze([...new Set(Object.values(FEATURE_CODES).flat())]),
   bots: Object.freeze(['bot_unnamed', 'bot_selection_mismatch', 'bot_failed', 'bot_not_won', 'replay_mismatch']),
 });
@@ -155,13 +171,15 @@ function botProblems(checked, registry, logic, evidence) {
   const chosen = select(ctx).chosen.map(c => c.s.id);
   if (!isDeepStrictEqual(chosen, named)) out.push(problem('bot_selection_mismatch', `the gate plays ${chosen.join(', ') || 'no bot'}; the loops name ${named.join(', ')}`));
   for (const id of named) {
-    const bot = strategies.get(id), opts = { budgetMs: BOT_BUDGET_MS, seeds: [...SEEDS], ...BOT_OPTS[id] };
+    const bot = strategies.get(id), opts = { maxSteps: BOT_STEPS, seeds: [...SEEDS], ...BOT_OPTS[id] };
     const t0 = performance.now();
     let a, b;
     // A bot that asks for a verb no control issues, or that throws, fails here with what it needed.
-    try { a = bot.run(ctx, opts); b = bot.run(ctx, opts); } catch (error) { out.push(problem('bot_failed', `${id}: ${String(error?.message || error).slice(0, 400)}`, { bot: id, ...(error?.code ? { cause: error.code } : {}) })); continue; }
+    let human = null;
+    try { a = bot.run(ctx, opts); b = bot.run(ctx, opts); human = runsOf(bot.run({ ...ctx, make: humanRate(ctx.make, HUMAN_INPUT.changesPerSecond) }, { ...opts, seeds: [SEEDS[0]] })); } catch (error) { out.push(problem('bot_failed', `${id}: ${String(error?.message || error).slice(0, 400)}`, { bot: id, ...(error?.code ? { cause: error.code } : {}) })); continue; }
     const runs = runsOf(a);
-    evidence.bots.push({ id, runs: runs.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), ms: Math.round(performance.now() - t0) });
+    // How the bot's play ends with a person's hands: evidence (which templates need a faster hand), not a block.
+    evidence.bots.push({ id, runs: runs.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), human: human.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), humanRate: HUMAN_INPUT.changesPerSecond, ms: Math.round(performance.now() - t0) });
     if (a.ok !== true) out.push(problem('bot_failed', `${id}: ${JSON.stringify(a.problems).slice(0, 400)}`, { bot: id }));
     for (const seed of SEEDS) {
       const r = runs.find(x => x.seed === seed);
@@ -186,6 +204,8 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
   const problems = [];
   const t = /** @type {any} */ (template);
   let checked = null, bare = null, gateFeatures = null;
+  /** @type {any[]} */
+  let gateOptions = [];
   const run = {
     format: () => formatProblems(t),
     tune: () => tuneProblems(t, registry),
@@ -204,6 +224,7 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
       const v = await verifyDocument(structuredClone(t.doc), registry, logic, { ...GATE });
       evidence.gate = { viable: Boolean(v.viable), viability: v.viability ?? null, ms: v.ms ?? null };
       gateFeatures = v.features ?? null;
+      gateOptions = (v.problems || []).filter(p => p.code === 'option_uncontrolled');
       return v.viable ? [] : [problem('gate_not_viable', `${v.viability} ${JSON.stringify((v.problems || []).filter(p => p.severity === 'error')).slice(0, 600)}`, { cause: v.viability ?? null })];
     },
     // The document a person plays gives a control for every verb its loops declare (in each interaction they are played
@@ -213,7 +234,9 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
       const out = documentUncontrolled(host, registry).map(m => problem('controls_missing', `${m.use}: no control a person has issues '${m.kind}'${m.interaction ? ` in ${m.interaction}` : ''}`, { verb: m.verb, use: m.use }));
       const d = directionProblems(host, registry, playContext(checked, registry, logic).make, SEEDS[0]);
       evidence.directions = d.evidence;
-      return [...out, ...d.problems.map(p => problem(p.code, p.message))];
+      // Every option the game offers is one a person can take (the gate's explorer: playtest option_uncontrolled).
+      const options = gateOptions.map(p => problem('option_uncontrolled', p.message, { missing: p.missing ?? null }));
+      return [...out, ...options, ...d.problems.map(p => problem(p.code, p.message))];
     },
     // Every primitive the document mixes in exists, is controllable and works (verify/features.js, run by the gate).
     features: () => {

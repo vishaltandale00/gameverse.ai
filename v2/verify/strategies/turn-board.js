@@ -12,8 +12,8 @@
 // waiting is a choice too.
 import { applyOption, hold, optionLabels, foes, posOf } from '../drive.js';
 import { objective } from '../objective.js';
-import { budget as makeBudget, stableStringify, stateHash } from '../util.js';
-import { untilDecision, chanceSeeds, multiSeed, ownerPath, problem } from './common.js';
+import { stableStringify, stateHash } from '../util.js';
+import { untilDecision, chanceSeeds, multiSeed, ownerPath, problem, seedBudgets } from './common.js';
 
 const WIN = 1e6;
 
@@ -33,11 +33,11 @@ export function macrosOf(rt, realtime) {
 }
 
 /** Play one choice and advance to the next decision (turn games) or for `dwell` frames (real time). */
-export function playMacro(rt, m, { realtime, dwell = 60, maxWait = 900, b = null } = {}) {
-  if (m.option) applyOption(rt, m.option, b);
+export function playMacro(rt, m, { realtime, dwell = 60, maxWait = 900 } = {}) {
+  if (m.option) applyOption(rt, m.option);
   // A choice that takes the options away (a shot in flight, the AI's turn) resolves to the next decision.
-  if (!realtime || !rt.availableOptions().length) untilDecision(rt, maxWait, b);
-  else hold(rt, {}, m.option ? Math.max(0, dwell - 1) : dwell, b);
+  if (!realtime || !rt.availableOptions().length) untilDecision(rt, maxWait);
+  else hold(rt, {}, m.option ? Math.max(0, dwell - 1) : dwell);
 }
 
 /** Replay a recorded path of choice labels from a fresh world; returns the world. */
@@ -73,7 +73,7 @@ export function chooseMacro(rt, score, { realtime, depth = 2, width = 4, samples
   const evalAfter = (m, rng) => {
     rt.restore(snap);
     if (rng !== null) rt.state.rng = rng >>> 0 || 1;
-    playMacro(rt, m, { realtime, dwell, maxWait, b });
+    playMacro(rt, m, { realtime, dwell, maxWait });
     b?.state();
     return leafValue(rt, score);
   };
@@ -88,12 +88,12 @@ export function chooseMacro(rt, score, { realtime, depth = 2, width = 4, samples
     const heads = first.slice().sort((x, y) => y.v - x.v || x.i - y.i).slice(0, width);
     for (const h of heads) {
       if (b?.over()) break;
-      rt.restore(snap); playMacro(rt, macros[h.i], { realtime, dwell, maxWait, b });
+      rt.restore(snap); playMacro(rt, macros[h.i], { realtime, dwell, maxWait });
       if (rt.state.status !== 'playing') continue;
       const inner = rt.snapshot(), next = macrosOf(rt, realtime).slice(0, maxBranch);
       let best = -Infinity;
       for (const m of next) {
-        rt.restore(inner); playMacro(rt, m, { realtime, dwell, maxWait, b }); b?.state();
+        rt.restore(inner); playMacro(rt, m, { realtime, dwell, maxWait }); b?.state();
         best = Math.max(best, leafValue(rt, score));
       }
       if (next.length) h.v = Math.max(h.v, best);
@@ -109,8 +109,10 @@ export default {
   requires: { options: true },
   hints: ['gameplay.turns', 'gameplay.cards', 'gameplay.rts'],
   detect(ctx) { const rt = ctx.make(ctx.seed); untilDecision(rt, 600); return rt.availableOptions().length > 0 && foes(rt).length > 0; },
-  run(ctx, { seeds = [1, 2, 3], passRate = 0.67, maxDecisions = 200, depth = 2, width = 4, samples = 2, maxBranch = 24, dwell = 60, maxWait = 900, budgetMs = 2000, maxSteps = Infinity } = {}) {
-    const b = makeBudget({ ms: budgetMs, steps: maxSteps });
+  run(ctx, { seeds = [1, 2, 3], passRate = 0.67, maxDecisions = 200, depth = 2, width = 4, samples = 2, maxBranch = 24, dwell = 60, maxWait = 900, maxSteps = Infinity } = {}) {
+    const sb = seedBudgets(maxSteps);
+    /** The budget of the seed being played (seedBudgets: one per seed). @type {any} */
+    let b = null;
     // Every side emits the same loop events here, so the score is the primitives' side-aware progress hooks when the
     // document has them (event counts would reward letting the opponent act).
     const sided = objective(ctx.doc, ctx.registry, ctx.logic, { counts: false });
@@ -118,22 +120,22 @@ export default {
     const probe = ctx.make(ctx.seed); untilDecision(probe, maxWait);
     const realtime = runsOnItsOwn(probe), where = ownerPath(ctx, probe, ['gameplay.turns', 'gameplay.cards', 'gameplay.rts']);
     const play = seed => {
-      const rt = ctx.make(seed), path = [];
-      untilDecision(rt, maxWait, b);
+      const rt = (b = sb.budget()).meter(ctx.make(seed)), path = [];
+      untilDecision(rt, maxWait);
       while (rt.state.status === 'playing' && path.length < maxDecisions && !b.over()) {
         const c = chooseMacro(rt, score, { realtime, depth, width, samples, maxBranch, dwell, maxWait, b });
         if (!c) break;
         const m = macrosOf(rt, realtime)[c.i];
-        playMacro(rt, m, { realtime, dwell, maxWait, b });
+        playMacro(rt, m, { realtime, dwell, maxWait });
         path.push(m.label);
       }
       const won = rt.state.status === 'won';
       return { seed, won, status: rt.state.status, ending: rt.state.ending, decisions: path.length, frames: rt.state.frame, path, hash: stateHash(rt.state), budget: !won && rt.state.status === 'playing' && Boolean(b.hit) };
     };
-    const r = multiSeed(play, { seeds, passRate, b });
+    const r = multiSeed(play, { seeds, passRate });
     const finished = r.runs.filter(x => !x.budget), problems = [];
     if (!finished.length) problems.push(problem('budget_exhausted', where, 'turn-board search ran out of budget before a game finished', { severity: 'warning' }));
     else if (finished.filter(x => x.won).length / finished.length < passRate) problems.push(problem('too_hard', where, `a turn-board search won ${finished.filter(x => x.won).length}/${finished.length} seeded games (it usually ended '${finished.find(x => !x.won)?.ending || finished.find(x => !x.won)?.status}')`, { hint: 'weaker or fewer opponent units, more player units or AP, or stronger player actions' }));
-    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`a turn-board search (depth ${depth}) won ${r.wins}/${r.runs.length} seeded games`] : [], problems, metrics: { realtime, runs: r.runs, rate: r.rate }, exhaustive: false, budget: b.report() };
+    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`a turn-board search (depth ${depth}) won ${r.wins}/${r.runs.length} seeded games`] : [], problems, metrics: { realtime, runs: r.runs, rate: r.rate }, exhaustive: false, budget: sb.report() };
   },
 };

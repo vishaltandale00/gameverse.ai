@@ -9,7 +9,7 @@
 // Runtime fields kept on the mount component: rider, gait, st (stamina), called.
 // The rider gets components.move.riding = <mount id>, body.state = 'ride' and body.riding.
 import {
-  round6, mv, bodyOf, spaceApi, frameOf, intent, claim, ownedBy, ownerKey, verbs, ensureShared, len, sub, v3, boxHits, canProbe, settle, COMMON_PARAMS, MACRO_PARAMS, travelAlong,
+  round6, mv, bodyOf, spaceApi, frameOf, intent, claim, ownedBy, ownerKey, verbs, ensureShared, len, sub, v3, boxHits, canProbe, settle, COMMON_PARAMS, travelAlong,
 } from './move-lib-core.js';
 import { stepWalk, walkConfig } from './move-walk.js';
 
@@ -44,7 +44,7 @@ export default {
       jumpHeight: num(0, 10, 1.2, 'units', 'jump height while mounted (0 = no jumping)'),
       seat: { type: 'list', of: { type: 'number' }, default: [0, 1, 0], effect: 'rider offset from the mount position' },
       fightMounted: { type: 'boolean', default: false, effect: 'whether combat may be used mounted; combat reads it through `mounted` and components.move.mountedCombat' },
-      ...COMMON_PARAMS, ...MACRO_PARAMS,
+      ...COMMON_PARAMS,
     },
     // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
     denials: ['mount_failed', 'mount_call_failed'],
@@ -78,7 +78,7 @@ export default {
   install(rt, c, instance) {
     const owner = ownerKey(instance);
     rt.caches.mountCfg = c;
-    ensureShared(rt, { speed: c.trot, ...c.macro });
+    ensureShared(rt, { speed: c.trot });
     verbs(rt, ['mount', 'call', 'sprint']);
     const mounts = () => Object.values(rt.state.entities).filter(e => e.components.mount && typeof e.components.mount === 'object');
     rt.system('input', rt => {

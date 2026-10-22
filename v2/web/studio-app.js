@@ -18,17 +18,21 @@ const mountAny = async (el, record) => record.doc?.schema === 'gameverse.v2.game
 // A game that will not load says why, on its screen and in a toast, instead of a silent blank board.
 // Every mount belongs to one generation: switching or deleting games starts a new one, and a mount that
 // finishes for an older generation is unloaded at once (no game keeps running behind the one on screen).
+// There is one player slot: mounting a game first unloads the one shown (whatever started it).
 let mountGen = 0;
 const unloadGame = () => { mountGen++; player?.dispose(); player = null; $('#game')?.replaceChildren(); };
+// A slot that shows no running game (a failed or superseded mount): a newer version mounts in its place.
+const noGame = version => ({ version, dispose() {}, extend() {}, update() { return false; } });
 const mount = async (el, record) => {
+  player?.dispose(); player = null;
   const gen = ++mountGen;
-  try { const p = await mountAny(el, record); if (gen !== mountGen) { p?.dispose?.(); return { dispose() {}, extend() {}, update() { return false; } }; } return p; }
+  try { const p = await mountAny(el, record); if (gen !== mountGen) { p?.dispose?.(); return noGame(record.version); } return p; }
   catch (error) {
     console.error(error, error.errors);
     const why = (error.errors || []).slice(0, 4).map(e => `${e.path}: ${e.message}`).join("\n");
     el.replaceChildren(Object.assign(document.createElement("pre"), { className: "load-error", textContent: `${error.message}${why ? "\n" + why : ""}` }));
     toast(error.message);
-    return { dispose() {}, extend() {} };
+    return noGame(record.version);
   }
 };
 const STAGES = { decomposing: 'Reading the idea', decomposed: 'Idea decomposed', selected: 'Primitives chosen', outlining: 'Outlining the game', outlined: 'Outline checked', first_playable: 'First playable', detail: 'Detailing zones', detail_rejected: 'Detail rejected', gap: 'Building a new primitive', revising: 'Working on the change', tweaked: 'Tweaked', revised: 'Revised', experimenting: 'Writing an experiment', experimented: 'Experiment checked', verified: 'Verified', complete: 'Done' };
@@ -418,6 +422,8 @@ events.addEventListener('version', async ev => {
   b.log.push({ label: `Version ${e.version} ready`, ms: e.ms });
   refreshLibrary();
   if (e.gameId !== selected) { toast('One of your games has a new version.'); return; }
+  // A version event older than (or the same as) the version shown changes nothing on screen.
+  if (player && $('#game') && shownVersion != null && e.version <= shownVersion) { renderSheet(); return; }
   const record = await api(`/api/v2/games/${e.gameId}/v/${e.version}`);
   let loaded = false;
   if (!player || !$('#game')) { const fromBuild = Boolean($('#ct-canvas')); const { meta } = await api(`/api/v2/games/${e.gameId}`); await playView(meta, record, { powerOn: fromBuild }); toast('Your game is ready. Play!'); }

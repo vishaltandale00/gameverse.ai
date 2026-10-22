@@ -86,7 +86,7 @@ async function experimentJob({ experiments, catalogue, config }, job, ctx) {
   // What the new version's report carries from the latest one: not the latest's bot proof (it proves that document).
   const { proof: baseProof, ...report } = obj(latest.report);
   if (doc.schema !== DOC_SCHEMA) throw legacyError();
-  const budgets = { budgetMs: config.solveBudgetMs, playtestMs: config.playtestMs };
+  const budgets = { playable: true };
   if (job.kind === 'experiment-remove') {
     const next = withoutExperiment(doc, job.experimentId);
     const { registry, logic } = await catalogue(next);

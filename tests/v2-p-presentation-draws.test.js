@@ -98,10 +98,10 @@ test('farm: the crops a person plants are drawn on the field (card.marks)', () =
   assert.ok(ellipses(planted) >= ellipses(idle) + 2, `the plot is drawn (${ellipses(planted)} ellipses with it, ${ellipses(idle)} without)`);
 });
 
-// Whose side an entity is on is drawn (graphics/allegiance.js, from card.sides): over every template whose primitives put
+// Whose side an entity is on is drawn (kernel/sides.js, from card.sides): over every template whose primitives put
 // entities on sides, the player's side reads as allies and the other side as enemies.
 test('sides: the player\'s side and the other side are drawn apart, in every template with sides', async () => {
-  const { sideOf } = await import('../v2/primitives/graphics/allegiance.js');
+  const { sideOf } = await import('../v2/kernel/sides.js');
   const { lookOf } = await import('../v2/primitives/graphics/flat-models.js');
   let n = 0;
   for (const t of TEMPLATES) {

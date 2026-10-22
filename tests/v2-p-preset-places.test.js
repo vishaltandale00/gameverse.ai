@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { preset, placesFor, zoneShape } from '../v2/planner/presets.js';
-import { normalize, decomposeOffline } from '../v2/planner/decompose.js';
+import { normalize } from '../v2/planner/decompose.js';
 import { contractsOf } from '../v2/planner/content.js';
 
 const { registry, logic } = buildCatalogue();
@@ -29,11 +29,6 @@ test('a non-narrative decomposition carries no act or zone count, even when the 
   assert.deepEqual([told.acts, told.zones], [3, 7]);
   const untold = normalize({ title: 'x', premise: 'x', mechanics: [], core: { interaction: 'avatar-realtime', opponent: 'none', win: 'w', lose: '', theme: '', narrative: true, mashup: [] } }, 'x', registry);
   assert.ok(!('acts' in untold) && !('zones' in untold));
-  // The offline path writes none (it has no model to say how big a story is).
-  for (const idea of ['race karts around a circuit', 'a detective story in a lighthouse']) {
-    const d = decomposeOffline(idea, [], registry);
-    assert.ok(!('acts' in d) && !('zones' in d), idea);
-  }
 });
 
 test('a non-narrative graph-space game gets its places from declarations', () => {

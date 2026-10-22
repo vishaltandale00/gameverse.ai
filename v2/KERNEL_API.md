@@ -16,7 +16,8 @@ export default {
     provides: { capabilities?, events: ['hit', 'defeated:*'], vars: ['hp'], services: ['roadgraph'], actions: ['attack'] },
     requires: { capabilities: ['overlap'], primitives: ['gameplay.combat.health'], services: [] },
     conflicts: [],
-    reads: ['content.items'],               // document sections it consumes (preflight warns on unread data)
+    reads: ['content.items'],               // document sections it consumes (preflight warns on unread data: data_unused;
+                                            // a base section the document's data references by id, e.g. an ending, is read)
     defines: [{ kind: 'gate', at: 'plot.gates' }, { kind: 'portal', in: 'portals' }],  // new reference kinds
   },
   logic(logic) {},                          // register predicates/effects (once per catalogue)
@@ -40,7 +41,9 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 | Member | Use |
 | --- | --- |
 | `rt.state` | The JSON game state: `frame time status ending rng vars flags counts events entities spaces prim`. Everything that must survive a snapshot lives here. |
-| `rt.store(key)` | Per-primitive JSON state at `state.prim[key]`. Fetch it inside each call; never hold it across calls, because `restore()` replaces it. Key it by primitive id, or by `instance.key` when several instances are allowed. |
+| `rt.store(key)` | Per-primitive JSON state at `state.prim[key]`. Fetch it inside each call; never hold it across calls, because `restore()` replaces it. Key it by primitive id, or by `instance.key` when several instances are allowed. Inside a read (`rt.read`, option listing) an absent store is not created: it reads as a fresh empty object. |
+| `rt.read(fn)` | Run `fn` as a read of the world. Option listing is one; hosts draw frames and handle UI keys inside one. Reads never change state, however often presentation and bots read, so lazily initialised state is made by the steps alone, at the same moment in every host. |
+| `rt.derived(key, build)` | Inside a read: `build()` once per read and key, shared by every lookup of that read (an index over entities that a search consults per cell). Dropped when the outermost read ends and by every step, restore and extend. Outside a read it returns `null` and the caller computes directly, since the state may change between any two lookups. Bots plan inside `rt.read` so the spaces they search index the state once (`engine.space.grid` entity obstacles). |
 | `rt.caches` | Non-JSON derived data (indexes, meshes). Rebuild it in `rt.onRestore(fn)` and when `rt.doc` changes. |
 | `rt.system(phase, fn, owner)` | Per-step system. Phases run in this order: `input ai movement physics interaction rules plot late`. |
 | `rt.on(name, fn)` | Event handler. `'*'` receives every event. |
@@ -48,7 +51,7 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 | `rt.emitTyped(name, subject, data)` | Emits both `name` (with `subject`) and `name:<subject>`. Use it for every typed event (`defeated:goblin`, `item_gained:key`). |
 | `rt.action(name, fn(value, rt))` | Player verb. Input reaches it through `step({actions})`. |
 | `rt.hold(by, owners)` / `rt.release(by)` | Skip the systems registered by `owners` (their `rt.system` owner) until released. A nested loop holds the outer loop while it runs (`engine.adapt.nested`). Kept in `state.held` only while something is held. |
-| `rt.options(fn(rt) → [{label, text, actions, steps?, apply?(rt)}])` | Meaningful player choices, as hints for solvers and playtest bots. `label` is the solvers' key (unique, ids allowed); `text` is what a person reads when a UI lists the option (graphics.ui.story, graphics.ui.choices, graphics.ui.battle), written with the document's names (`Talk to Old Maren`, a dialogue choice's line), never ids (`tests/v2-option-text.test.js`). Bots act only through the real controls (input driver); every option's `actions` must be issuable through a declared control. Continuous spaces offer macro options such as "travel to zone X" via `apply`, which the bot realizes as input. |
+| `rt.options(fn(rt) → [{label, text, actions, steps?, apply?(rt)}])` | Meaningful player choices, as hints for solvers and playtest bots. `label` is the solvers' key (unique, ids allowed); `text` is what a person reads when a UI lists the option (graphics.ui.story, graphics.ui.choices, graphics.ui.battle), written with the document's names (`Talk to Old Maren`, a dialogue choice's line), never ids (`tests/v2-option-text.test.js`). Bots act only through the real controls (input driver); every option's `actions` must be issuable through a declared control (the gate fails `option_uncontrolled` otherwise): presses and values of the verbs the primitive declares, and directions as the input axis it declares (`move: [x, y]`, held for the option's `steps` as a person holds the stick or keys), never undeclared verbs. Continuous spaces offer macro options such as "travel to zone X" via `apply`, which the bot realizes as input; movement offers them only where a card of the document declares the `travel` verb (walk, grid, platformer: `loop.verbsOf`), which the host gives a control (`tests/v2-options-controlled.test.js`). An axis verb (`engine.input.actions` `axes`) is bound to axis sources only (`input_axis_key`). |
 | `rt.provide(name, api)` / `rt.service(name)` | Shared services (`roadgraph`, `surface`, `biomeAt`...). Declare them in `card.provides.services` / `requires.services`. |
 | `rt.defineSpace(id, api)` / `rt.space(id)` / `rt.spaces()` | Spaces (§3). |
 | `rt.spawn(archetype, {space, at, components, id})` / `rt.despawn(id)` | Entities. Characters spawn with `id = character id`. |
@@ -58,7 +61,9 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 | `rt.random()` | The only randomness allowed. It is seeded and stored in state. Never use `Math.random`, `Date` or `performance` in simulation. |
 | `rt.input` | This step's input: `{actions:{verb:value}, axes:{move:[x,y], look:[x,y]}, held:{verb:true}}`. |
 | `rt.headless` / `rt.view` | `view` exists only in the browser (§6). Simulation must never depend on it. |
-| `rt.step(input)`, `rt.snapshot()`, `rt.restore(s)`, `rt.extend(doc, added)` | Driven by hosts, solvers and the planner. |
+| `rt.step(input)`, `rt.snapshot()`, `rt.restore(s)`, `rt.extend(doc, added)` | Driven by hosts, solvers and the planner. While a modal is open, the step's input (`rt.input`, as every system reads it) is only the modal's actions, as actions, held verbs or axes, in every host. |
+
+Each world owns a copy of the document it is created from (`createWorld` clones it): a primitive that sets params at run time changes only its own world's `rt.doc`.
 
 **Entities** are plain JSON: `{id, archetype, space, at, zone?, components:{...}}`. Components are keyed by the owning primitive (catalog §0): `health melee ranged ai attacks schedule vehicle mount interact shop container equipment loot level resources status model body`. Continuous spaces keep kinematics in `components.body` = `{size, vel, grounded, facing, layer}`. A primitive owns only its own component and reads others' through their documented fields.
 
@@ -75,6 +80,17 @@ Base kinds (`character item zone quest model archetype space beat ending recipe 
 | `ai` | owned by `gameplay.ai.brain` (catalog §6.4) |
 
 The player's scalars are mirrored to vars: `hp`, `hp.max`, `res.<pool>`, `score`, `lives`.
+
+**Sides.** Who is on whose side is one kernel reading, `kernel/sides.js`, of what primitives declare: a primitive that puts
+entities on sides declares `card.sides: {param, control?, component?, field?, members?, each?}` (`param` its list param of
+sides, entries with an `id`; `control` the entry `control` value that makes a side the player's; `component`/`field` the
+component field naming an entity's side; `members` the entries' field listing ids, archetypes or tags; `each`: `param` lists
+participant selectors, every one a side of its own: racers, fighters). A loop played against participants declares the
+sides of its participants param (or its `via` host does). `sideOf(world, e)` → `{side, mine}` | null, `onPlayerSide`,
+`opposed`, `playerSides`, and `staticSides(doc, registry)` for checks before a world exists. Everything that asks who is
+the player's or an opponent reads it: a win `reads: {component, of: 'opponents' | 'player'}` (the gate's measure, the loop
+check), an event read `of: 'player'` (the subjects of the player's sides), the bots' foes, combat teams (`teamOf`:
+friendly fire, shots, contact), AI hostility and what a person sees (`tests/v2-sides.test.js`).
 
 **Shared effect contracts (frozen).** These effects have a single owner but many callers:
 - `add_score {amount, reason?, who?}` is owned by `gameplay.score`. The `score` var mirrors the total.
@@ -125,6 +141,7 @@ A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `prov
 - **Capability lists.** `bounds`, `wrap` and `dynamics` are kernel capabilities alongside those above. Space-specific ones (`joints`, `boxes`, `ledges`, `scroll`, `settle`, `cellRules`...) are documented in `card.provides.capabilityMethods`; conformance checks them.
 - **Topology and passability.** `navigate.neighbors(at)` is the space's topology only (adjacent cells, a graph's exits); whether a given walker may enter one is `canMove(entity, to, rt)`, which applies blocks, class rules (a door only hunters pass), gates and one-way cells. Every search over a walker's moves (AI, movement, bots) steps through `stepsFrom(api, entity, at, rt)` from `kernel/testing.js`, never `neighbors` alone.
 - **Cells of positions.** A position's cell is `api.cellOf({ at })` on spaces that expose it (it honours the anchor: the grid rounds to cell centres); code never floors coordinates itself where the space defines cells.
+- **Placement on the generated world.** Code that places entities before the world exists (composition, content placement) never picks coordinates: it declares the placement (`engine.spawner` rule `band`: a seat at an edge of a cell space; a zone; `near`), and the spawner resolves it at spawn time on the space as generated, with `standable` (`engine/runtime-lib.js`: inside a cell space's bounds, in a cell the archetype may enter). A sampled grid position that lands in a wall is drawn again among the region's open cells. Every participant a loop declares must then be in the world at the start of play (`planner/content.js` `startProblems`: the feature check `feature_participant_absent`, composition `compose_participants_absent` / `compose_player_misplaced`).
 - **Kernel-owned spatial vocabulary.** The predicates `zone`, `near` and `cell` and the effects `teleport` and `move_to` are registered by the kernel and dispatch through the subject's space. Spaces must not register them. `move_to` only records intent in `components.moveTo`; movement and AI primitives carry it out.
 - **Zone events.** Spaces emit `enter_zone` / `leave_zone` (typed: `enter_zone:<zone>`) as entities move, and keep `entity.zone` current.
 - **State.** Space state lives in `rt.state.spaces[id]`; cell spaces store generator params plus an edit log.
@@ -149,17 +166,17 @@ A space's `install()` calls `rt.defineSpace(instance.id, api)`. Its card's `prov
 
 ## 6. Graphics and hosts
 
-Graphics primitives install only when `!rt.headless`. The browser host (`v2/web/player.js`) passes `view = {container, THREE, act(actions), onFrame(fn(alpha)), input()}`. A renderer:
+Graphics primitives install only when `!rt.headless`. The browser host (`v2/web/player.js`) passes `view = {container, THREE, act(actions), onFrame(fn(alpha)), input(), onDispose(fn), pause(on), paused, restart(), load(snapshot), setTimeScale(s), now(), continuing}`: `now()` is the display clock in ms; `onDispose(fn)` releases anything a primitive holds outside the container (listeners on window or document, timers, audio, GL, workers) when the host unloads or replaces the world; `continuing` is true for a world a hot-load builds while a game is in play: it starts from the new version's own first state (ARCHITECTURE §4) and shows no title screen. Frames are drawn inside `rt.read`. A renderer:
 - draws entities of the space it is bound to (`instance.space`, default first space), and only while the player is in that space;
 - interpolates with `alpha`;
 - never writes `rt.state`.
 
 UI primitives layer DOM in `.gv-overlay` and send choices through `view.act`; each declares `card.interactions` (the interactions it gives a person controls for) and `card.controls` (`verbs` it sends; `choice: true` for graphics.ui.choices, which issues every choice verb no other mounted UI names; `options: true` for a UI that sends a listed option's actions). Renderers and cameras declare `card.projection` per view (`{kind: 'plane', right, up}` or `{kind: 'chase', forward, right}` over the space's axes). The host mounts `v2/web/host-doc.js` `hostDocument(doc)`: the document plus its default input and UI; the gate, the first-playable boot and the composition check judge the same document (the loop check reads the document itself, whose loop report the host's additions never change: `tests/v2-host-document-checks.test.js`). `engine.input.actions` owns the device → verb mapping and sets `view.input`. Renderers read model specs from `content.models` (catalog §5.2) and draw everything procedurally, with no external assets; reuse `v2/art/*`.
 
-What a person sees is declared, never inferred from names or words (`v2/primitives/graphics/presentation.js`, `flat-art.js`, `allegiance.js`):
+What a person sees is declared, never inferred from names or words (`v2/primitives/graphics/presentation.js`, `flat-art.js`, `kernel/sides.js`):
 - a loop with a win or lose declares `card.loop.shows` (`entities cells zones labels marks`) and each renderer `card.draws`; the template contract and the gate fail a document whose renderer does not draw what its loops show (`render_missing`, `shows_undeclared`). Zones drawn are the ones the loops' params name (`ref` to a zone); labels are `content.blocks[].label`; marks come from the service a card names in `card.marks` (`marks(spaceId) → [{at, kind, stage, stages, ready}]`);
 - a card owning a component declares what an entity carrying it reads as: `card.presents: { <component | ref-to-archetype param>: {role, prop?, vector?, when?} | [...] }`; with the archetype's `kind` the highest-precedence role wins. A block's look is its `tile` and `color`;
-- a primitive that puts entities on sides declares `card.sides: {param, control?, component?, field?, members?}`; the player's side is drawn as allies, the other as enemies;
+- a primitive that puts entities on sides declares `card.sides` (§2 Sides); the player's side is drawn as allies, the other as enemies;
 - a loop end declares how a person watches it when that is not its `reads`: `shown` (`{var, max?, label?, applies?, each?} | {count} | {bar: 'boss'}` or a list, data only) or `once` (it happens at the first occurrence); the HUD shows these goals (`ui-defaults.js hudGoals`) unless a mounted UI's `card.displays` covers them.
 
 ## 7. Workstreams and file ownership

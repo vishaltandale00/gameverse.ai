@@ -29,7 +29,7 @@ import { controlledMaker, hostPreflight, documentUncontrolled } from '../verify/
 import { modeBots } from '../verify/strategies/index.js';
 import { playBot } from '../verify/index.js';
 import { usedPrimitives } from '../verify/util.js';
-import { BOT_BUDGET_MS, BOT_OPTS } from '../templates/contract.js';
+import { BOT_STEPS, BOT_OPTS } from '../templates/contract.js';
 import { isObj, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
@@ -140,12 +140,14 @@ export function tuneRangeProblems(template, doc, base, cat) {
 
 /**
  * The bots the document's loops name (card.mode.bot), each played once through the controls a person has on the
- * document's own world seed, with the template contract's bot budget. A bot that throws is recorded with its error.
+ * document's own world seed, with the template contract's bot budget (simulated frames, never wall time). A bot that
+ * throws is recorded with its error. A bot won when its run ended with the game won (status 'won'), never by its own
+ * pass criterion.
  * @param {Doc} doc a preflighted document @param {RegistryLike} registry @param {LogicLike} logic
- * @param {{ budgetMs?: number, only?: string[] | null }} [opts] only: play just these bots
+ * @param {{ maxSteps?: number, only?: string[] | null }} [opts] only: play just these bots
  * @returns {BotProof}
  */
-export function botProof(doc, registry, logic, { budgetMs = BOT_BUDGET_MS, only = null } = {}) {
+export function botProof(doc, registry, logic, { maxSteps = BOT_STEPS, only = null } = {}) {
   const host = hostPreflight(doc, registry, logic);
   /** @type {BotProof} */
   const proof = { version: BOT_PROOF_VERSION, docHash: hashOf(doc), catalogHash: catalogHash(registry), seed: doc.seed ?? null, bots: [] };
@@ -158,11 +160,11 @@ export function botProof(doc, registry, logic, { budgetMs = BOT_BUDGET_MS, only 
     if (only && !only.includes(s.id)) continue;
     const t0 = performance.now();
     try {
-      const r = playBot(s, ctx, { budgetMs, ...(botOpts[s.id] || {}) });
+      const r = playBot(s, ctx, { maxSteps, ...(botOpts[s.id] || {}) });
       const runs = /** @type {Array<Record<string, unknown>>} */ (prop(r.metrics, 'runs') ?? prop(r.metrics, 'matches') ?? []);
       const run = runs[0] ?? null, proven = Array.isArray(r.proven) ? r.proven.map(String) : [];
-      const undecided = !proven.length && (Boolean(run?.budget) || (r.problems || []).some((/** @type {{ code?: unknown }} */ p) => p.code === 'budget_exhausted'));
-      proof.bots.push({ id: s.id, won: proven.length > 0, undecided, status: typeof run?.status === 'string' ? run.status : null, frames: typeof run?.frames === 'number' ? run.frames : null, ms: Math.round(performance.now() - t0), proven: proven.slice(0, 4) });
+      const undecided = run?.status !== 'won' && (Boolean(run?.budget) || (r.problems || []).some((/** @type {{ code?: unknown }} */ p) => p.code === 'budget_exhausted'));
+      proof.bots.push({ id: s.id, won: run?.status === 'won', undecided, status: typeof run?.status === 'string' ? run.status : null, frames: typeof run?.frames === 'number' ? run.frames : null, ms: Math.round(performance.now() - t0), proven: proven.slice(0, 4) });
     } catch (error) {
       proof.bots.push({ id: s.id, won: false, undecided: false, status: null, frames: null, ms: Math.round(performance.now() - t0), proven: [], error: errorText(error).slice(0, 300) });
     }
@@ -217,10 +219,11 @@ export function botRegressions(base, after) {
  * preflighted document, its verification, the bot proofs the regression stage made).
  * @param {unknown} input the document to publish (preflighted here)
  * `through: 'controls'` runs the static stages only (nothing simulates).
- * @param {{ registry: RegistryLike, logic: LogicLike, budgetMs: number, playtestMs: number, base?: Baseline | null, template?: Template | null, botBudgetMs?: number, through?: 'controls' | null }} opts
+ * `playable`: the publish gate's playability checks apply (verifyDocument); its budgets are frames and states (v2/verify GATE_BUDGET).
+ * @param {{ registry: RegistryLike, logic: LogicLike, playable?: boolean, base?: Baseline | null, template?: Template | null, botSteps?: number, through?: 'controls' | null }} opts
  * @returns {Promise<GateResult>}
  */
-export async function gateVersion(input, { registry, logic, budgetMs, playtestMs, base = null, template = null, botBudgetMs = BOT_BUDGET_MS, through = null }) {
+export async function gateVersion(input, { registry, logic, playable = true, base = null, template = null, botSteps = BOT_STEPS, through = null }) {
   /** @type {Record<string, number>} */
   const ms = {};
   /** @type {GateResult} */
@@ -247,7 +250,7 @@ export async function gateVersion(input, { registry, logic, budgetMs, playtestMs
   if (loose.length) return fail('controls', loose.map(m => ({ stage: 'controls', code: 'controls_missing', path: m.use, message: `${m.use}: no control a person has issues '${m.kind}'${m.interaction ? ` in ${m.interaction}` : ''}`, use: m.use, verb: m.verb })));
   if (through === 'controls') return Object.assign(result, { ok: true, stage: null, problems: [] });
   let t = performance.now();
-  const v = await verifyDocument(doc, registry, logic, { budgetMs, playtestMs });
+  const v = await verifyDocument(doc, registry, logic, { playable });
   ms.gate = Math.round(performance.now() - t);
   result.verification = v;
   if (!v.viable) return fail('gate', [{ stage: 'gate', code: 'not_playable', path: '$', message: String(v.viability || 'not viable') }, ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8).map(p => ({ ...p, stage: 'gate' }))]);
@@ -261,10 +264,10 @@ export async function gateVersion(input, { registry, logic, budgetMs, playtestMs
     if (features.length) return fail('features', features);
     t = performance.now();
     // The base's proof is reused when it is the proof of that document in this catalogue (its version's report keeps it).
-    const before = proofHolds(base.proof, base.doc, registry) ? base.proof : botProof(base.doc, registry, logic, { budgetMs: botBudgetMs });
+    const before = proofHolds(base.proof, base.doc, registry) ? base.proof : botProof(base.doc, registry, logic, { maxSteps: botSteps });
     result.baseProof = before;
     const won = before.bots.filter(b => b.won).map(b => b.id);
-    if (won.length) result.proof = botProof(doc, registry, logic, { budgetMs: botBudgetMs, only: won });
+    if (won.length) result.proof = botProof(doc, registry, logic, { maxSteps: botSteps, only: won });
     ms.bots = Math.round(performance.now() - t);
     const bots = result.proof ? botRegressions(before, result.proof) : [];
     if (bots.length) return fail('bots', bots);

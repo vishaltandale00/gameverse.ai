@@ -1,24 +1,22 @@
 // @ts-check
 // The ARCHITECTURE.md §4 generation pipeline for kernel documents, end to end:
-//   decompose -> select (capability-aware) -> outline (preflight + repair rounds)
-//   -> first playable (no model, <1 s) -> detail patches per zone in parallel
-//   (each repaired, guarded, verified, then published for hosts to hot-load)
-//   -> gaps (new primitives through the experiments sandbox) -> complete.
-// Revisions: tweak (params, no model, <1 s) else targeted model ops, both behind
+//   template pick -> composition -> extensions -> content -> gate (the template path), or, for a game or genre no
+//   template is, the step path: decompose -> select (capability-aware) -> outline (preflight + repair rounds)
+//   -> first playable (no model, <1 s) -> gate -> gaps (new primitives through the experiments sandbox) -> complete.
+// No post-publish pass adds content the declarations did not ask for (ARCHITECTURE §5).
+// Revisions: a tweak (one strict model choice among the declared params) else targeted model ops, both behind
 // the revision-check guards. Every stage reports measured durations; values that
 // were not measured are null, never zero (AGENTS.md).
 import { hashOf } from '../server/store.js';
 import { seedFrom } from '../kernel/rng.js';
 import { preflight } from '../kernel/document.js';
-import { decomposeIdea, decomposeOffline } from './decompose.js';
-import { selectPrimitives } from './select.js';
-import { writeOutline, ensureAgency } from './outline.js';
-import { diagnose, replan, gapRequest, addedBy, experimentsOf, missingText } from './replan.js';
+import { decomposeIdea } from './decompose.js';
+import { selectPrimitives, MODEL_MISSING } from './select.js';
+import { writeOutline } from './outline.js';
 import { applySkins, mashupAdapterProblems } from './adapters.js';
 import { firstPlayable } from './first-playable.js';
 import { engageDocument } from './engage.js';
-import { detailTasks, writeDetail, acceptPatch } from './detail.js';
-import { tweakDocument, reviseDocument, applyOps, reviewChange, worldScaleRequest, routeWorldScale, REVISE_VERSION } from './doc-revise.js';
+import { tweakDocument, reviseDocument, applyOps, reviewChange, routeWorldScale, REVISE_VERSION } from './doc-revise.js';
 import { gateVersion, gateError, versionTemplate, tuneLimits, VERSION_GATE_VERSION } from './version-gate.js';
 import { contentGrowth } from './revision-check.js';
 import { describeErrors } from './repair.js';
@@ -28,7 +26,7 @@ import { loopProblems } from './loop-check.js';
 import { loopCore } from './presets.js';
 import { catalogHash } from './catalog.js';
 import { quality as measureQuality } from '../verify/quality.js';
-import { obj, prop, str } from '../kernel/guards.js';
+import { obj, prop, str, list, isObj } from '../kernel/guards.js';
 import { TEMPLATES } from '../templates/registry.js';
 import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn, narrowPick, checkPick, chooseReading, templateLoops } from './templates.js';
 import { EXTEND_VERSION, extendDocument, paramsForm, recordingWriter, unengaged } from './extend.js';
@@ -44,30 +42,25 @@ import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 /** @typedef {import('./verify-adapter.js').Verification} Verification */
 /** @typedef {import('./decisions.js').DecisionClient} DecisionClient */
 /** @typedef {import('./select.js').Selection} Selection */
-/** @typedef {import('./detail.js').DetailTask} DetailTask */
 /** @typedef {import('../server/jobs.js').JobSpec} JobSpec */
 /** @typedef {import('../server/jobs.js').JobContext} JobContext */
 /** The registry and logic for a document (catalog.js). @typedef {{ registry: RegistryLike, logic: LogicLike }} Catalogue */
 /** New primitives for a gap (the experiments sandbox). Its document is the service's output, checked by the caller's next stage. @typedef {{ fill(request: { doc: unknown, request: string, gap: unknown }): Promise<{ ok: boolean, doc?: unknown, experiment: Record<string, unknown>, problems?: unknown[] }> }} GapService */
 /**
- * Limits: modelAttempts bounds the calls for the play spec and the catalogue mapping (a failing call is asked again, then
- * the stage fails); outlineRepairRounds bounds the model's field repairs inside one build attempt; replanAttempts bounds the build
- * attempts (each after diagnosing and re-planning a failure); maxGapPrimitives bounds the primitives the gap layer
- * writes (only with gaps 'auto'). When they are exhausted the build fails with what it tried and what is missing.
- * @typedef {{ detailConcurrency: number, maxDetailTasks: number, playtestMs: number, detailRepairs: number, outlineRepairRounds: number, reviseRepairs: number,
- *   solveBudgetMs: number, gaps: string, maxGapPrimitives: number, qualityMs: number, replanAttempts: number, modelAttempts: number }} PipelineConfig
+ * Limits: modelAttempts bounds the calls for one question (a failing call is asked again, then the stage fails);
+ * outlineRepairRounds bounds the model's field repairs of the step path's outline; stepPathMs is the step path's time
+ * box (its decomposition, build and extension steps ask nothing after it; 0: none); maxGapPrimitives bounds the
+ * primitives the gap layer writes (only with gaps 'auto'). When they are exhausted the build fails with what it tried
+ * and what is missing.
+ * @typedef {{ outlineRepairRounds: number, reviseRepairs: number,
+ *   gaps: string, maxGapPrimitives: number, qualityMs: number, stepPathMs: number, modelAttempts: number }} PipelineConfig
  */
 /** Stage durations: null when not measured (AGENTS.md). @typedef {Record<string, number | null>} Timings */
-/** @typedef {{ code: string, path?: string, message: string }} PatchProblem */
-/**
- * What acceptPatch (detail.js) resolves to, and the rejection a throwing check becomes.
- * @typedef {{ ok: true, doc: Doc, added: import('../kernel/types.js').Added, verify: Verification, fixes: unknown[], patch: unknown } | { ok: false, reason: string, errors: PatchProblem[], patch: unknown }} PatchResult
- */
 
 export const KERNEL_PIPELINE_VERSION = 'v2-kernel/0.1';
 export const PIPELINE_CONFIG = Object.freeze(/** @type {PipelineConfig} */ ({
-  detailConcurrency: 3, maxDetailTasks: 8, playtestMs: 1500, detailRepairs: 1, outlineRepairRounds: 2, reviseRepairs: 2,
-  solveBudgetMs: 800, gaps: 'offer', maxGapPrimitives: 1, qualityMs: 250, replanAttempts: 3, modelAttempts: 2,
+  outlineRepairRounds: 2, reviseRepairs: 2,
+  gaps: 'offer', maxGapPrimitives: 1, qualityMs: 250, stepPathMs: 180000, modelAttempts: 2,
 }));
 
 const ms = (/** @type {number} */ t) => Math.round(performance.now() - t);
@@ -76,7 +69,7 @@ const errorText = error => String(prop(error, 'message') || error);
 
 /**
  * The quality report for a verification that already passed the publish gate (v2/verify/quality.js). It never
- * blocks: it reuses the gate's playtest, is bounded by `budgetMs`, and a failure is recorded as { error }.
+ * blocks: it reuses the gate's playtest, is bounded by simulated frames (quality.js QUALITY_STEPS), and a failure is recorded as { error }.
  * Sets v.quality so summarizeVerify keeps it. Returns null when quality is off (budgetMs 0) or there is no document.
  * @param {Verification | null | undefined} v @param {RegistryLike} registry @param {LogicLike} logic
  * @param {{ mechanics?: unknown, budgetMs?: number }} [opts] mechanics: selection.mechanics (a stored report's on revisions)
@@ -187,11 +180,15 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     t = performance.now();
     const before = calls.length;
     const interactions = [...new Set(templateLoops(composed.parts[0].template, registry).loops.flatMap(l => l.interactions))];
-    const ext = await extendDocument({ doc: composed.doc, mechanics: pick.mechanics, registry, logic, writer: recordingWriter(writer, calls), attempts: cfg.modelAttempts, interactions,
+    // The extension steps are the step path's machinery: time-boxed (cfg.stepPathMs) and reported (stepPath).
+    const deadline = cfg.stepPathMs > 0 ? t + cfg.stepPathMs : null;
+    const ext = await extendDocument({ deadline, doc: composed.doc, mechanics: pick.mechanics, registry, logic, writer: recordingWriter(writer, calls), attempts: cfg.modelAttempts, interactions,
       header: `Game idea: ${prompt}\nThe game: ${pick.title}: ${pick.premise}\nBuilt from the verified templates ${composed.parts.map(p => `'${p.template.id}' (${p.template.concept})`).join(' and ')}, played as ${interactions.join(' or ') || 'its loops are'}.`,
       gaps: { mode: cfg.gaps, service: gapService, max: cfg.maxGapPrimitives }, catalogue, stage: (name, detail) => ctx.stage(name, detail) });
     timings.extendMs = pick.mechanics.length ? ms(t) : null;
     const extensionCalls = calls.length - before;
+    const stepUse = { used: ext.coverage.some(c => c.by !== 'template'), mechanics: ext.coverage.filter(c => c.by !== 'template').map(c => c.mechanic), budgetMs: cfg.stepPathMs || null, ms: timings.extendMs, calls: extensionCalls };
+    if (stepUse.used) ctx.stage('step_path', { during: 'extension', mechanics: stepUse.mechanics, budgetMs: stepUse.budgetMs, ms: stepUse.ms, calls: extensionCalls });
     checkpoint('extensions', { coverage: ext.coverage, added: ext.added });
     if (ext.missing.length) throw fail('extension_missing', 'extension', ext.missing.map(c => ({ code: 'extension_missing', path: `mechanics.${c.mechanic}`, message: `"${c.mechanic}" (${c.importance}${c.verb !== 'none' ? `, verb '${c.verb}'` : ''}) is still missing: ${c.why}` })));
     ({ registry, logic } = ext);
@@ -230,7 +227,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     timings.composeMs = Math.round(clock.codeMs);
     // The version gate every new version passes (version-gate.js): the same checks a revision of it will pass.
     const tg = performance.now();
-    const gate = await gateVersion(fp.doc, { registry, logic, budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs, template });
+    const gate = await gateVersion(fp.doc, { registry, logic, playable: true, template });
     timings.gateMs = ms(tg);
     if (!gate.ok || !gate.doc || !gate.verification) throw fail(gate.stage === 'gate' ? 'not_playable' : defect, gate.stage ?? 'gate', gate.problems);
     const v = gate.verification;
@@ -242,7 +239,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const modelCalls = calls.length, modelRounds = picked.calls + extensionCalls + content.rounds;
     const doc = gate.doc;
     await ctx.store.updateMeta(job.gameId, { title: doc.title, kind: 'kernel' });
-    const report = { kind: 'kernel', path: 'template', templates: used, joins: composed.joins, pick, themes: composed.themes, mechanics: ext.coverage, extensionCalls, content: content.forms, calls, modelCalls, modelRounds,
+    const report = { kind: 'kernel', path: 'template', templates: used, joins: composed.joins, pick, themes: composed.themes, mechanics: ext.coverage, extensionCalls, stepPath: stepUse, content: content.forms, calls, modelCalls, modelRounds,
       summary: doc.logline || pick.premise, gaps: [], verified: true, verification: summarizeVerify(v), features: v.features ?? null, playtest: v.playtest, quality,
       firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } };
     const provenance = { pipeline: KERNEL_PIPELINE_VERSION, templatePath: TEMPLATE_PATH_VERSION, catalogHash: catalogHash(registry), models: { spec: writer.model || null, specProvider: writer.provider || null, code: escalate?.model || null },
@@ -256,249 +253,164 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     return { path: 'template', result: { doc, path: 'template', templates: used, pick, mechanics: ext.coverage, timings, modelCalls, modelRounds, calls, firstVerification: summarizeVerify(v), base: v } };
   }
 
-  /** @param {JobSpec} job @param {JobContext} ctx */
-  async function create(job, ctx) {
-    /** @type {Timings} */
-    const timings = { queueMs: job.queuedMs ?? null };
-    const t0 = performance.now();
-    let { registry, logic } = await catalogue(null);
-    const seed = job.seed ?? seedFrom(job.prompt);
-    // A create job carries its prompt (api.mjs); a missing one is written to the models as empty.
-    const prompt = str(job.prompt);
-    // Checkpoints are what a failure record keeps to reproduce the run (server/jobs.js); hosts without them ignore them.
+  /**
+   * The step path (ARCHITECTURE §5): for a game or genre concept no template is, time-boxed (cfg.stepPathMs) and
+   * reported. Decomposition, then the iterative build (select.js, build.js: the space first, then one mechanic at a
+   * time, each a small model choice among the options code proved valid by declarations, in declaration order, with the
+   * checks after every pick; a pick that fails them is dropped and the step asked again without it), then the gap layer
+   * for the mechanics nothing in the catalogue covers ("none fits": cfg.gaps 'auto', within cfg.maxGapPrimitives), then
+   * the outline (field-level repair rounds), engagement, the loop check, first playable, the mashup relations and the
+   * publish gate, once. A stage that fails fails the build with its problems: the collection is never re-planned
+   * around them, nothing is substituted and nothing is dropped.
+   * @param {JobSpec} job @param {JobContext} ctx
+   * @param {{ registry: RegistryLike, logic: LogicLike, seed: number, prompt: string, t0: number, timings: Timings, why: { pick: import('./templates.js').Pick, stepPath: string[], why: string, calls: number } }} run
+   */
+  async function stepCreate(job, ctx, { registry, logic, seed, prompt, t0, timings, why: routed }) {
+    const writer = /** @type {Writer} */ (spec);
     const checkpoint = (/** @type {string} */ name, /** @type {unknown} */ value) => ctx.checkpoint?.(name, value);
-    checkpoint('provenance', { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, specProvider: spec?.provider || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [] });
-    // The template path first (ARCHITECTURE §5): with a writer, one pick decides whether templates build the idea.
-    // A game or genre concept no template is goes to the step path below, for the whole idea, and says so.
-    /** @type {{ pick: import('./templates.js').Pick, stepPath: string[], why: string, calls: number } | null} */
-    let templatePick = null;
-    if (spec) {
-      const routed = await templateCreate(job, ctx, { registry, logic, seed, prompt, t0, timings });
-      if (routed.path === 'template') return routed.result;
-      templatePick = routed.pick;
-    }
-    ctx.stage('decomposing', { model: spec?.model || 'offline' });
+    const started = performance.now();
+    const deadline = cfg.stepPathMs > 0 ? started + cfg.stepPathMs : null;
+    /** How the step path was used (reported on the published version and on a failure). */
+    const use = { why: routed.why, stepPath: routed.stepPath, budgetMs: cfg.stepPathMs || null, ms: /** @type {number | null} */ (null), calls: /** @type {number | null} */ (null), stage: 'decompose' };
+    ctx.stage('step_path', { why: routed.why, stepPath: routed.stepPath, budgetMs: use.budgetMs });
+    /** @param {string} stage @param {string} code @param {Array<{ code?: unknown, path?: unknown, message?: unknown }>} problems */
+    const fail = (stage, code, problems) => {
+      use.ms = ms(started); use.stage = stage;
+      const missing = problems.slice(0, 8).map(p => `${String(p.code ?? '')} ${String(p.path ?? '')}: ${String(p.message ?? '').slice(0, 200)}`);
+      checkpoint('figure', { path: 'step', stage, code, stepPath: use, problems: problems.slice(0, 20) });
+      ctx.stage('not_buildable', { path: 'step', stage, code, missing });
+      return Object.assign(Error(`This isn't the game you asked for yet: the step path failed at ${stage}: ${missing.slice(0, 4).join('; ')}`), { status: 422, code, report: { path: 'step', stage, problems: problems.slice(0, 40), stepPath: use } });
+    };
+    /** A question the time box or the model failed: the build fails at that stage, saying which. @param {string} stage @param {unknown} error */
+    const failed = (stage, error) => fail(stage, String(prop(error, 'code') || 'step_failed'), [{ code: prop(error, 'code') || 'step_failed', path: stage, message: errorText(error) }]);
+    ctx.stage('decomposing', { model: writer.model || null });
     let t = performance.now();
-    const decomposition = await decomposeIdea({ writer: spec, escalate: writers.code || null, prompt, answers: job.answers || [], registry, attempts: cfg.modelAttempts });
+    let decomposition;
+    try { decomposition = await decomposeIdea({ writer, escalate: writers.code || null, prompt, answers: job.answers || [], registry, attempts: cfg.modelAttempts }); }
+    catch (error) { throw failed('decompose', error); }
     timings.decomposeMs = ms(t);
     checkpoint('decomposition', decomposition);
-    ctx.stage('decomposed', { ms: timings.decomposeMs, source: decomposition.source, ...(decomposition.calls ? { calls: decomposition.calls.length } : {}), references: decomposition.references.map(r => r.name), mechanics: decomposition.mechanics.map(m => m.description), ...(decomposition.error ? { error: decomposition.error } : {}) });
+    ctx.stage('decomposed', { ms: timings.decomposeMs, source: decomposition.source, ...(decomposition.calls ? { calls: decomposition.calls.length } : {}), references: decomposition.references.map(r => r.name), mechanics: decomposition.mechanics.map(m => m.description) });
     t = performance.now();
-    const chosen = await selectPrimitives({ decomposition, registry, decisions, writer: spec, attempts: cfg.modelAttempts });
-    const agency = await ensureAgency({ decomposition, selection: chosen, registry, logic, seed, prompt });
-    // Cast: ensureAgency (outline.js) has no @returns, so the gap it may add widens Gap.kind to string; at runtime
-    // it is a Selection. Remove once outline.js declares its result.
-    let selection = /** @type {Selection} */ (agency.selection);
+    use.stage = 'select';
+    /** @type {Selection} */
+    let selection;
+    try { selection = await selectPrimitives({ decomposition, registry, writer, attempts: cfg.modelAttempts, deadline }); }
+    catch (error) { throw failed('select', error); }
     timings.selectMs = ms(t);
-    checkpoint('selection', { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider, build: /** @type {any} */ (selection).build || null, agency: agency.agency, agencyAttempts: agency.attempts });
-    ctx.stage('selected', { ms: timings.selectMs, provider: selection.provider || 'lexical', spaces: selection.spaces.map(s => s.use), systems: selection.systems, gaps: selection.gaps.map(g => g.description), agency: agency.agency, agencyAttempts: agency.attempts });
-    ctx.stage('outlining', { model: spec?.model || 'procedural' });
-    t = performance.now();
-
-    // Build, verify, and when a stage fails figure out how to make the game (replan.js): diagnose the problems, re-plan
-    // the collection or repair the fields again, or have the gap layer write the missing primitive, then verify again.
-    // Bounded by cfg.replanAttempts (and cfg.maxGapPrimitives for written primitives); nothing is ever substituted.
-    /** @type {Array<Record<string, unknown>>} */
-    const attempts = [];
-    /** @type {Map<string, Set<string>>} */
-    const tried = new Map();
+    use.calls = (decomposition.calls?.length ?? 0) + (selection.build?.calls ?? 0);
+    checkpoint('selection', { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider, build: selection.build || null });
+    ctx.stage('selected', { ms: timings.selectMs, provider: selection.provider, spaces: selection.spaces.map(s => s.use), systems: selection.systems, gaps: selection.gaps.map(g => g.description) });
+    // "None fits": what the catalogue cannot serve, the gap layer writes (cfg.gaps 'auto', within cfg.maxGapPrimitives),
+    // each held to the build's checks again; a core mechanic nothing covers fails the build naming it.
     /** @type {unknown[]} */
     const experiments = [];
-    let writtenGaps = 0;
-    /** @param {Selection} sel */
-    const attempt = async sel => {
-      // Core gaps the selection already knows about cost no model call: they are re-planned first.
-      const known = sel.gaps.filter(g => g.importance === 'core');
-      if (known.length) return { ok: /** @type {const} */ (false), stage: 'selection', problems: known.map(g => ({ code: `gap_${g.kind}`, path: 'systems', message: g.description })), doc: null, outline: null };
-      const outline = await writeOutline({ writer: spec, prompt, answers: job.answers || [], decomposition, selection: sel, registry, logic, seed, maxRounds: cfg.outlineRepairRounds, escalate: writers.code || null });
-      if (!outline.ok) return { ok: /** @type {const} */ (false), stage: 'outline', problems: outline.errors, doc: outline.doc, outline };
-      // The preset may have found what the selection did not (a win nothing declares, a primitive no space hosts).
-      const later = sel.gaps.filter(g => g.importance === 'core');
-      if (later.length) return { ok: /** @type {const} */ (false), stage: 'structure', problems: later.map(g => ({ code: `gap_${g.kind}`, path: 'systems', message: g.description })), doc: outline.doc, outline };
-      // Last document step before play: wire the player and AI participants into the chosen mechanics (card.engage).
-      const engaged = engageDocument(applySkins(outline.doc, registry), registry, logic);
-      // The static loop check of the document that will be played (loop-check.js): its declared win must be reachable.
-      const structural = loopProblems(engaged.doc, registry, { logic, core: loopCore(decomposition, sel, registry), opponent: decomposition.core?.opponent ?? null });
-      if (structural.length) return { ok: /** @type {const} */ (false), stage: 'loop', problems: structural, doc: engaged.doc, outline, engaged };
-      const keep = new Set((engaged.doc.systems || []).map(s => s.use));
-      const fp = firstPlayable(engaged.doc, registry, logic, { seed, protect: keep, maxIsolations: 0 });
-      if (!fp.ok) return { ok: /** @type {const} */ (false), stage: 'first_playable', problems: [...fp.errors, ...fp.problems], doc: engaged.doc, outline, engaged };
-      const doc = experiments.length ? /** @type {Doc} */ ({ ...fp.doc, experiments }) : fp.doc;
-      // The mashup relations the build's adapter steps realised are in the document that would publish (every entry
-      // with a relation has its adapter instances), or the build fails with that gap.
-      const lost = mashupAdapterProblems(doc, decomposition, sel, registry);
-      if (lost.length) return { ok: /** @type {const} */ (false), stage: 'mashup', problems: lost, doc, outline, engaged };
-      // The version gate every new version passes (version-gate.js): the static checks, then a playtest agent plays
-      // this exact document through the controls; nothing may crash and the declared loop must happen.
+    /** @type {Array<Record<string, unknown>>} */
+    const filled = [];
+    let written = 0;
+    for (const g of selection.gaps.filter(x => x.importance === 'core')) {
+      if (cfg.gaps !== 'auto' || !gapService || written >= cfg.maxGapPrimitives) continue;
+      written++;
       const tg = performance.now();
-      const gate = await gateVersion(doc, { registry, logic, budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
-      timings.gateMs = ms(tg);
-      if (!gate.ok || !gate.verification) return { ok: /** @type {const} */ (false), stage: gate.stage ?? 'gate', problems: gate.problems, doc, outline, base: gate.verification };
-      const base = gate.verification;
-      const core = coreLoopProblems(doc, sel.mechanics, registry);
-      if (core.length) return { ok: /** @type {const} */ (false), stage: 'core_loop', problems: core, doc, outline, base };
-      return { ok: /** @type {const} */ (true), doc, outline, engaged, fp, base };
-    };
-    let built = await attempt(selection);
-    for (let n = 1; ; n++) {
-      const entry = { attempt: n, systems: [...selection.systems], stage: built.ok ? 'published' : built.stage, problems: built.ok ? [] : built.problems.slice(0, 8).map(p => `${prop(p, 'code')} ${prop(p, 'path') ?? ''}: ${String(prop(p, 'message') ?? '').slice(0, 160)}`) };
-      attempts.push(entry);
-      if (built.ok) break;
-      /** @param {string[]} missing @param {string} [stopped] why the build stopped before its last attempt */
-      const fail = (missing, stopped = '') => {
-        checkpoint('figure', { attempts, missing, ...(stopped ? { stopped } : {}) });
-        ctx.stage('not_buildable', { attempts: attempts.length, missing, ...(stopped ? { stopped } : {}) });
-        return Object.assign(Error(`This isn't the game you asked for yet. Tried ${attempts.length} time(s): ${attempts.map(a => `#${a.attempt} ${a.stage}${Array.isArray(a.actions) && a.actions.length ? ` → ${a.actions.map(x => prop(x, 'text')).join(', ')}` : ''}`).join('; ')}.${stopped ? ` ${stopped}.` : ''} Still missing: ${missing.slice(0, 4).join('; ')}`), { status: 422, code: 'not_buildable', report: { attempts, missing, ...(stopped ? { stopped } : {}) } });
-      };
-      // A mashup relation the document lost is the pipeline's own gap: no re-planned pick restores an adapter instance.
-      if (built.stage === 'mashup') throw fail(built.problems.map(p => `gap (adapter): ${String(prop(p, 'message'))}`));
-      const diagnoses = diagnose(built.problems, { selection, registry, doc: built.doc, core: loopCore(decomposition, selection, registry), opponent: decomposition.core?.opponent ?? null });
-      Object.assign(entry, { diagnoses: diagnoses.map(d => ({ kind: d.kind, mechanic: d.mechanic ?? null, primitive: d.primitive ?? null, codes: d.codes })) });
-      if (n >= cfg.replanAttempts) throw fail(missingText(diagnoses));
-      const plan = await replan(selection, diagnoses, { registry, decomposition, tried, writer: spec, attempts: cfg.modelAttempts });
-      /** @type {Array<{ text: string } & Record<string, unknown>>} */
-      const actions = plan.actions.map(a => ({ ...a, text: a.action === 'replace' ? `${a.primitive} → ${a.by}` : a.action === 'add' ? `+${a.primitive}` : 'repair fields' }));
-      // What the catalogue cannot serve: the gap layer writes it (cfg.gaps 'auto'), within cfg.maxGapPrimitives.
-      for (const d of plan.unresolved) {
-        if (cfg.gaps !== 'auto' || !gapService || writtenGaps >= cfg.maxGapPrimitives) continue;
-        writtenGaps++;
-        const { request, gap } = gapRequest(d, plan.selection, decomposition);
-        ctx.stage('gap', { mechanic: gap.mechanic, during: 'build' });
-        try {
-          const r = await gapService.fill({ doc: built.doc ?? { schema: 'gameverse.v2.game/0.2', id: 'draft', title: decomposition.title, spaces: [], systems: [] }, request, gap });
-          if (!r.ok || !r.doc) { actions.push({ action: 'write', text: `gap layer could not write ${String(gap.mechanic)}`, problems: r.problems ?? [] }); continue; }
-          ({ registry, logic } = await catalogue(r.doc));
-          const ids = addedBy(r.doc, plan.selection, registry);
-          experiments.push(...experimentsOf(r.doc).filter(e => !experiments.includes(e)));
-          for (const id of ids) {
-            plan.selection.systems.push(id);
-            const m = plan.selection.mechanics.find(x => x.id === d.mechanic); if (m) m.primitives = [...m.primitives, id];
-          }
-          plan.selection.gaps = plan.selection.gaps.filter(g => g.mechanic !== d.mechanic || g.importance !== 'core');
-          actions.push({ action: 'write', text: `wrote ${ids.join(', ') || 'a primitive'}`, primitives: ids, experiment: r.experiment?.id ?? null });
-          plan.unresolved = plan.unresolved.filter(x => x !== d);
-        } catch (error) { actions.push({ action: 'write', text: `gap layer failed: ${errorText(error).slice(0, 120)}` }); }
-      }
-      Object.assign(entry, { actions });
-      // Nothing left to change: the problems are what is missing. Re-asking the model only helps once it has written
-      // something (the outline ran); a gap in the collection needs another primitive. Another attempt on the same
-      // selection would fail the same way, so the build stops here, before its last attempt, and says so: each
-      // diagnosis re-planning took no action for is reported with its reason (replan.js `reason`).
-      const changes = plan.actions.filter(a => a.action !== 'repair' || (built.stage !== 'selection' && built.stage !== 'structure'));
-      if (!changes.length && !actions.some(a => a.action === 'write' && Array.isArray(a.primitives))) {
-        const stopped = `Stopped after attempt ${n} of ${cfg.replanAttempts}: re-planning found no action for ${plan.unresolved.length || diagnoses.length} diagnosis(es)${plan.actions.length ? ` (only ${plan.actions.map(a => a.action).join(', ')}, which cannot change a ${built.stage} failure)` : ''}`;
-        Object.assign(entry, { stopped });
-        ctx.stage('replanned', { attempt: n, actions: actions.map(a => a.text), unresolved: missingText(plan.unresolved), stopped });
-        throw fail(missingText(plan.unresolved.length ? plan.unresolved : diagnoses), stopped);
-      }
-      selection = plan.selection;
-      ctx.stage('replanned', { attempt: n, actions: actions.map(a => a.text), unresolved: missingText(plan.unresolved) });
-      built = await attempt(selection);
+      ctx.stage('gap', { mechanic: g.mechanic, during: 'build' });
+      const request = `${g.signature || g.description}. It must work on ${selection.spaces.map(s => s.use).join(', ') || 'the chosen space'}${decomposition.core?.interaction ? `, be played as ${decomposition.core.interaction}` : ''} and declare its loop (card.loop: verbs, progress events${g.kind === 'win' ? ', win' : ''}).`.slice(0, 700);
+      try {
+        const r = await gapService.fill({ doc: { schema: 'gameverse.v2.game/0.2', id: 'draft', title: decomposition.title, spaces: [], systems: [] }, request, gap: g });
+        if (!r.ok || !r.doc) { filled.push({ mechanic: g.mechanic, ok: false, problems: r.problems ?? [], ms: ms(tg) }); continue; }
+        ({ registry, logic } = await catalogue(r.doc));
+        const ids = list(prop(r.doc, 'systems')).map(x => prop(x, 'use')).filter(/** @returns {x is string} */ x => typeof x === 'string' && registry.has(x) && !selection.systems.includes(x));
+        if (!ids.length) { filled.push({ mechanic: g.mechanic, ok: false, problems: ['the gap layer added no primitive'], ms: ms(tg) }); continue; }
+        experiments.push(...list(prop(r.doc, 'experiments')).filter(x => isObj(x) && !experiments.includes(x)));
+        selection.systems.push(...ids);
+        const m = selection.mechanics.find(x => x.id === g.mechanic); if (m) m.primitives = [...m.primitives, ...ids];
+        selection.gaps = selection.gaps.filter(x => x !== g);
+        filled.push({ mechanic: g.mechanic, ok: true, primitives: ids, experiment: r.experiment?.id ?? null, ms: ms(tg) });
+      } catch (error) { filled.push({ mechanic: g.mechanic, ok: false, error: errorText(error).slice(0, 160), ms: ms(tg) }); }
     }
-    const { outline, fp, base } = built;
-    timings.outlineMs = ms(t); timings.outlineModelMs = spec ? outline.modelMs : null;
-    timings.buildAttempts = attempts.length;
-    checkpoint('outline', { ok: outline.ok, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, errors: (outline.errors || []).slice(0, 20), removed: outline.removed || [], content: (outline.content || []).map(p => `${p.code} ${p.path}: ${p.message}`).slice(0, 20), doc: outline.doc, attempts });
-    ctx.stage('outlined', { ms: timings.outlineMs, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, attempts: attempts.length });
+    const known = selection.gaps.filter(g => g.importance === 'core');
+    if (known.length) throw fail('selection', 'not_buildable', known.map(g => ({ code: `gap_${g.kind}`, path: g.mechanic, message: `${g.description}: ${g.why}` })));
+    ctx.stage('outlining', { model: writer.model || null });
+    t = performance.now();
+    use.stage = 'outline';
+    const outline = await writeOutline({ writer, prompt, answers: job.answers || [], decomposition, selection, registry, logic, seed, maxRounds: cfg.outlineRepairRounds, escalate: writers.code || null });
+    timings.outlineMs = ms(t); timings.outlineModelMs = outline.modelMs;
+    checkpoint('outline', { ok: outline.ok, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk, errors: (outline.errors || []).slice(0, 20), removed: outline.removed || [], content: (outline.content || []).map(p => `${p.code} ${p.path}: ${p.message}`).slice(0, 20), doc: outline.doc });
+    if (!outline.ok) throw fail('outline', 'not_buildable', outline.errors);
+    // The preset may have found what the selection did not (a win nothing declares, a primitive no space hosts).
+    const later = selection.gaps.filter(g => g.importance === 'core');
+    if (later.length) throw fail('structure', 'not_buildable', later.map(g => ({ code: `gap_${g.kind}`, path: g.mechanic, message: `${g.description}: ${g.why}` })));
+    ctx.stage('outlined', { ms: timings.outlineMs, source: outline.source, rounds: outline.rounds, firstPassOk: outline.firstPassOk });
+    // Last document step before play: wire the player and AI participants into the chosen mechanics (card.engage).
+    const engaged = engageDocument(applySkins(outline.doc, registry), registry, logic);
+    // The static loop check of the document that will be played (loop-check.js): its declared win must be reachable.
+    const structural = loopProblems(engaged.doc, registry, { logic, core: loopCore(decomposition, selection, registry), opponent: decomposition.core?.opponent ?? null });
+    if (structural.length) throw fail('loop', 'not_buildable', structural);
+    const fp = firstPlayable(engaged.doc, registry, logic, { seed, protect: new Set((engaged.doc.systems || []).map(x => x.use)), maxIsolations: 0 });
+    if (!fp.ok) throw fail('first_playable', 'not_buildable', [...fp.errors, ...fp.problems]);
     timings.firstPlayableBuildMs = fp.ms;
-    let current = built.doc;
+    const built = experiments.length ? /** @type {Doc} */ ({ ...fp.doc, experiments }) : fp.doc;
+    // The mashup relations the build's adapter steps realised are in the document that would publish (every entry
+    // with a relation has its adapter instances), or the build fails with that gap.
+    const lost = mashupAdapterProblems(built, decomposition, selection, registry);
+    if (lost.length) throw fail('mashup', 'not_buildable', lost);
+    // The version gate every new version passes (version-gate.js): the static checks on the document a person plays, then
+    // a playtest agent plays it through the controls; nothing may crash and the declared loop must happen.
+    const tg = performance.now();
+    const gate = await gateVersion(built, { registry, logic, playable: true });
+    timings.gateMs = ms(tg);
+    if (!gate.ok || !gate.doc || !gate.verification) throw fail(gate.stage ?? 'gate', gate.stage === 'gate' ? 'not_playable' : 'not_buildable', gate.problems);
+    const base = gate.verification, doc = gate.doc;
+    const core = coreLoopProblems(doc, selection.mechanics, registry);
+    if (core.length) throw fail('core_loop', 'not_buildable', core);
+    use.ms = ms(started); use.stage = 'published'; timings.stepPathMs = use.ms;
     /** @type {GapNote[]} */
     const gaps = [...selection.gaps.map(gapNote), ...[...(outline.removed || []), ...fp.removed].map(r => ({ capability: r.use, why: r.why, kind: r.kind === 'capability' ? 'capability' : 'removed' }))];
-    await ctx.store.updateMeta(job.gameId, { title: current.title, kind: 'kernel' });
-    const common = { kind: 'kernel', decomposition, selection: { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider }, gaps, summary: current.logline || decomposition.premise };
-    const provenance = (/** @type {Record<string, unknown>} */ extra) => ({ pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, specProvider: spec?.provider || null, decisions: decisions?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [], outlineSource: outline.source, decompositionHash: hashOf(decomposition), ...extra });
+    await ctx.store.updateMeta(job.gameId, { title: doc.title, kind: 'kernel' });
+    const report = { kind: 'kernel', path: 'step', why: routed.why, templatePick: routed, stepPath: use, decomposition, selection: { mechanics: selection.mechanics, spaces: selection.spaces, systems: selection.systems, graphics: selection.graphics, gaps: selection.gaps, provider: selection.provider }, gaps, gapsFilled: filled, summary: doc.logline || decomposition.premise };
+    const provenance = { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: writer.model || null, specProvider: writer.provider || null }, seed, prompt: job.prompt, answers: job.answers || [], path: 'step', outlineSource: outline.source, decompositionHash: hashOf(decomposition), outlineHash: hashOf(doc) };
     checkpoint('gate', { viable: Boolean(base.viable), viability: base.viability || null, playtest: base.playtest || null, problems: (base.problems || []).slice(0, 20) });
-    checkpoint('coreLoop', { problems: [] });
     // Quality is measured only once the gate passed, and never changes what publishes.
     t = performance.now();
     const quality = qualityReport(base, registry, logic, { mechanics: selection.mechanics, budgetMs: cfg.qualityMs });
     timings.qualityMs = quality ? ms(t) : null;
     timings.requestToFirstPlayableMs = ms(t0);
-    await ctx.publish({ doc: current, stage: 'first_playable', report: { ...common, ...(templatePick ? { path: 'step', why: templatePick.why, templatePick } : {}), verified: true, verification: summarizeVerify(base), playtest: base.playtest, quality, outline: { source: outline.source, structure: outline.structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk, attempts }, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance: provenance({ outlineHash: hashOf(current) }) });
-    ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs, gateMs: timings.gateMs });
+    const outlineReport = { source: outline.source, structure: outline.structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk };
+    await ctx.publish({ doc, stage: 'first_playable', report: { ...report, verified: true, verification: summarizeVerify(base), playtest: base.playtest, quality, outline: outlineReport, firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } }, provenance });
+    ctx.stage('first_playable', { ms: timings.requestToFirstPlayableMs, buildMs: timings.firstPlayableBuildMs, gateMs: timings.gateMs, path: 'step', stepPathMs: use.ms });
     ctx.stage('verified', { ms: timings.gateMs, verification: summarizeVerify(base) });
-
-    // Layer 3: detail patches in parallel; merges are serialized in completion order.
-    const tasks = detailTasks(current, { max: cfg.maxDetailTasks });
-    /** @type {{ proposed: number, accepted: number, rejected: Array<{ task: string, reason: string | undefined }>, tasks: Array<Record<string, unknown>> }} */
-    const detail = { proposed: 0, accepted: 0, rejected: [], tasks: [] };
-    /** @type {Promise<void>} */
-    let merging = Promise.resolve();
-    let baseVerify = base;
-    /** @param {DetailTask} task */
-    const runTask = async task => {
-      const tt = performance.now();
-      ctx.stage('detail', { task: task.id });
-      /** @type {Awaited<ReturnType<typeof writeDetail>>} */
-      let written;
-      try { written = await writeDetail({ writer: spec, doc: current, task, registry, logic }); }
-      catch (error) { detail.tasks.push({ task: task.id, ok: false, reason: 'writer', error: errorText(error).slice(0, 120), ms: ms(tt) }); detail.proposed++; detail.rejected.push({ task: task.id, reason: 'writer' }); return; }
-      detail.proposed++;
-      await (merging = merging.then(async () => {
-        // A patch never takes the pipeline down: anything that throws while checking it is a rejection.
-        // Cast: acceptPatch (detail.js) does not declare its result, so `ok` widens to boolean and does not narrow;
-        // PatchResult is what it returns. Remove once detail.js declares it.
-        /** @param {unknown} patch @returns {Promise<PatchResult>} */
-        const accept = patch => acceptPatch({ current, patch, task, registry, logic, baseVerify, budgetMs: cfg.solveBudgetMs })
-          .then(r => /** @type {PatchResult} */ (r))
-          .catch(error => ({ ok: false, reason: 'threw', errors: [{ code: 'patch_threw', path: '$', message: errorText(error).slice(0, 200) }], patch }));
-        let result = await accept(written.patch);
-        for (let r = 0; !result.ok && spec && r < cfg.detailRepairs && result.reason !== 'empty'; r++) {
-          // Cast: writeDetail (detail.js) takes Problem[], while acceptPatch's errors include verification problems
-          // whose path is optional. Remove once writeDetail accepts PatchProblem[].
-          try { written = await writeDetail({ writer: spec, doc: current, task, registry, logic, errors: /** @type {Problem[]} */ (result.errors), previous: result.patch }); } catch { break; }
-          result = await accept(written.patch);
-        }
-        /** @type {Record<string, unknown>} */
-        const entry = { task: task.id, ok: result.ok, source: written.source, modelMs: written.ms ?? null, ms: ms(tt), ...(result.ok ? { fixes: result.fixes.length } : { reason: result.reason, errors: (result.errors || []).slice(0, 4).map(e => e.code || e.message) }) };
-        detail.tasks.push(entry);
-        if (!result.ok) { detail.rejected.push({ task: task.id, reason: result.reason }); ctx.stage('detail_rejected', { task: task.id, reason: result.reason }); return; }
-        current = result.doc; baseVerify = result.verify; detail.accepted++;
-        const tq = performance.now(), quality = qualityReport(result.verify, registry, logic, { mechanics: selection.mechanics, budgetMs: cfg.qualityMs });
-        entry.qualityMs = quality ? ms(tq) : null;
-        await ctx.publish({ doc: current, stage: `detail:${task.zone}`, report: { ...common, added: result.added, verified: true, verification: summarizeVerify(result.verify), quality, detail: entry, timings: { ...timings, sinceRequestMs: ms(t0) } }, provenance: provenance({ task: task.id }) });
-      }));
-    };
-    const queue = [...tasks];
-    await Promise.all(Array.from({ length: Math.min(cfg.detailConcurrency, queue.length) }, async () => { while (queue.length) await runTask(/** @type {DetailTask} */ (queue.shift())); }));
-    await merging;
-    timings.detailMs = ms(t0) - Number(timings.requestToFirstPlayableMs);
-
-    // Layer 4: gaps -> new primitives (background, bounded by config). A gap's document comes from the experiments
-    // service (its own checks ran there): it is published and handed on as it is.
-    /** @type {unknown} */
-    let latest = current;
-    /** @type {Array<Record<string, unknown>>} */
-    const filled = [];
-    if (cfg.gaps === 'auto' && gapService) {
-      for (const g of selection.gaps.filter(g => g.importance === 'core').slice(0, cfg.maxGapPrimitives)) {
-        const tg = performance.now();
-        ctx.stage('gap', { mechanic: g.mechanic });
-        try {
-          const r = await gapService.fill({ doc: latest, request: g.description, gap: g });
-          // The gap's version passes the version gate like every other, held to the version it changes.
-          const gated = r.ok ? await (async () => {
-            const cat = await catalogue(r.doc);
-            const before = await gateVersion(latest, { ...cat, budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs });
-            return gateVersion(r.doc, { ...cat, budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs, ...(before.ok && before.doc && before.verification ? { base: { doc: before.doc, verification: before.verification } } : {}) });
-          })() : null;
-          if (r.ok && gated && !gated.ok) filled.push({ mechanic: g.mechanic, ok: false, experiment: r.experiment.id, gate: { stage: gated.stage, problems: gated.problems.slice(0, 8) }, ms: ms(tg) });
-          else if (r.ok && gated?.doc) {
-            latest = gated.doc; filled.push({ mechanic: g.mechanic, experiment: r.experiment.id, ms: ms(tg) });
-            await ctx.publish({ doc: latest, stage: `gap:${g.mechanic}`, report: { ...common, gaps: common.gaps.filter(x => x.mechanic !== g.mechanic), experiment: { id: r.experiment.id, label: r.experiment.label }, changes: [`experimental: ${r.experiment.label}`], timings: { ...timings, sinceRequestMs: ms(t0) } }, provenance: provenance({ experiment: r.experiment.id }) });
-          } else filled.push({ mechanic: g.mechanic, ok: false, problems: r.problems, ms: ms(tg) });
-        } catch (error) { filled.push({ mechanic: g.mechanic, ok: false, error: errorText(error).slice(0, 160), ms: ms(tg) }); }
-      }
-    }
     timings.totalMs = ms(t0);
-    ctx.stage('complete', { timings, detail: { proposed: detail.proposed, accepted: detail.accepted, rejected: detail.rejected }, gaps: filled });
-    return { doc: latest, timings, detail, gaps: filled, firstVerification: summarizeVerify(base), decomposition, selection, outline: { source: outline.source, structure: outline.structure ?? null, rounds: outline.rounds, firstPassOk: outline.firstPassOk, attempts }, base };
+    ctx.stage('complete', { timings, path: 'step', gaps: filled });
+    return { doc, timings, gaps: filled, path: 'step', stepPath: use, firstVerification: summarizeVerify(base), decomposition, selection, outline: outlineReport, base };
+  }
+
+  /** @param {JobSpec} job @param {JobContext} ctx */
+  async function create(job, ctx) {
+    /** @type {Timings} */
+    const timings = { queueMs: job.queuedMs ?? null };
+    const t0 = performance.now();
+    const { registry, logic } = await catalogue(null);
+    const seed = job.seed ?? seedFrom(job.prompt);
+    // A create job carries its prompt (api.mjs); a missing one is written to the models as empty.
+    const prompt = str(job.prompt);
+    // Checkpoints are what a failure record keeps to reproduce the run (server/jobs.js); hosts without them ignore them.
+    ctx.checkpoint?.('provenance', { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), models: { spec: spec?.model || null, specProvider: spec?.provider || null }, seed, prompt: job.prompt, answers: job.answers || [] });
+    // The model writes the judgement (the template pick, the step path's choices, content): without one nothing is
+    // chosen, and no offline guess stands in.
+    if (!spec) {
+      ctx.stage('not_buildable', { stage: 'model', code: MODEL_MISSING });
+      throw Object.assign(Error('No model is connected: the template pick, the step path\'s choices and the content are the model\'s, and nothing stands in for them.'), { status: 422, code: MODEL_MISSING });
+    }
+    // The template path first (ARCHITECTURE §5): one pick decides whether templates build the idea. A game or genre
+    // concept no template is goes to the step path, for the whole idea, and says so.
+    const routed = await templateCreate(job, ctx, { registry, logic, seed, prompt, t0, timings });
+    if (routed.path === 'template') return routed.result;
+    return stepCreate(job, ctx, { registry, logic, seed, prompt, t0, timings, why: routed.pick });
   }
 
   /**
    * A revision: a new immutable version checked like a new game (ARCHITECTURE §4). The change applies to the version
    * the job names, else to the game's latest version when the job runs (a change queued behind another builds on it).
-   * A parameter tweak (no model; on a template game within the ranges its template tunes them) else the model's ops,
+   * A parameter tweak (one strict model choice among the declared params; on a template game its tune slots within the ranges its template tunes them) else the model's ops,
    * preflighted (a failing draft goes back to the model with the errors; nothing is repaired around, stubbed or
    * dropped). Then the version gate (version-gate.js) on the document a person plays, against the base version
    * verified with the same budgets: preflight, the template's tune ranges, composition, loop, controls, the publish
@@ -528,9 +440,9 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     // A revise job carries its change (api.mjs); a missing one is written to the models as empty.
     const change = str(job.change);
     ctx.stage('revising', { change: job.change, base: baseVersion });
-    // Layer 5 first: a parameter tweak with no model.
+    // A parameter tweak first: one small strict model choice among the declared params (doc-revise.js tweakDocument).
     let t = performance.now();
-    const tweak = await tweakDocument(before, job.change, { registry, decisions, limits: template ? tuneLimits(template, before, { registry, logic }) : null });
+    const tweak = await tweakDocument(before, job.change, { registry, writer: spec, attempts: cfg.modelAttempts, limits: template ? tuneLimits(template, before, { registry, logic }) : null });
     timings.tweakMs = ms(t);
     /** @type {Doc | null} */
     let after = null;
@@ -580,7 +492,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     ctx.checkpoint?.('revision', { base: baseVersion, change: job.change, path, ops: opsApplied.slice(0, 50), unsupported, timings: { ...timings }, doc: after });
     // The version gate, against the base verified with the same budgets (comparable baselines; made only once the
     // static stages pass).
-    const budgets = { budgetMs: cfg.solveBudgetMs, playtestMs: cfg.playtestMs };
+    const budgets = { playable: true };
     const gate = await gateVersion(after, { registry, logic, ...budgets, template, base: { doc: before, verify: () => verifyDocument(before, registry, logic, budgets), proof: prop(previous.report, 'proof') } });
     timings.gateMs = ms(t); timings.botsMs = gate.ms.bots ?? null;
     if (!gate.ok || !gate.doc || !gate.verification) {
@@ -597,9 +509,9 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     // The revision check as published: the checker's, or (when the world did not grow) at least notApplied and why.
     /** @type {Partial<import('./revision-check.js').RevisionCheck> | null} */
     let revisionCheck = guard.revisionCheck;
-    if (scaled || worldScaleRequest(job.change)) {
+    if (scaled) {
       growth = contentGrowth(before, published, registry, logic);
-      const wantGrow = (scaled?.factor ?? worldScaleRequest(job.change) ?? 1) > 1;
+      const wantGrow = scaled.factor > 1;
       if (wantGrow && !growth.grew) revisionCheck = { ...(revisionCheck || {}), notApplied: true, why: 'Only the world\'s container grew: nothing it generates (cells, rooms, zones, entities) got bigger.' };
     }
     const notApplied = revisionCheck?.notApplied || (guard.diff === 0);
@@ -651,4 +563,3 @@ export function summarizeVerify(v) {
     playtest: v.playtest ?? null, quality: v.quality ?? null, features: v.features?.table ?? null };
 }
 
-export { decomposeOffline };

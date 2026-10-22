@@ -5,6 +5,7 @@
 import { createWorld } from '../kernel/world.js';
 import { touchDefeats } from '../primitives/gameplay/combat-lib.js';
 import { ControlsMissing } from './controls.js';
+import { onPlayerSide, opposed } from '../kernel/sides.js';
 
 /** A factory of fresh headless worlds for one normalized document. */
 export function maker(doc, registry, logic) {
@@ -13,12 +14,25 @@ export function maker(doc, registry, logic) {
 
 const playing = rt => rt.state.status === 'playing';
 
-/** Step `n` frames with `input`; counts steps on the budget. Returns frames actually stepped. */
-export function hold(rt, input, n = 1, b = null) {
+/** Step `n` frames with `input` (a metered runtime counts them on its budget: util.js budget.meter). Returns frames actually stepped. */
+export function hold(rt, input, n = 1) {
   let k = 0;
   for (; k < n && playing(rt); k++) rt.step(input);
-  b?.step(k);
   return k;
+}
+
+/**
+ * Hold a person's input for `n` frames: a press goes down on the first frame and stays down (held) for the rest, a
+ * value sent through a UI is sent once, and axes and held verbs stay as given. Holding `{ actions }` itself for n
+ * frames would press the key again every frame, which no hand does. Returns frames actually stepped.
+ */
+export function holdInput(rt, input, n = 1) {
+  if (n <= 0) return 0;
+  const k = hold(rt, input, 1);
+  if (n === 1 || !k) return k;
+  const held = { ...(input.held || {}) };
+  for (const [v, x] of Object.entries(input.actions || {})) if (x === true) held[v] = true;
+  return k + hold(rt, { ...(input.axes ? { axes: input.axes } : {}), ...(Object.keys(held).length ? { held } : {}) }, n - 1);
 }
 
 /**
@@ -29,26 +43,25 @@ export function hold(rt, input, n = 1, b = null) {
  * are sent once) and its `apply` macro is never run; an option whose only content is a macro is not something a
  * person can do (ControlsMissing).
  */
-export function applyOption(rt, option, b = null) {
-  const before = rt.state.frame;
+export function applyOption(rt, option) {
   if (rt.controls) {
     const actions = option.actions || {}, verbs = Object.keys(actions).filter(v => actions[v] !== undefined && actions[v] !== null && actions[v] !== false);
     if (!verbs.length && typeof option.apply === 'function') throw new ControlsMissing([{ verb: option.label ?? 'option', why: 'the option is a macro (apply) and issues no action' }]);
     const n = option.steps || 1;
     hold(rt, { actions }, 1);
+    // Its presses stay held, and an input axis it names (a vector value: the move axis) stays pushed, for its steps.
     const held = Object.fromEntries(verbs.filter(v => actions[v] === true).map(v => [v, true]));
-    if (n > 1) hold(rt, Object.keys(held).length ? { held } : {}, n - 1);
-    b?.step(Math.max(1, rt.state.frame - before));
+    const axial = Object.fromEntries(verbs.filter(v => Array.isArray(actions[v])).map(v => [v, actions[v]]));
+    if (n > 1) hold(rt, { ...(Object.keys(held).length ? { held } : {}), ...(Object.keys(axial).length ? { actions: axial } : {}) }, n - 1);
     return;
   }
   if (typeof option.apply === 'function') option.apply(rt);
   if (option.actions || (!option.apply && !option.steps)) hold(rt, { actions: option.actions || {} }, option.steps || 1);
   else if (option.steps && playing(rt)) hold(rt, {}, option.steps);
-  b?.step(Math.max(1, rt.state.frame - before));
 }
 
 /** Step empty input a few frames so systems react (beats fire, AI moves). */
-export function settle(rt, n = 0, b = null) { return n > 0 ? hold(rt, {}, n, b) : 0; }
+export function settle(rt, n = 0) { return n > 0 ? hold(rt, {}, n) : 0; }
 
 /** Stable label of an option within one state (labels should be unique; index breaks ties). */
 export function optionLabels(options) {
@@ -109,30 +122,45 @@ export function threats(rt, e = rt.player()) {
 }
 /** Prey: touching it defeats it (combat-lib touchDefeats, the one definition the runtime uses). */
 export function isVulnerable(rt, o) { return touchDefeats(rt, o); }
-/** Non-player entities with health in the player's space (opponents, targets). */
-export const foes = (rt, e = rt.player()) => Object.values(rt.state.entities).filter(o => o !== e && o.space === e?.space && hpOf(o) !== null);
+/** Entities with health in `e`'s space that are not on its side (kernel/sides.js): the player's opponents and targets, never its own pieces. */
+export const foes = (rt, e = rt.player()) => Object.values(rt.state.entities).filter(o => o !== e && o.space === e?.space && hpOf(o) !== null && (e?.id === 'player' ? !onPlayerSide(rt, o) : opposed(rt, e, o) !== false));
 /** Entities the player gains by touching: collectible/pickup components. */
 export const collectibles = (rt, e = rt.player()) => Object.values(rt.state.entities).filter(o => o !== e && o.space === e?.space && (o.components.collectible || o.components.pickup));
 
 /** Velocity of an entity: components.body.vel or [0,0,0]. */
 export const velOf = e => { const v = e?.components?.body?.vel; return Array.isArray(v) ? v : [0, 0, 0]; };
 
+/**
+ * The verbs a person presses (a key sends true): on a controlled runtime (v2/verify/controls.js) the controls' own
+ * list, so a bot never asks for a verb no key gives; else every action the runtime registers.
+ */
+export const pressableVerbs = rt => (rt.controls ? rt.controls.pressable() : rt.actions());
+
 /** Directional input macros for continuous/cell spaces: idle + 8 axis directions. */
 export const DIRS8 = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
 
 /**
- * Generic input macros when a document exposes no options: idle, axis moves,
- * each action verb alone and with a move. `verbs` defaults to the verbs a person can press (a controlled runtime,
- * v2/verify/controls.js), else rt.actions().
+ * Generic input macros when a document exposes no options: idle, each held axis in the eight directions, each action
+ * verb alone and with a horizontal move. On a controlled runtime (v2/verify/controls.js) they are what a person has:
+ * `verbs` defaults to the verbs a key presses and `axes` to every axis the bindings give a source (move, drive, steer,
+ * aim...; mouse look excepted); else rt.actions() and the move axis. `axes: false` (or []) leaves the axes out.
  */
-export function inputMacros(rt, { verbs = rt.controls ? rt.controls.pressable() : rt.actions(), axes = true, combos = true } = {}) {
+export function inputMacros(rt, { verbs = pressableVerbs(rt), axes = boundAxes(rt), combos = true } = {}) {
+  const list = axes === true ? ['move'] : axes || [];
   const out = [{ label: 'idle', input: {} }];
-  if (axes) for (const [x, y] of DIRS8.slice(1)) out.push({ label: `move ${x},${y}`, input: { axes: { move: [x, y] } } });
+  for (const a of list) for (const [x, y] of DIRS8.slice(1)) out.push({ label: `${a} ${x},${y}`, input: { axes: { [a]: [x, y] } } });
   for (const v of verbs) {
     out.push({ label: v, input: { actions: { [v]: true } } });
-    if (combos && axes) for (const [x, y] of [[1, 0], [-1, 0]]) out.push({ label: `${v}+${x},${y}`, input: { actions: { [v]: true }, axes: { move: [x, y] } } });
+    if (combos && list.length) for (const [x, y] of [[1, 0], [-1, 0]]) out.push({ label: `${v}+${x},${y}`, input: { actions: { [v]: true }, axes: { [list[0]]: [x, y] } } });
   }
   return out;
+}
+
+/** The axes a person holds on a controlled runtime (bound to some source; mouse look excepted), move first; else ['move']. */
+export function boundAxes(rt) {
+  if (!rt.controls) return ['move'];
+  const axes = Object.entries(rt.controls.controls.map?.axes || {}).filter(([a, src]) => a !== 'look' && (src || []).length).map(([a]) => a);
+  return axes.sort((a, b) => (b === 'move') - (a === 'move'));
 }
 
 /** True if the space bound to the player provides a capability method set. */

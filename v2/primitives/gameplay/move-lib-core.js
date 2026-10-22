@@ -41,6 +41,7 @@ const AXES = ['x', 'y', 'z'];
 import { movementEnvelope } from './move-lib-envelope.js';
 import { intercept } from './combat-lib.js';
 import { entityName, zoneName, listed, cellText } from '../engine/runtime-lib-names.js';
+import { loopVerbs } from '../engine/runtime-lib-controls.js';
 
 // ---------------------------------------------------------------- vocabulary of other primitives
 
@@ -696,7 +697,14 @@ export function verbs(rt, names) { const have = new Set(rt.actions()); for (cons
  *   each waypoint is free.
  */
 export function ensureShared(rt, macro = {}) {
-  if (rt.caches.moveShared) { if (macro.speed) rt.caches.moveShared.speed = Math.max(rt.caches.moveShared.speed, macro.speed); return; }
+  if (rt.caches.moveShared) {
+    const S = rt.caches.moveShared;
+    if (macro.speed) S.speed = Math.max(S.speed, macro.speed);
+    // A card that declares travel (its macro params) sets them whatever installed first.
+    for (const k of /** @type {const} */ (['seconds', 'teleport', 'max'])) if (macro[k] !== undefined) S[k] = macro[k];
+    travelVerb(rt);
+    return;
+  }
   const S = rt.caches.moveShared = { speed: macro.speed || 3, seconds: macro.seconds ?? 60, teleport: macro.teleport ?? true, max: macro.max ?? 16 };
   // Movement i-frames (dodge rolls, dashes, ledge grabs, hyperspace) cancel hits through combat's
   // shared hit-interceptor chain, first in order. combat.health reads only its own health.invulnerable,
@@ -716,11 +724,11 @@ export function ensureShared(rt, macro = {}) {
       if (down.length || e.components.move?.held?.length) mv(e).held = down;
     }
   }, 'gameplay.move');
-  if (!new Set(rt.actions()).has('travel')) rt.action('travel', (zone, rt) => {
-    const p = rt.player(); if (!p || typeof zone !== 'string') return;
-    if (p.components.moveTo?.zone !== zone) p.components.moveTo = { zone, at: null, run: true };
-  });
+  travelVerb(rt);
   rt.options(rt => {
+    // Offered exactly when a card of the document declares the verb (its loop's travel, which the host gives a control:
+    // ui-defaults mounts the choices UI for it), so every travel option is one a person can take.
+    if (!travelDeclared(rt)) return [];
     const p = rt.player(); if (!p?.space || S.max <= 0) return [];
     const api = spaceApi(rt, p); if (!api) return [];
     // Listing is cheap: one reachable() set per step (memoised), membership tests, a distance
@@ -731,6 +739,23 @@ export function ensureShared(rt, macro = {}) {
       const name = zoneName(rt.doc, id);
       return { label: `travel to ${id}`, ...(name ? { text: `Go to ${name}` } : {}), actions: { travel: id }, steps, macro: true, apply: rt => travel(rt, id, steps, S) };
     });
+  });
+}
+
+/** Whether a card of the world's document declares `travel` among its loop verbs (memoised per document). @param {any} rt */
+function travelDeclared(rt) {
+  const c = rt.caches.moveTravel;
+  if (c?.doc === rt.doc) return c.on;
+  const on = loopVerbs(rt.doc, rt.registry).includes('travel');
+  rt.caches.moveTravel = { doc: rt.doc, on };
+  return on;
+}
+/** The `travel` verb (go to a zone, as the travel options name it), registered once a card declares it. @param {any} rt */
+function travelVerb(rt) {
+  if (!travelDeclared(rt) || new Set(rt.actions()).has('travel')) return;
+  rt.action('travel', (zone, rt) => {
+    const p = rt.player(); if (!p || typeof zone !== 'string') return;
+    if (p.components.moveTo?.zone !== zone) p.components.moveTo = { zone, at: null, run: true };
   });
 }
 
@@ -836,8 +861,9 @@ export const COMMON_PARAMS = {
   npcs: { type: 'boolean', default: true, effect: 'drive NPCs that carry components.move (input, steer or moveTo intents)' },
   plane: { type: 'string', options: ['auto', 'x', 'xy', 'xz'], default: 'auto', effect: 'ground plane axes; auto derives it from gravity and the space size' },
 };
+/** The travel options' settings, on the cards that declare the `travel` verb (walk, grid, platformer). */
 export const MACRO_PARAMS = {
-  macro: { type: 'object', default: {}, effect: 'solver macro options: travel to zones', fields: {
+  macro: { type: 'object', default: {}, effect: 'travel to zones (the travel verb\'s options)', fields: {
     max: { type: 'integer', min: 0, max: 64, default: 16, effect: 'travel options offered at once (0 disables)' },
     seconds: { type: 'number', min: 1, max: 600, default: 60, unit: 's', effect: 'step budget per travel' },
     teleport: { type: 'boolean', default: true, effect: 'fall back to validated teleport along space.path when stepping fails' },

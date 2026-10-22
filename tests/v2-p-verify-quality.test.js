@@ -8,9 +8,8 @@ import { readFileSync } from 'node:fs';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { engageDocument } from '../v2/planner/engage.js';
 import { preflight } from '../v2/kernel/document.js';
-import { playtest, replayPlay } from '../v2/verify/playtest.js';
+import { playtest, replayPlay, explorerWorlds } from '../v2/verify/playtest.js';
 import { quality, QUALITY_CODES } from '../v2/verify/quality.js';
-import { maker } from '../v2/verify/drive.js';
 import { stateHash } from '../v2/verify/util.js';
 import { qualityReport, summarizeVerify } from '../v2/planner/kernel-pipeline.js';
 import { viability } from '../v2/planner/verify-adapter.js';
@@ -26,7 +25,7 @@ const engaged = (name, edit = d => d) => {
 // The live platformer as recorded: its shaft rooms stack platforms up through the falling-piece board's spawn rows (the
 // rooms are proven for the player's real jump, which needs six of them to reach that high), so it is lost on frame 1.
 const blockedBoard = d => ({ ...d, spaces: d.spaces.map(s => ({ ...s, generators: (s.generators || []).map(g => (g.use === 'engine.generate.tilemap.rooms' ? { ...g, with: { ...g.with, rooms: g.with.rooms.map(r => ({ ...r, platforms: 6 })) } } : g)) })) });
-const BOUNDED = { budgetMs: Infinity, maxRounds: 24 };
+const BOUNDED = { maxRounds: 24 };
 const runs = new Map();
 const play = (name, edit) => { const k = `${name}:${edit}`; if (!runs.has(k)) { const { doc } = engaged(name, edit); runs.set(k, playtest(doc, registry, logic, { seed: doc.seed, ...BOUNDED })); } return runs.get(k); };
 const SECTIONS = ['agency', 'coverage', 'progression', 'pacing', 'deadTime', 'variety', 'budget', 'exhaustive'];
@@ -51,7 +50,8 @@ test('playtest returns a frame-level timeline of the best path and a small archi
   assert.ok(tl.cells >= 1 && tl.zones.length >= 1 && tl.labels.length >= 1);
   assert.ok(pt.sample.length >= 2 && pt.sample.length <= 7, `sample ${pt.sample.length}`);
   assert.deepEqual(pt.sample[0].path, [], 'the start cell comes first');
-  const make = maker(doc, registry, logic);
+  // The explorer's worlds: the host document, through the controls (the archive was played there).
+  const make = explorerWorlds(doc, registry, logic, { seed: doc.seed, travel: pt.travel === 'steer' }).make;
   for (const c of pt.sample.slice(1, 3)) assert.equal(stateHash(replayPlay(make, doc.seed, c.path).snapshot()), stateHash(c.snap), `${c.key} replays to its snapshot`);
   // Same document, seed and rounds: the same timeline.
   assert.deepEqual(playtest(doc, registry, logic, { seed: doc.seed, ...BOUNDED }).timeline, tl);
@@ -59,7 +59,7 @@ test('playtest returns a frame-level timeline of the best path and a small archi
 
 test('quality: every section is measured on a playable document, findings are info with stable codes', () => {
   const { doc, mechanics } = engaged('kart');
-  const q = quality(doc, registry, logic, { playtest: play('kart'), mechanics, budgetMs: Infinity });
+  const q = quality(doc, registry, logic, { playtest: play('kart'), mechanics });
   for (const k of SECTIONS) assert.ok(k in q, k);
   assert.equal(q.exhaustive, false);
   assert.deepEqual(q.unmeasured, {});
@@ -74,18 +74,18 @@ test('quality: every section is measured on a playable document, findings are in
     assert.ok(QUALITY_CODES[f.code], `stable code ${f.code}`);
     assert.equal(typeof f.path, 'string');
   }
-  assert.deepEqual(stable(quality(doc, registry, logic, { playtest: play('kart'), mechanics, budgetMs: Infinity })), stable(q), 'deterministic');
+  assert.deepEqual(stable(quality(doc, registry, logic, { playtest: play('kart'), mechanics })), stable(q), 'deterministic');
 });
 
 test('quality: what was not measured is null, never 0', () => {
   // The live platformer is lost on its first frame: no path survives past the start.
   const { doc, mechanics } = engaged('platformer', blockedBoard);
-  const q = quality(doc, registry, logic, { playtest: play('platformer', blockedBoard), mechanics, budgetMs: Infinity });
+  const q = quality(doc, registry, logic, { playtest: play('platformer', blockedBoard), mechanics });
   for (const k of ['progression', 'pacing', 'deadTime', 'variety']) { assert.equal(q[k], null, k); assert.equal(typeof q.unmeasured[k], 'string'); }
   assert.ok(q.agency, 'agency is still measured at the start cell');
   assert.ok(q.findings.some(f => f.code === 'agency_low'));
-  // No mechanics, no time: coverage and agency are unmeasured, not zero.
-  const none = quality(engaged('kart').doc, registry, logic, { playtest: play('kart'), budgetMs: 0 });
+  // No mechanics, no steps: coverage and agency are unmeasured, not zero.
+  const none = quality(engaged('kart').doc, registry, logic, { playtest: play('kart'), maxSteps: 0 });
   assert.equal(none.coverage, null);
   assert.equal(none.agency, null);
   assert.match(none.unmeasured.agency, /budget/);

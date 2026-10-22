@@ -57,7 +57,10 @@ function controlsFor(rt, v, pref = 'auto') {
   if (!driver || c.destroyed) return zero;
   if (driver === 'player') {
     const inp = rt.input || {}, held = inp.held || {}, act = inp.actions || {}, dv = act.drive && typeof act.drive === 'object' ? act.drive : null;
-    const mv = dv ? [dv.steer ?? 0, dv.throttle ?? 0] : inp.axes?.move || [0, 0];
+    // The drive verb's value (card.actionSpace drive: steer and throttle) as the host gives a person it: an action
+    // record, or the held axis its continuous declaration binds (axes.drive, [steer, throttle]); else the move axis.
+    const ax = inp.axes || {}, held2 = v => Array.isArray(v) && Boolean(v[0] || v[1]);
+    const mv = dv ? [dv.steer ?? 0, dv.throttle ?? 0] : held2(ax.drive) ? ax.drive : ax.move || [0, 0];
     const throttle = clamp((mv[1] ?? 0) + (held.accelerate ? 1 : 0) - (held.reverse ? 1 : 0), -1, 1);
     // The player's input frame: right (move x > 0) turns right, clockwise seen from above, in whatever handedness the
     // space's plane has (runtime-lib-frame.js turnSign). The motion primitives turn the heading by -steer, so the
@@ -278,13 +281,15 @@ export default {
     rt.options(rt => {
       const p = rt.player(); if (!p) return [];
       if (p.components.seat) {
-        // The driver's real controls as held macros, so solvers and playtesters can drive (the same `drive` action a pad sends).
+        // The driver's real controls as held macros, so solvers and playtesters can drive: the move axis it declares
+        // (card.actionSpace move: [steer, throttle]), held for the option's steps as a person holds the stick or keys.
         const driving = p.components.seat.seat === 0 ? [['drive', 0, 45], ['drive left', -1, 20], ['drive right', 1, 20], ['brake', 0, 15, -1]]
-          .map(([label, steer, steps, throttle = 1]) => ({ label, actions: { drive: { throttle, steer } }, steps })) : [];
+          .map(([label, steer, steps, throttle = 1]) => ({ label, actions: { move: [steer, throttle] }, steps })) : [];
         return [...driving, { label: 'exit vehicle', actions: { exit_vehicle: true } }];
       }
       const v = service.nearest(p, true);
-      return v ? [{ label: `enter ${v.id}`, actions: { enter_vehicle: v.id } }] : [];
+      // The enter key enters the nearest free vehicle (enter_vehicle true): the one this option names.
+      return v ? [{ label: `enter ${v.id}`, actions: { enter_vehicle: true } }] : [];
     });
   },
 };

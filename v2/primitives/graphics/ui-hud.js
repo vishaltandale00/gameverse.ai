@@ -5,13 +5,13 @@
 // combo/chain popups, crosshair, tracked objective, toasts and zone titles.
 // hudModel() is the pure view model; install() renders it and animates changes.
 import { THEMES, resolveTheme } from './ui-theme.js';
-import { tellsOf, tellWords, uiHost, later, setText, setStyle, setClass, setHidden, keyed, fill, pulse, clamp, isNum, fmtInt, fmtHour, fmtClock, titleCase, itemName, zoneName, docItem, docSystem, docZone } from './ui-lib.js';
+import { tellsOf, tellWords, uiHost, setText, setStyle, setClass, setHidden, keyed, fill, pulse, clamp, isNum, fmtInt, fmtHour, fmtClock, titleCase, itemName, zoneName, docItem, docSystem, docZone } from './ui-lib.js';
 import { icon, itemIcon, statusIcon } from './ui-icons.js';
 import { glyph } from './ui-input.js';
 import * as S from './ui-sources.js';
 import { spaceGeometry, heading, bearing } from './ui-spatial.js';
 import { entityPos } from './ui-cartography.js';
-import { sideOf } from './allegiance.js';
+import { onPlayerSide } from '../../kernel/sides.js';
 import { declaredDenials, deniesPlayer } from '../engine/runtime-lib-controls.js';
 
 export const POSITIONS = ['top-left', 'top-center', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom-center', 'bottom-right'];
@@ -237,8 +237,8 @@ export function goalsFor(rt, config, out, bound = new Set(), local = {}) {
         if (h && isNum(h.hp)) { out.meters.push({ key, id: g.component, label: g.label ?? 'Health', value: h.hp, max: h.max ?? h.hp, frac: clamp(h.hp / (h.max || h.hp || 1), 0, 1), color: DEFAULT_COLORS.hp, pos: 'top-left', style: 'bar', low: h.hp / (h.max || 1) <= 0.25 }); res.push({ ...g, shown: true }); continue; }
         res.push({ ...g, shown: false }); continue;
       }
-      // The opponents a win counts: entities carrying the component that are not the player's or on its side (allegiance.js).
-      const foes = Object.values(rt.state.entities).filter(e => e.id !== 'player' && e.components?.[g.component] !== undefined && !sideOf(rt, e)?.mine).sort((a, b) => (a.id < b.id ? -1 : 1));
+      // The opponents a win counts: entities carrying the component that are not the player's or on its side (kernel/sides.js).
+      const foes = Object.values(rt.state.entities).filter(e => e.components?.[g.component] !== undefined && !onPlayerSide(rt, e)).sort((a, b) => (a.id < b.id ? -1 : 1));
       const seen = (local.foes ??= new Set()); for (const e of foes) seen.add(e.id);
       const alive = foes.filter(e => !deadOf(e));
       if (g.component === 'health' && alive.length >= 1 && alive.length <= 3 && seen.size <= 3) for (const e of alive) {
@@ -305,15 +305,15 @@ export default {
       if (!config.toasts) return;
       const now = host.now();
       const same = key && live.find(t => t.key === key && now - t.at < 2.5);
-      if (same) { same.count += count || 1; same.at = now; setText(same.countEl, `×${same.count}`); pulse(same.el, 'is-pop'); clearTimeout(same.timer); same.timer = later(() => drop(same), 3200); return; }
+      if (same) { same.count += count || 1; same.at = now; setText(same.countEl, `×${same.count}`); pulse(same.el, 'is-pop'); host.clearLater(same.timer); same.timer = host.later(() => drop(same), 3200); return; }
       const countEl = el('span.gv-toast-count', { text: count > 1 ? `×${count}` : '' });
       const node = el('div.gv-toast.gv-panel', { data: { kind } }, iconName ? icon(iconName, { color: iconColor }) : null, el('div', {}, kicker ? el('span.gv-toast-kicker', { text: kicker }) : null, el('span', { text })), countEl);
       const t = { key, el: node, countEl, count: count || 1, at: now };
-      t.timer = later(() => drop(t), 3600);
+      t.timer = host.later(() => drop(t), 3600);
       live.push(t); toasts.append(node);
       while (live.length > 4) drop(live[0]);
     };
-    const drop = t => { const i = live.indexOf(t); if (i < 0) return; live.splice(i, 1); clearTimeout(t.timer); t.el.classList.add('is-out'); later(() => t.el.remove(), 420); };
+    const drop = t => { const i = live.indexOf(t); if (i < 0) return; live.splice(i, 1); host.clearLater(t.timer); t.el.classList.add('is-out'); host.later(() => t.el.remove(), 420); };
     const qTitle = id => rt.doc.plot?.quests?.find(q => q.id === id)?.title || '';
     host.on('notify', e => toast({ kind: e.kind || 'info', text: e.text, iconName: e.icon || 'check' }));
     rt.on('notify', e => toast({ kind: e.kind, text: e.text, iconName: e.kind === 'warn' ? 'skull' : e.kind === 'quest' ? 'quest' : null }));
@@ -347,7 +347,7 @@ export default {
       const who = rt.entity(e.who); if (!who || !Array.isArray(who.at)) return;
       const p = project2(who.id, who.at); if (!p) return;
       const f = host.el(`div.gv-floater${cls ? '.' + cls : ''}`, { text: `${ev === 'healed' ? '+' : ''}${fmtInt(e.amount)}`, style: { left: `${p[0]}px`, top: `${p[1]}px`, color: ev === 'damaged' && e.who === 'player' ? 'var(--gv-bad)' : null } });
-      floaters.append(f); later(() => f.remove(), 950);
+      floaters.append(f); host.later(() => f.remove(), 950);
     });
     rt.on('damaged', e => { if (e.who === 'player') for (const n of nodes.values()) if (n.dataset?.var === 'hp') pulse(n, n.classList.contains('gv-meter') ? 'is-hit' : 'is-shake'); });
 
@@ -398,7 +398,7 @@ export default {
           if (isNum(before) && before !== c.value) {
             pulse(n.children[1], 'is-pop');
             const d = n.children[2]; setText(d, `${c.value > before ? '+' : ''}${fmtInt(c.value - before)}`); setClass(d, 'is-neg', c.value < before); d.classList.add('is-on');
-            clearTimeout(d._t); d._t = later(() => d.classList.remove('is-on'), 1100);
+            host.clearLater(d._t); d._t = host.later(() => d.classList.remove('is-on'), 1100);
           }
           setText(n.children[1], fmtInt(c.value));
           prev[c.key] = c.value;

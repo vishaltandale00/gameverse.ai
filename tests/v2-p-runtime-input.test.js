@@ -131,6 +131,11 @@ test('preflight rejects bad input configs with stable codes', () => {
   for (const code of ['input_verb_invalid', 'input_key_unknown', 'input_verb_unknown', 'motion_set_unknown', 'motion_button_unknown', 'motion_duplicate', 'motion_invalid', 'motion_set_invalid']) assert.ok(c.includes(code), code);
   const conflict = doc([{ use: 'engine.input.actions', with: { verbs: ['move', 'jump'], bindings: { td: { jump: ['w'], move: ['wasd'] } } } }]);
   assert.ok(codes(conflict).includes('input_binding_conflict'));
+  // An axis verb is bound to axis sources: a single key would send a press (`move: true`), not a direction.
+  const keyed = doc([{ use: 'engine.input.actions', with: { verbs: ['move', 'jump'], bindings: { side: { move: ['left', 'right', 'wasd'], jump: ['space'] } } } }]);
+  assert.deepEqual(codes(keyed).filter(c => c === 'input_axis_key'), ['input_axis_key', 'input_axis_key']);
+  const sourced = doc([{ use: 'engine.input.actions', with: { verbs: ['move', 'jump'], bindings: { side: { move: ['arrows', 'wasd', 'lstick'], jump: ['space'] } } } }]);
+  assert.ok(!codes(sourced).includes('input_axis_key'));
 });
 
 test('every engine.input.* instance in v2/games has valid params and no binding conflicts', () => {

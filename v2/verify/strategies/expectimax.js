@@ -5,8 +5,8 @@
 // draw. Leaves use the standard line heuristic on numeric cells (empty cells,
 // mergeable neighbours, monotonicity, a penalty on large scattered tiles),
 // scored on rows and columns. Depth grows as the board crowds.
-import { boardOf, readBoard, numeric, simulateOption, untilDecision, chanceSeeds, multiSeed, ownerPath, problem } from './common.js';
-import { budget as makeBudget, stableStringify } from '../util.js';
+import { boardOf, readBoard, numeric, simulateOption, untilDecision, chanceSeeds, multiSeed, ownerPath, problem, seedBudgets } from './common.js';
+import { stableStringify } from '../util.js';
 
 const rank = v => (v > 0 ? Math.log2(v) : 0);
 function lineHeuristic(line) {
@@ -30,7 +30,7 @@ export function slideHeuristic(rows) {
 }
 const maxTile = rows => Math.max(0, ...rows.flat().map(c => numeric(c) ?? 0));
 
-export function chooseExpectimax(rt, board, { depth = 2, samples = 3, b = null, memo = new Map() } = {}) {
+export function chooseExpectimax(rt, board, { depth = 2, samples = 3, memo = new Map() } = {}) {
   const value = (d) => {
     if (rt.state.status !== 'playing') return rt.state.status === 'won' ? 1e12 : 0;
     const rows = readBoard(board), key = `${d}:${stableStringify(rows)}`;
@@ -41,7 +41,7 @@ export function chooseExpectimax(rt, board, { depth = 2, samples = 3, b = null, 
     for (let i = 0; i < n; i++) {
       let total = 0;
       const seeds = chanceSeeds(rt, samples, i);
-      for (const s of seeds) { simulateOption(rt, snap, i, { rng: s, b }); total += value(d - 1); }
+      for (const s of seeds) { simulateOption(rt, snap, i, { rng: s }); total += value(d - 1); }
       best = Math.max(best, total / seeds.length);
     }
     rt.restore(snap);
@@ -55,7 +55,7 @@ export function chooseExpectimax(rt, board, { depth = 2, samples = 3, b = null, 
   for (let i = 0; i < n; i++) {
     let total = 0;
     const seeds = chanceSeeds(rt, samples, `top${i}`);
-    for (const s of seeds) { simulateOption(rt, snap, i, { rng: s, b }); total += value(d - 1); }
+    for (const s of seeds) { simulateOption(rt, snap, i, { rng: s }); total += value(d - 1); }
     if (total / seeds.length > bestV) { bestV = total / seeds.length; bestI = i; }
   }
   rt.restore(snap);
@@ -78,23 +78,25 @@ export default {
     for (const s of chanceSeeds(rt, 4, 'detect')) { simulateOption(rt, snap, 0, { rng: s }); seen.add(stableStringify(readBoard(board))); }
     return seen.size > 1;
   },
-  run(ctx, { depth = 2, samples = 3, maxMoves = 3000, seeds = [1, 2, 3, 4, 5, 6, 7, 8], passRate = 0.7, budgetMs = 2000, maxSteps = Infinity } = {}) {
-    const b = makeBudget({ ms: budgetMs, steps: maxSteps });
+  run(ctx, { depth = 2, samples = 3, maxMoves = 3000, seeds = [1, 2, 3, 4, 5, 6, 7, 8], passRate = 0.7, maxSteps = Infinity } = {}) {
+    const sb = seedBudgets(maxSteps);
+    /** The budget of the seed being played (seedBudgets: one per seed). @type {any} */
+    let b = null;
     const probe = ctx.make(ctx.seed); untilDecision(probe, 600);
     const play = seed => {
-      const rt = ctx.make(seed), board = boardOf(rt), memo = new Map();
+      const rt = (b = sb.budget()).meter(ctx.make(seed)), board = boardOf(rt), memo = new Map();
       let moves = 0;
-      untilDecision(rt, 600, b);
+      untilDecision(rt, 600);
       while (rt.state.status === 'playing' && moves < maxMoves && !b.over()) {
         if (memo.size > 50000) memo.clear();
-        const i = chooseExpectimax(rt, board, { depth, samples, b, memo });
+        const i = chooseExpectimax(rt, board, { depth, samples, memo });
         if (i < 0) break;
-        simulateOption(rt, rt.snapshot(), i, { b });
+        simulateOption(rt, rt.snapshot(), i);
         moves++;
       }
       return { seed, won: rt.state.status === 'won', status: rt.state.status, moves, maxTile: maxTile(readBoard(board)), budget: rt.state.status === 'playing' && b.hit };
     };
-    const r = multiSeed(play, { seeds, passRate, b });
+    const r = multiSeed(play, { seeds, passRate });
     const finished = r.runs.filter(x => !x.budget);
     const path = ownerPath(ctx, probe, ['gameplay.slide', 'gameplay.puzzle']);
     const problems = [];
@@ -103,6 +105,6 @@ export default {
       const sorted = finished.map(x => x.maxTile).sort((x, y) => y - x), fair = sorted[Math.max(0, Math.ceil(sorted.length * passRate) - 1)];
       problems.push(problem('goal_unreached', path, `an expectimax bot reached the goal in ${finished.filter(x => x.won).length}/${finished.length} runs (best tile ${sorted[0]})`, { hint: `a lower target (about ${fair}) or more moves` }));
     }
-    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`an expectimax bot (depth ≤ ${depth}, ${samples} chance samples) met the goal in ${r.wins}/${r.runs.length} runs`] : [], problems, metrics: { runs: r.runs, rate: r.rate }, exhaustive: false, budget: b.report() };
+    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`an expectimax bot (depth ≤ ${depth}, ${samples} chance samples) met the goal in ${r.wins}/${r.runs.length} runs`] : [], problems, metrics: { runs: r.runs, rate: r.rate }, exhaustive: false, budget: sb.report() };
   },
 };
