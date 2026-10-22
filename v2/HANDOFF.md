@@ -58,6 +58,19 @@ incomplete.
 | 4 | `polish` | no ids shown to a person (option `text` everywhere, declared names for sides, teams, stages, counters); 3D models and UI icons from declarations; `scenery` a declared closed-set param chosen through tune (cosmetic, proven by one frame per value); farming stage blocks only above on spaces with an up axis | 3 commits, last WIP. 368 focused tests pass. **Open:** tests/v2-templates.test.js gate fails `feature_inert` for falling-blocks (seeds 1–2) and launcher (1–3): cause unknown, may come from this branch. Also edited `templates.js` (union tune paths). |
 | 5 | `tune-rules` | templates declare playable tune ranges proven at bounds; `card.rules` for validate codes; vocabulary codes declared with `logic.*(kind, { codes: [{ code, fields, example }] })`; `effect_invalid` a kernel code; rule examples `{ doc }` (each named top-level section replaces the card's minimal document's); `kernel/sections.js`; sampler conformance; no warnings phase (`DECLARATIONS_ENFORCED` on, not an off switch); themed text forms for every card-declared display field | 99 commits (the largest branch); check its last commit message for what is incomplete. Merge last: it touches forms, cards and every template's `tune:` (keep `polish`'s scenery entries). |
 
+**Uncommitted work left in worktrees when the agents were stopped** (inspect with `git -C .claude/worktrees/<name>
+status` / `diff`, finish, commit, then merge as above):
+- `sides-controls`: 33 changed files, all of agent SC's work (no commits yet).
+- `E-refdefaults` (a sub-branch of `tune-rules`, 55 commits ahead): 28 changed files, a finished fix: no reference
+  defaults left on generator/space cards (each block/archetype id required where it matters, scaffolds name their
+  ids), templates dungeon/maze-chase and blockport/emberfall migrated, new tests/v2-ref-defaults.test.js. Not yet run:
+  pipeline-generators and v2-templates tests. engine.generate.city still picks road blocks by name. Merge into
+  `tune-rules`.
+- `tune-rules`: 11 changed files (agent E's in-flight work on top of its 99 commits); E's other sub-agent worktrees
+  (`E-*` under .claude/worktrees) may hold more: list them with `git worktree list`.
+- `cleanup-int`: 12 changed files: the merge of `placement` in progress (resolve, commit, or `git merge --abort`).
+- Clean up afterwards: `scratchpad/base-wt` temp worktree (E-refdefaults), untracked `node_modules` symlinks.
+
 ## Required work, in order
 
 1. **Gate speed** (`gate-speed`): every template's publish gate well under 10 s on an idle machine, verdicts
