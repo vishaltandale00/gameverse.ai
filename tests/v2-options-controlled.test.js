@@ -62,20 +62,21 @@ test('every option offered in the catalogue\'s worlds is one a person can take t
   t.diagnostic(`${all.length} worlds, ${offered} options, ${Math.round(performance.now() - t0)} ms`);
 });
 
-test('travel options are offered only where a card declares the travel verb (the host then gives it a control), and are offered there', () => {
-  let declaring = 0;
+test('a shortcut is never a person\'s control: no game option travels, no movement card declares travel, and the verifier\'s travel macros reach zones', () => {
+  // Travel to a zone is what a person does with the move axis; the verifier plays it as held input (verify/macros.js).
+  for (const c of registry.cards().filter(c => c.id.startsWith('gameplay.move') || c.id === 'gameplay.mount')) {
+    assert.ok(!(c.loop?.verbs || []).includes('travel') && !c.actionSpace?.travel, `${c.id} declares no travel verb`);
+  }
+  let zoned = 0;
   for (const { label, doc, prepare } of cases()) {
     const pre = preflight(structuredClone(doc), registry, logic), host = hostPreflight(pre.doc, registry, logic);
     const rt = controlledMaker(host.doc, registry, logic)(host.doc.seed ?? 1);
     prepare?.(rt);
     hold(rt, {}, 30);
-    const declared = loopVerbs(host.doc, registry).includes('travel'), travel = rt.availableOptions().filter(o => o.actions?.travel !== undefined);
-    if (!declared) assert.deepEqual(travel.map(o => o.label), [], `${label}: no card declares travel, so none is offered`);
-    else if (travel.length) {
-      declaring++;
-      assert.ok(travel.every(o => !rt.controls.missing({ actions: o.actions }).length), `${label}: a control issues travel`);
-    }
+    assert.ok(!loopVerbs(host.doc, registry).includes('travel'), `${label}: no loop verb travels`);
+    assert.deepEqual(rt.availableOptions().filter(o => o.actions?.travel !== undefined || /^travel/.test(String(o.label))).map(o => o.label), [], `${label}: no game option travels`);
+    const p = rt.player(), space = (host.doc.spaces || []).find(s => s.id === p?.space);
+    if (space?.zones?.length && typeof rt.space(p.space).path === 'function') zoned++;
   }
-  // Not silenced: worlds whose cards declare travel offer it (a world with no reachable zone offers none).
-  assert.ok(declaring > 0, 'worlds whose cards declare travel offer travel options');
+  assert.ok(zoned > 0, 'some catalogue world has zones the verifier\'s travel macros reach (solve.js, playtest.js)');
 });

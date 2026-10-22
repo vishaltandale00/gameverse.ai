@@ -24,13 +24,13 @@ export function arcScore(levels) {
 export const AGENTS = {
   /** Breadth-first plot solver: optimal option count on small levels. */
   solver: (doc, registry, logic, { maxStates = 50000, seed } = {}) => {
-    const r = solve(doc, registry, logic, { maxStates, seed, settleSteps: 0, checkReplay: false });
+    const r = solve(doc, registry, logic, { maxStates, seed, settleSteps: 0, checkReplay: false, travel: false });
     const path = Object.entries(r.endings).filter(([k]) => r.outcomes[k] !== 'lost').sort((a, b) => a[1].length - b[1].length)[0]?.[1] || null;
     return { solved: Boolean(path), actions: path ? path.length : null, path, exhaustive: r.exhaustive, states: r.states };
   },
   /** Best-first solver: fewer states, not always the shortest path. */
   'best-first': (doc, registry, logic, { maxStates = 50000, seed } = {}) => {
-    const r = solve(doc, registry, logic, { search: 'best-first', maxStates, seed, settleSteps: 0, checkReplay: false });
+    const r = solve(doc, registry, logic, { search: 'best-first', maxStates, seed, settleSteps: 0, checkReplay: false, travel: false });
     const path = Object.entries(r.endings).filter(([k]) => r.outcomes[k] !== 'lost').sort((a, b) => a[1].length - b[1].length)[0]?.[1] || null;
     return { solved: Boolean(path), actions: path ? path.length : null, path, states: r.states };
   },

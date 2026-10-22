@@ -107,8 +107,11 @@ export function withDefaultInput(doc, registry, { touch = false } = {}) {
     for (const n of names) claim(verb, n);
     return names;
   };
+  // A verb no primitive reads (no card declares it: provides.actions, actionSpace, a loop verb) gets no key: it would
+  // send what nothing reads (the same rule as engine.input.actions' input_verb_unread). Camera look is read by cameras.
+  const read = new Set(['look', ...loops, ...systems.flatMap(s => [...(cardOf(s)?.provides?.actions || []), ...Object.keys(actionSpaceOf(cardOf(s), s))])]);
   for (const verb of verbs) {
-    if (UI_VERBS.has(verb) || map[verb] && bindingNames(map[verb]).length) continue;
+    if (UI_VERBS.has(verb) || map[verb] && bindingNames(map[verb]).length || !read.has(verb)) continue;
     const c = control(verb);
     if (c.kind === 'choice') continue;
     if (c.kind === 'axis' || (axes.includes(verb) && verb in AXIS_SOURCES)) {

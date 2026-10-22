@@ -158,21 +158,15 @@ test('core: overlays outrank the base controller and hand back (mode events)', (
   assert.ok(rt.state.counts.move_mode >= 3);
 });
 
-test('core: macro travel options walk the real controller to each zone', () => {
+test('core: no game option travels; the verifier\'s travel macro walks the real controller to the zone', () => {
   const d = side({ zones: [{ id: 'start', rect: [0, 0, 4, 6] }, { id: 'far', rect: [16, 1, 20, 5] }] });
   const { rt } = make(d);
   run(rt, 3, {});
-  const opts = rt.availableOptions().filter(o => o.macro);
-  assert.deepEqual(opts.map(o => o.label), ['travel to far']);
-  // Solver path: repeat the option's actions for its steps.
-  const snap = rt.snapshot();
-  const o = opts[0];
-  for (let i = 0; i < o.steps && !rt.test({ zone: 'far' }); i++) rt.step({ actions: o.actions });
-  assert.ok(rt.test({ zone: 'far' }), 'travel by repeated actions arrives');
-  rt.restore(snap);
-  const res = o.apply(rt);
-  assert.equal(res.ok, true); assert.equal(res.mode, 'steps');
-  assert.ok(rt.test({ zone: 'far' }));
+  assert.deepEqual(rt.availableOptions().filter(o => /^travel/.test(o.label)).map(o => o.label), [], 'a person walks there: no game option travels');
+  // What the travel option did, without it: a move target (the kernel's move_to) drives the real controller there.
+  rt.run([{ do: 'move_to', who: 'player', zone: 'far' }]);
+  for (let i = 0; i < 1200 && !rt.test({ zone: 'far' }); i++) rt.step({});
+  assert.ok(rt.test({ zone: 'far' }), `the controller walked to the far zone (${rt.player().at})`);
 });
 
 test('walk: deterministic replay', () => {

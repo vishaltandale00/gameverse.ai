@@ -7,6 +7,14 @@ import { Registry } from '../v2/kernel/registry.js';
 import { Logic } from '../v2/kernel/logic.js';
 import { buildLogic } from '../v2/kernel/world.js';
 import { preflight } from '../v2/kernel/document.js';
+import { applyOption } from '../v2/verify/drive.js';
+/** Place the falling piece as a person does: its placement option (rotation r, column x), played as the key presses it is. */
+const place = (rt, { r, x, ccw = false }) => {
+  const o = rt.availableOptions().find(o => new RegExp(` r${r} x${x}${ccw ? ' ccw' : ''}$`).test(o.label));
+  assert.ok(o, `a placement r${r} x${x} is offered`);
+  applyOption(rt, o);
+};
+
 
 const ALL = [...PRIMITIVES, testSpace];
 const reg = new Registry(ALL), lg = buildLogic(reg, Logic);
@@ -138,11 +146,13 @@ test('score: a puzzle line clear scores through add_score', () => {
   rt.step();
   rt.state.prim['gameplay.falling.pieces:board'].piece = { t: 0, r: 0, x: 3, y: 1, id: 99 };
   const s0 = rt.state.vars.score ?? 0;
-  rt.step({ actions: { place: { r: 0, x: 6 } } });
+  // Every event of the placement's frames (the piece is placed by key presses over several frames).
+  const seen = []; rt.on('*', e => seen.push(e));
+  place(rt, { r: 0, x: 6 });
   assert.equal(rt.state.counts.lines_cleared, 1);
   assert.ok(count(rt, 'scored') >= 1, 'falling pieces called add_score');
   assert.ok(rt.state.vars.score > 0);
-  const scored = rt.state.events.filter(e => e.name === 'scored');
+  const scored = seen.filter(e => e.name === 'scored');
   assert.ok(scored.some(e => e.reason && e.reason !== 'effect'), 'the puzzle passes its reason');
   assert.equal(rt.state.vars.score - s0, scored.reduce((s, e) => s + e.amount, 0), 'the score var mirrors add_score totals');
 });

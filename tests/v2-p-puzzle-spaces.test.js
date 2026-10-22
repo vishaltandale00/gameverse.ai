@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compile, run } from '../v2/kernel/testing.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
+import { applyOption } from '../v2/verify/drive.js';
 
 const go = d => compile(d, { primitives: PRIMITIVES });
 const base = (spaces, systems, extra = {}) => ({ schema: 'gameverse.v2.game/0.2', id: 'real', title: 'Real', seed: 9, spaces, systems, ...extra });
@@ -12,7 +13,7 @@ const board = (w, h, more = {}) => ({ name: 'board', at: [0, 0], size: [w, h], a
 
 test('real grid: guideline falling pieces play through options and replay deterministically', () => {
   const doc = base([{ id: 'g', use: 'engine.space.grid', with: { size: [10, 24] } }], [{ use: 'gameplay.falling.pieces', with: { board: board(10, 24), clearFrames: 0 } }]);
-  const play = () => { const { rt } = go(doc); for (let i = 0; i < 25 && rt.state.status === 'playing'; i++) { let o = rt.availableOptions(); for (let k = 0; k < 10 && !o.length; k++) { rt.step(); o = rt.availableOptions(); } if (!o.length) break; rt.step({ actions: o[(i * 7) % o.length].actions }); } return rt; };
+  const play = () => { const { rt } = go(doc); for (let i = 0; i < 25 && rt.state.status === 'playing'; i++) { let o = rt.availableOptions(); for (let k = 0; k < 10 && !o.length; k++) { rt.step(); o = rt.availableOptions(); } if (!o.length) break; applyOption(rt, o[(i * 7) % o.length]); } return rt; };
   const a = play(), b = play();
   assert.deepEqual(a.snapshot(), b.snapshot());
   assert.ok(a.state.counts.piece_locked >= 10);

@@ -6,6 +6,14 @@ import { Logic } from '../v2/kernel/logic.js';
 import { buildLogic } from '../v2/kernel/world.js';
 import { preflight } from '../v2/kernel/document.js';
 import falling, { solverKey, gravityRows } from '../v2/primitives/gameplay/falling-pieces.js';
+import { applyOption } from '../v2/verify/drive.js';
+/** Place the falling piece as a person does: its placement option (rotation r, column x), played as the key presses it is. */
+const place = (rt, { r, x, ccw = false }) => {
+  const o = rt.availableOptions().find(o => new RegExp(` r${r} x${x}${ccw ? ' ccw' : ''}$`).test(o.label));
+  assert.ok(o, `a placement r${r} x${x} is offered`);
+  applyOption(rt, o);
+};
+
 
 const PRIMS = [testSpace, falling];
 const ST = 'gameplay.falling.pieces:board';
@@ -51,9 +59,11 @@ test('falling: a line clear collapses rows and scores guideline points', () => {
   rt.step();
   // Put an I piece in play and place it flat in columns 6..9.
   st(rt).piece = { t: 0, r: 0, x: 3, y: 1, id: 99 };
-  rt.step({ actions: { place: { r: 0, x: 6 } } });
+  // Every event of the placement's frames (the piece is placed by key presses over several frames).
+  const seen = []; rt.on('*', e => seen.push(e));
+  place(rt, { r: 0, x: 6 });
   assert.equal(rt.state.counts.lines_cleared, 1);
-  const ev = rt.state.events.find(e => e.name === 'lines_cleared');
+  const ev = seen.find(e => e.name === 'lines_cleared');
   assert.equal(ev.count, 1);
   run(rt, 3);
   for (let x = 0; x < 10; x++) assert.equal(cell(rt, x, 0), null, 'the row cleared');
@@ -107,7 +117,7 @@ test('falling: lock delay is 30 frames when resting', () => {
 });
 
 test('falling: same seed and inputs replay identically; options enumerate placements', () => {
-  const play = () => { const { rt } = compile(doc(), { primitives: PRIMS }); rt.step(); for (let i = 0; i < 6; i++) { const o = rt.availableOptions(); rt.step({ actions: o[i % o.length].actions }); run(rt, 2); } return rt; };
+  const play = () => { const { rt } = compile(doc(), { primitives: PRIMS }); rt.step(); for (let i = 0; i < 6; i++) { const o = rt.availableOptions(); applyOption(rt, o[i % o.length]); run(rt, 2); } return rt; };
   const a = play(), b = play();
   assert.deepEqual(a.snapshot(), b.snapshot());
   assert.equal(solverKey(a), solverKey(b));
@@ -144,12 +154,14 @@ test('falling: in a level, landings never bury the player and the guard keeps ar
   const rows = ['...', '...', '#.#', '...'];
   const { rt } = compile(doc({ hidden: 0, sets: ['small'], steer: 'drift', guard: 'reachable', passThrough: true, scoring: 'flat', clearRows: 'none', onTopOut: [] }, { size: [3, 4, 1], solid: solidFrom(rows, 4), player: [0, 0, 0] }), { primitives: PRIMS });
   rt.step();
+  // Drift: no one steers, so the piece falls where it is (no placement options): run until it lands.
+  const land = () => { const n = (rt.state.counts.piece_locked ?? 0) + (rt.state.counts.piece_blocked ?? 0); for (let i = 0; i < 600 && (rt.state.counts.piece_locked ?? 0) + (rt.state.counts.piece_blocked ?? 0) === n; i++) rt.step(); };
   st(rt).piece = { t: 0, r: 0, x: 1, y: -1, id: 50 }; // a single cell over the middle column
-  rt.step({ actions: { place: { r: 0, x: 1 } } });
+  land();
   assert.equal(cell(rt, 1, 0), null, 'the cell that would cut off the right pocket stays open');
   assert.ok(rt.state.events.some(e => e.name === 'piece_blocked' && e.reason === 'cuts_off'));
   st(rt).piece = { t: 0, r: 0, x: 0, y: -1, id: 51 };
-  rt.step({ actions: { place: { r: 0, x: 0 } } });
+  land();
   assert.equal(cell(rt, 0, 0), null, 'never lands on the player');
 });
 
@@ -157,13 +169,13 @@ test('falling: land = spawn makes brick entities that stack and clear as rows', 
   const { rt } = compile(doc({ hidden: 0, sets: ['small'], land: 'spawn', archetype: 'brick', clearRows: 'remove', clearFrames: 0, scoring: 'flat', onTopOut: [] }, { size: [2, 4, 1] }), { primitives: PRIMS });
   rt.step();
   st(rt).piece = { t: 0, r: 0, x: 0, y: -1, id: 1 }; // single cell at column 0
-  rt.step({ actions: { place: { r: 0, x: 0 } } });
+  place(rt, { r: 0, x: 0 });
   st(rt).piece = { t: 0, r: 0, x: 0, y: -1, id: 2 };
-  rt.step({ actions: { place: { r: 0, x: 0 } } });
+  place(rt, { r: 0, x: 0 });
   const bricks = () => Object.values(rt.state.entities).filter(e => e.archetype === 'brick').map(e => e.at.join(','));
   assert.deepEqual(bricks().sort(), ['0,0,0', '0,1,0'], 'second brick rests on the first');
   st(rt).piece = { t: 0, r: 0, x: 1, y: -1, id: 3 };
-  rt.step({ actions: { place: { r: 0, x: 1 } } });
+  place(rt, { r: 0, x: 1 });
   assert.deepEqual(bricks(), ['0,1,0'], 'the full bottom row cleared');
   assert.equal(rt.state.counts['row_cleared_entity:brick'], 2);
 });
@@ -205,7 +217,7 @@ test('falling: fall = +1 makes pieces rise into the top of a y-up space (breakou
   const { rt } = compile(doc({ board: { name: 'board', at: [0, 0, 0], size: [3, 4], axes: [0, 1], fall: 1 }, hidden: 0, sets: ['small'], clearRows: 'none', scoring: 'none', onTopOut: [] }, { size: [3, 4, 1] }), { primitives: PRIMS });
   rt.step();
   st(rt).piece = { t: 0, r: 0, x: 1, y: -1, id: 7 };
-  rt.step({ actions: { place: { r: 0, x: 1 } } });
+  place(rt, { r: 0, x: 1 });
   assert.ok(cell(rt, 1, 3), 'landed against the top edge');
   assert.equal(cell(rt, 1, 0), null);
 });

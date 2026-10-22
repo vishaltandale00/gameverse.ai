@@ -4,6 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { makeReal, realDoc, picture, run } from './v2-p-move-helpers.js';
+import { travel, travelOptions } from '../v2/verify/macros.js';
 
 const L = { '#': 'stone', '=': 'plank', 'H': 'ladder', '~': 'water' };
 const side = (rows, systems, o = {}) => realDoc({ space: 'engine.space.tilemap', with: { size: [rows[0].length, rows.length], mode: 'side', edges: { left: 'solid', right: 'solid', bottom: 'kill', top: 'open' } }, cells: picture(rows, L), systems, ...o });
@@ -132,7 +133,7 @@ test('verifier travel macro drives the real platformer along the tilemap path (s
   assert.equal(prim.travel(rt, path, {}, {}), true, `travelled to the plank (${rt.player().at})`);
 });
 
-test('travel options: listing makes no path calls and one reachable call per state; unreachable zones are not offered', () => {
+test('travel macros (verifier): listing makes no path calls; reachable zones are arrived at by the real controller, a sealed one is not', () => {
   const rows = [...SIDE.slice(0, 2), '..........######........', ...SIDE.slice(3)];
   const d = side(rows, [plat()], { at: [1.5, 1.5], zones: [{ id: 'block', rect: [13, 4, 17, 7] }, { id: 'plank', rect: [4, 4, 7, 6] }, { id: 'sky', rect: [11, 12, 15, 14] }] });
   const { rt } = makeReal(d);
@@ -141,20 +142,19 @@ test('travel options: listing makes no path calls and one reachable call per sta
   const path = api.path, reachable = api.reachable;
   api.path = (...a) => { calls.path++; return path(...a); };
   api.reachable = (...a) => { calls.reachable++; return reachable(...a); };
-  const first = rt.availableOptions().filter(o => o.macro).map(o => o.label);
-  const again = rt.availableOptions().filter(o => o.macro).map(o => o.label);
+  // No game option travels (a person walks there); the verifier's travel macros list the zones and plan on use.
+  assert.deepEqual(rt.availableOptions().filter(o => /^travel/.test(o.label)).map(o => o.label), []);
+  const provider = travelOptions(rt.registry, { mode: 'steer' });
+  rt.options(provider);
+  const first = rt.availableOptions().filter(o => o.zone !== undefined).map(o => o.zone);
+  assert.deepEqual(first, rt.availableOptions().filter(o => o.zone !== undefined).map(o => o.zone));
   assert.equal(calls.path, 0, 'no path planning while listing');
-  assert.equal(calls.reachable, 1, 'one reachable set per state');
-  assert.deepEqual(first, again);
-  assert.deepEqual(first, ['travel to plank', 'travel to block'], 'nearest first; the sealed sky zone is unreachable');
-  // The path is planned when the option runs.
-  const o = rt.availableOptions().find(o => o.label === 'travel to block');
-  const res = o.apply(rt);
-  assert.equal(res.ok, true, `arrived (${rt.player().at})`);
-  assert.ok(calls.path >= 1, 'planned on apply');
-  rt.step({});
-  rt.availableOptions();
-  assert.equal(calls.reachable, 2, 'a new state (frame and cell) lists again');
+  assert.deepEqual([...first].sort(), ['block', 'plank', 'sky']);
+  const snap = rt.snapshot();
+  assert.equal(travel(rt, rt.registry, 'block', { mode: 'steer' }), true, `arrived at the block (${rt.player().at})`);
+  assert.ok(calls.path >= 1, 'planned on use');
+  rt.restore(snap);
+  assert.equal(travel(rt, rt.registry, 'sky', { mode: 'steer' }), false, 'the sealed sky zone is not reached');
 });
 
 test('real spaces: deterministic replay (tilemap side platformer)', () => {

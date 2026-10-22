@@ -9,6 +9,7 @@ import { buildLogic } from '../v2/kernel/world.js';
 import { preflight } from '../v2/kernel/document.js';
 import spaces2d from '../v2/primitives/engine/spaces2d.index.js';
 import { BASE_SPEED, CORNER } from '../v2/primitives/gameplay/move-grid.js';
+import { travel } from '../v2/verify/macros.js';
 
 const L = { '#': 'stone', 'v': 'ledge', 'D': 'door', 'T': 'tunnel' };
 const MAZE = ['#########', '#.......#', '#.#.#.#.#', '#.......#', '#########'];
@@ -99,7 +100,7 @@ test('grid step: one-way ledges are jumped going down and bump going up', () => 
   assert.ok(rt.state.counts.bump >= 1);
 });
 
-test('grid: NPC moveTo across the board, travel macro, unique option labels; test space too', () => {
+test('grid: NPC moveTo across the board, the verifier\'s travel macro, unique option labels, no travel option; test space too', () => {
   const d = board(MAZE, { mode: 'lane', speed: 8 }, { zones: [{ id: 'corner', rect: [7, 3, 8, 4] }], archetypes: [{ id: 'ghost', components: { body: { size: [1, 1] }, move: {} } }] });
   const { rt } = makeReal(d);
   const g = rt.spawn('ghost', { at: [1, 3] });
@@ -108,9 +109,9 @@ test('grid: NPC moveTo across the board, travel macro, unique option labels; tes
   assert.equal(rt.state.counts['arrived:corner'], 1, `ghost reached the corner (${g.at})`);
   const labels = rt.availableOptions().map(o => o.label);
   assert.equal(new Set(labels).size, labels.length);
-  assert.ok(labels.includes('travel to corner') && labels.includes('step up'));
-  const o = rt.availableOptions().find(o => o.label === 'travel to corner');
-  assert.equal(o.apply(rt).ok, true);
+  // Travel to a zone is no option of the game (a person moves there): the verifier's macro walks the real controller.
+  assert.ok(labels.includes('step up') && !labels.some(l => l.startsWith('travel')), labels.join(', '));
+  assert.equal(travel(rt, rt.registry, 'corner', { mode: 'steer' }), true, `arrived at the corner (${rt.player().at})`);
   const { rt: t } = make(doc({ gravity: 0, size: [6, 6, 1], solid: [], at: [0, 0, 0], body: { size: [1, 1, 1] }, systems: [{ use: 'gameplay.move.grid', with: { mode: 'step' } }] }));
   run(t, 24, { axes: { move: [1, 0] } });
   assert.deepEqual(t.player().at, [3, 0, 0], 'test space: 3 steps in 24 frames');

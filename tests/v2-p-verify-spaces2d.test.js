@@ -90,7 +90,9 @@ test('tilemap: the playtest wins through steered travel and replays the win', ()
 
 test('grid: reachable keys map to zones and entity cells; sealed places are reported', () => {
   const { doc } = normalized(gridDoc());
-  const plot = solve(doc, cat.registry, cat.logic);
+  // Zones get the verifier's travel macros (travel is no option of the game); the maze path through the step options alone:
+  assert.equal(solve(doc, cat.registry, cat.logic).travel, 'steer');
+  const plot = solve(doc, cat.registry, cat.logic, { travel: false });
   assert.equal(plot.travel, null, 'grid moves come from options here');
   assert.equal(plot.completable, true);
   assert.equal(plot.endings.free.length, 10, 'shortest maze path');

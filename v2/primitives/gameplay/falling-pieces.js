@@ -524,7 +524,7 @@ export default {
       if (config.steer !== 'player' || s.phase !== 'play' || !s.piece) return [];
       const press = (/** @type {string} */ verb, /** @type {number} */ n) => Array.from({ length: n }, () => [{ actions: { [verb]: true } }, {}]).flat();
       return placements(s, B()).map(o => ({ label: `place ${types[s.piece.t].key} r${o.r} x${o.x}${o.ccw ? ' ccw' : ''}`,
-        inputs: [...press(o.ccw ? 'rotate_ccw' : 'rotate_cw', o.turns), ...press(o.dx < 0 ? 'shift_left' : 'shift_right', Math.abs(o.dx)), { actions: { hard_drop: true } }] }));
+        inputs: [...press(o.ccw ? 'rotate_ccw' : 'rotate_cw', o.turns), ...press(o.dx < 0 ? 'shift_left' : 'shift_right', Math.abs(o.dx)), ...press('hard_drop', 1)] }));
     });
     function placements(s, b) {
       const out = [], seen = new Set(), p0 = s.piece;
