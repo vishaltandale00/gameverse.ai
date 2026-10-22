@@ -338,6 +338,19 @@ test('an extension the gate proves does not work in the game is dropped and its 
   assert.equal(report.verified, true);
 });
 
+test('a mechanic the idea does not name (a theme\'s suggestion) is removed by code before the pick\'s check and reported; nothing is built for it', async () => {
+  const pick = { ...SONIC, readings: [], mechanics: [{ name: 'swim', says: 'swim underwater', verb: 'none', importance: 'core' }, { name: 'drive fast', says: 'fast cars', verb: 'none', importance: 'extra' }, GUN] };
+  const inner = sonicWriter();
+  const w = { ...inner, calls: [], async complete(req) { w.calls.push(req); return req.schema.name === 'pick_templates' ? { text: JSON.stringify(pick), ms: 1, model: 'fake' } : inner.complete(req); } };
+  const m = memoryCtx();
+  await createKernelPipeline({ catalogue: async () => cat, writers: { spec: w } })({ gameId: 'g', prompt: 'Sonic the Hedgehog racing fast cars, and he has a gun', kind: 'create', seed: 7 }, m.ctx);
+  const report = m.versions[0].report;
+  assert.deepEqual(report.unnamedMechanics.map(x => [x.name, x.why.split(':')[0]]), [['swim', 'pick_mechanic_unsaid'], ['drive fast', 'pick_mechanic_is_concept']]);
+  assert.deepEqual(report.pick.mechanics.map(x => x.name), ['has a gun'], 'the one the idea names is kept');
+  assert.deepEqual(report.mechanics.map(c => [c.mechanic, c.by]), [['has a gun', 'extension']]);
+  assert.equal(w.calls.filter(r => r.schema.name === 'pick_templates').length, 1, 'no re-ask for it');
+});
+
 test('extension rules are declared', () => { assert.deepEqual(Object.keys(EXTEND_RULES), ['extension_missing', 'extension_unengaged', 'extension_unusable', 'extension_params']); });
 
 const timings = {};

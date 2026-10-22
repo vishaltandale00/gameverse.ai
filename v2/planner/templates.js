@@ -294,6 +294,20 @@ export function mechanicProblems(pick, prompt) {
 }
 
 /**
+ * The pick's mechanics split by the idea's words (mechanicProblems): `kept`, the ones the idea names; `removed`, each
+ * entry that is no mechanic the idea names (its words not in the idea, or a concept's), with why. Code repairs the pick
+ * before its check (an entry outside the field's definition is not a mechanic of the idea, so nothing the idea names is
+ * dropped); the removed entries go into the build's report.
+ * @param {Pick} pick @param {string} prompt
+ * @returns {{ kept: PickMechanic[], removed: Array<{ name: string, says: string, why: string }> }}
+ */
+export function namedMechanics(pick, prompt) {
+  const bad = new Map(mechanicProblems(pick, prompt).map(p => [Number(/\[(\d+)\]/.exec(p.field)?.[1]), p]));
+  return { kept: pick.mechanics.filter((_, i) => !bad.has(i)),
+    removed: pick.mechanics.flatMap((m, i) => { const p = bad.get(i); return p ? [{ name: m.name, says: m.says ?? '', why: `${p.code}: ${p.message}`.slice(0, 240) }] : []; }) };
+}
+
+/**
  * The pick's code checks (PICK_RULES). Problems carry stable codes and the form field they name. A game or genre
  * with template 'none' is not a problem: it goes to the step path (`stepPath`: those concepts' names). With the idea
  * (`prompt`: the pick as asked, or resumed), its mechanics are held to its words (mechanicProblems).
@@ -484,12 +498,15 @@ export async function askForm({ writer, escalate, attempts, calls, system, user,
 /**
  * The pick, asked and checked; a pick still failing is a 422 'template_pick_failed' with its problems.
  * @param {{ writer: Writer, escalate: Writer | null, attempts: number, prompt: string, templates: readonly Template[], registry: RegistryLike, calls: TemplateCall[], clock: Clock }} args
- * @returns {Promise<{ pick: Pick, stepPath: string[], calls: number }>}
+ * @returns {Promise<{ pick: Pick, stepPath: string[], calls: number, unnamed: Array<{ name: string, says: string, why: string }> }>}
  */
 export async function askPick({ writer, escalate, attempts, prompt, templates, registry, calls, clock }) {
-  const r = await askForm({ writer, escalate, attempts, calls, clock, system: pickSystem(templates, registry), user: `Idea: ${prompt}`, schema: pickForm(templates, registry), narrow: narrowPick,
+  /** The answer's entries that are no mechanic the idea names (namedMechanics), removed by code before the check. @type {Array<{ name: string, says: string, why: string }>} */
+  let unnamed = [];
+  const narrow = (/** @type {unknown} */ v) => { const pick = narrowPick(v), named = namedMechanics(pick, prompt); unnamed = named.removed; return { ...pick, mechanics: named.kept }; };
+  const r = await askForm({ writer, escalate, attempts, calls, clock, system: pickSystem(templates, registry), user: `Idea: ${prompt}`, schema: pickForm(templates, registry), narrow,
     check: pick => checkPick(pick, { templates, registry, prompt }).problems, code: 'template_pick_failed', what: 'The template pick' });
-  return { pick: r.value, stepPath: checkPick(r.value, { templates, registry }).stepPath, calls: r.calls };
+  return { pick: r.value, stepPath: checkPick(r.value, { templates, registry }).stepPath, calls: r.calls, unnamed };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
