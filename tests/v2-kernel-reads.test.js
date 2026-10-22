@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { catalogue } from '../v2/primitives/index.js';
 import { preflight } from '../v2/kernel/document.js';
-import { createWorld } from '../v2/kernel/world.js';
+import { createWorld, cloneState } from '../v2/kernel/world.js';
 
 const probe = {
   id: 'gameplay.test.reads', card: { intent: 'Kernel read and modal fixture: lazily made state, an option, a modal.', views: ['any'], params: {}, provides: { actions: ['ask', 'answer', 'poke'] } },
@@ -62,4 +62,36 @@ test('documents: each world owns a copy of its document', () => {
   a.extend(next, { zones: [], beats: [], systems: [] }); b.extend(next, { zones: [], beats: [], systems: [] });
   a.doc.systems[0].with.changed = true;
   assert.equal(b.doc.systems[0].with.changed, undefined, 'and so is a document hot-loaded into it');
+});
+
+test('snapshots: cloneState copies JSON state exactly (NaN, Infinity, -0, holes) and shares nothing with it', () => {
+  const sparse = [1, , 3]; // eslint-disable-line no-sparse-arrays
+  const src = { a: [1, 2.5, NaN, -Infinity, -0, null, 'x', true], o: { n: { deep: [[1], { k: 2 }] } }, sparse, map: new Map([[1, 2]]) };
+  const out = /** @type {any} */ (cloneState(src));
+  assert.deepEqual(out, structuredClone(src));
+  assert.ok(Object.is(out.a[4], -0) && Number.isNaN(out.a[2]));
+  assert.equal(1 in out.sparse, false, 'a hole stays a hole');
+  assert.ok(out.map instanceof Map && out.map !== src.map, 'a non-JSON value is copied by structuredClone');
+  out.o.n.deep[1].k = 9; out.a.push(4);
+  assert.equal(src.o.n.deep[1].k, 2); assert.equal(src.a.length, 8);
+  const rt = world(); rt.step({});
+  const snap = rt.snapshot(); rt.step({ actions: { poke: true } }); rt.restore(snap);
+  assert.deepEqual(rt.state, snap, 'restore gives back the snapshot');
+  assert.notEqual(rt.state.prim, snap.prim, 'and keeps none of its objects');
+});
+
+test('derived: built once per read and key, dropped when the read ends and by a step or restore; null outside a read', () => {
+  const rt = world();
+  let builds = 0;
+  const build = () => ({ n: ++builds });
+  assert.equal(rt.derived('k', build), null, 'outside a read the state may change between lookups: nothing is kept');
+  assert.equal(builds, 0);
+  const [a, b, nested] = rt.read(() => [rt.derived('k', build), rt.derived('k', build), rt.read(() => rt.derived('k', build))]);
+  assert.equal(builds, 1, 'one build serves the whole read, nested reads included');
+  assert.equal(a, b); assert.equal(a, nested);
+  rt.read(() => rt.derived('k', build));
+  assert.equal(builds, 2, 'a new read builds again');
+  const snap = rt.snapshot();
+  rt.read(() => { rt.derived('k', build); rt.step({}); rt.derived('k', build); rt.restore(snap); rt.derived('k', build); });
+  assert.equal(builds, 5, 'a step or a restore inside a read changes the state: what was derived is dropped');
 });

@@ -1,8 +1,11 @@
 // One verification layer for every document (ARCHITECTURE.md §5):
 //   preflight → plot (static + solver) → spatial (gate-ordered reachability)
-//   → playtest (Go-Explore) → strategies (generic players chosen by what the
-//   document provides) → invariants (finiteness, explosions, storms,
-//   round-trip, replay determinism).
+//   → strategies (generic players chosen by what the document provides)
+//   → playtest (Go-Explore) → features → invariants (finiteness, explosions,
+//   storms, round-trip, replay determinism).
+// Each stage ends when what it is run to show is shown (a bot: the game won; the explorer, given opts.playtest.prove:
+// the loop and progress toward the win, a bot's win counting as progress; the feature checks: every verb's row
+// decided) or at its budget, whichever comes first; both are counted in play, never on the clock.
 // Everything runs headless on the real runtime through options, steps,
 // snapshots and space capabilities. Problems carry stable codes, document
 // paths and hints so the planner's repair loop can fix the document; each
@@ -73,7 +76,7 @@ export function playBot(strategy, ctx, opts = {}) {
 /**
  * verify(doc, registry, logic, opts) → report
  * opts: { seed, budget: Partial<GATE_BUDGET>, wallMs, plot: {...solver opts} | false, spatial: {...} | false,
- *         playtest: {...} | false, strategies: { only?: [ids], [id]: {...run opts} } | false, invariants: {...} | false }
+ *         playtest: { win?, prove?: { loop }, ... } | false, strategies: { only?: [ids], [id]: {...run opts} } | false, invariants: {...} | false }
  * `wallMs` (default none) caps total wall time between stages: a stage or bot not started because it passed is listed
  * in report.budgetLimited, with a budget_exhausted warning.
  */
@@ -109,10 +112,6 @@ export async function verify(doc, registry, logic, opts = {}) {
     report.spatial = await time('spatial', () => guard('spatial', () => verifySpatial(nd, registry, logic, { seed, plot: report.plot, settleSteps: opts.plot?.settleSteps ?? 2, ...(opts.spatial || {}) })));
     if (report.spatial) tag(report.spatial.problems, 'spatial');
   }
-  if (opts.playtest !== false && !capped('playtest')) {
-    report.playtest = await time('playtest', () => guard('playtest', () => playtest(nd, registry, logic, { seed, maxRounds: B.playtestRounds, maxFrames: B.playtestFrames, ...(opts.playtest || {}) })));
-    if (report.playtest) tag(report.playtest.problems, 'playtest');
-  }
   if (opts.strategies !== false && !capped('strategies')) {
     report.strategies = await time('strategies', () => guard('strategies', () => {
       // The bots are playtest agents too (§6.3): every runtime they play is measured on the win quantity the playtest
@@ -144,6 +143,14 @@ export async function verify(doc, registry, logic, opts = {}) {
       });
       return { ran, skipped };
     }));
+  }
+  if (opts.playtest !== false && !capped('playtest')) {
+    // The explorer runs until it has shown what its caller asks it to (opts.playtest.prove: the loop, and progress toward
+    // the win, which the bots' play counts toward: a bot's win, or how far it moved the win quantity), a win, or its budget.
+    const ran = report.strategies?.ran || [], moved = ran.map(b => Number(b.progress ?? NaN)).filter(Number.isFinite);
+    const prove = opts.playtest?.prove ? { ...opts.playtest.prove, won: ran.some(b => b.won === true), ...(moved.length ? { progress: Math.max(...moved) } : {}) } : undefined;
+    report.playtest = await time('playtest', () => guard('playtest', () => playtest(nd, registry, logic, { seed, maxRounds: B.playtestRounds, maxFrames: B.playtestFrames, ...(opts.playtest || {}), ...(prove ? { prove } : {}) })));
+    if (report.playtest) tag(report.playtest.problems, 'playtest');
   }
   // Feature checks (features.js): every primitive the document mixes in exists, is controllable and works when its
   // controls are pressed from states the bots' and the explorer's play reached.

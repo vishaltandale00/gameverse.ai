@@ -382,6 +382,8 @@ export interface Runtime {
   store(key: string): Record<string, any>;
   /** Run fn as a read: stores it touches are not created (presentation, bots and tests reading the world). */
   read<T>(fn: () => T): T;
+  /** Inside a read: build() once per read and key (dropped when it ends and by step, restore, extend); null outside a read. */
+  derived<T>(key: string, build: () => T): T | null;
   spawn(archetype: string, opts?: { space?: string; at?: any; zone?: string; components?: Record<string, any>; id?: string }): Entity;
   despawn(id: string): void;
   entity(id: string): Entity | undefined;
