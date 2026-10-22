@@ -2217,7 +2217,8 @@
   {
    "use": "gameplay.farming",
    "with": {
-    "crops": [{"item":"wheat","seed":"seeds","block":"crop_wheat","days":4,"seasons":["spring","summer","autumn"],"yield":[2,4]},{"item":"pumpkin","days":6,"seasons":["autumn"],"yield":[1,2]}]
+    "crops": [{"item":"wheat","seed":"seeds","block":"crop_wheat","days":4,"seasons":["spring","summer","autumn"],"yield":[2,4]},{"item":"pumpkin","days":6,"seasons":["autumn"],"yield":[1,2]}],
+    "tillable": ["dirt", "grass"], "farmland": "farmland"
    }
   },
   {"use":"gameplay.build.structure","with":{"pieces":["wall","floor","roof","door","stairs","lamp"],"block":"planks","ownership":true,"plots":[{"zone":"harbor_row","when":{"item":"plot_deed"}},{"zone":"greenmeadow","when":{"item":"plot_deed"}}]}},

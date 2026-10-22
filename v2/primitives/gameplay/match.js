@@ -235,7 +235,7 @@ export default {
       board: boardParam([8, 8]),
       rule: { type: 'string', default: 'line', options: ['line', 'group'], effect: 'line: runs in rows/columns; group: connected same-colour groups' },
       min: { type: 'integer', default: 3, min: 2, max: 8, effect: 'run length (line) or group size (group) that clears' },
-      colors: { type: 'list', default: ['red', 'orange', 'yellow', 'green', 'blue'], min: 2, max: 8, of: { type: 'ref', to: 'block' }, effect: 'gem colours: the board cells (content.blocks ids)' },
+      colors: { type: 'list', required: true, min: 2, max: 8, of: { type: 'ref', to: 'block' }, effect: 'gem colours: the board cells (content.blocks ids)' },
       trigger: { type: 'list', default: ['swap'], min: 1, of: { type: 'string', options: ['swap', 'land'] }, effect: 'swap verb and/or piece_locked from falling pieces on this board' },
       refill: { type: 'boolean', default: true, effect: 'new gems drop in from the top after clears' },
       gravity: { type: 'boolean', default: true, effect: 'cells fall after clears (fixed cells and blockers stay)' },

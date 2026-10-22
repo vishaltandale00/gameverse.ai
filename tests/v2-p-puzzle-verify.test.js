@@ -32,7 +32,8 @@ test('verify: expectimax plays slide boards by sampling the game rng', () => {
 });
 
 test('verify: greedy plays match boards through swap options', () => {
-  const ctx = ctxOf(grid(6, 6, [{ use: 'gameplay.match', with: { board: board(6, 6), moves: 4, clearFrames: 0, settleFrames: 0, swapFrames: 0, onOutOfMoves: [{ do: 'end_game', outcome: 'won' }] } }]));
+  const gems = ['red', 'orange', 'yellow', 'green', 'blue']; // the board cells: content.blocks ids (colors is a required reference list)
+  const ctx = ctxOf({ ...grid(6, 6, [{ use: 'gameplay.match', with: { board: board(6, 6), colors: gems, moves: 4, clearFrames: 0, settleFrames: 0, swapFrames: 0, onOutOfMoves: [{ do: 'end_game', outcome: 'won' }] } }]), content: { blocks: gems.map(id => ({ id })) } });
   assert.deepEqual(select(ctx).chosen.map(c => c.s.id), ['greedy']);
   const r = strategies.get('greedy').run(ctx, { seeds: [1], maxMoves: 4, budgetMs: 20000 });
   assert.ok(r.metrics.runs.length >= 1, JSON.stringify(r.problems));

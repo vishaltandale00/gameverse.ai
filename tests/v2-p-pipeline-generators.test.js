@@ -187,12 +187,12 @@ const MATRIX = [
   ['engine.generate.roads', 'mesh3d', S], ['engine.generate.roads', 'voxel', S],
   ['engine.generate.city', 'mesh3d', { districts: [{ zone: 'mid', density: 0.8 }], block: [32, 32] }], ['engine.generate.city', 'voxel', { districts: [{ zone: 'mid', density: 0.8 }], block: [24, 24] }],
   ['engine.generate.structures', 'mesh3d', { place: [{ id: 'huts', kind: 'hut', zone: 'mid', count: [2, 2] }] }], ['engine.generate.structures', 'voxel', { place: [{ id: 'huts', kind: 'hut', zone: 'mid', count: [2, 2] }] }],
-  ['engine.generate.scatter', 'mesh3d', { props: [{ model: 'tree', per100m2: 0.2, collide: true }] }, { models: [{ id: 'tree', name: 'Tree' }] }],
+  ['engine.generate.scatter', 'mesh3d', { props: [{ model: 'tree', per100m2: 0.2, collide: true }] }, { models: { tree: { name: 'Tree' } } }],
   ['engine.generate.scatter', 'voxel', { props: [{ block: 'log', shape: 'tree', crown: 'leaves', per100m2: 0.5 }] }, { blocks: [{ id: 'log', name: 'Log' }, { id: 'leaves', name: 'Leaves' }] }],
   ['engine.generate.biomes', 'mesh3d', BIOMES], ['engine.generate.biomes', 'voxel', BIOMES],
-  ['engine.generate.caves', 'voxel', { density: 0.4, worms: 4 }], ['engine.generate.ores', 'voxel', { veins: [{ block: 'coal_ore', minY: 4, maxY: 40 }] }, { blocks: [{ id: 'coal_ore', name: 'Coal ore' }] }],
+  ['engine.generate.caves', 'voxel', { density: 0.4, worms: 4 }], ['engine.generate.ores', 'voxel', { veins: [{ block: 'coal_ore', replace: ['stone'], minY: 4, maxY: 40 }] }, { blocks: [{ id: 'coal_ore', name: 'Coal ore' }] }],
   ['engine.generate.chunks', 'track', S],
-  ['engine.generate.chunks', 'tilemap', { chunks: [{ id: 'step', rows: CHUNK_ROWS }], along: 'columns', axis: 'x', cross: 'y', origin: [0, 1], firstAt: 8, end: 44 }],
+  ['engine.generate.chunks', 'tilemap', { chunks: [{ id: 'step', rows: CHUNK_ROWS }], legend: { '.': {}, o: { archetype: 'coin' }, '#': { block: 'ground', blocks: true } }, along: 'columns', axis: 'x', cross: 'y', origin: [0, 1], firstAt: 8, end: 44 }, { blocks: [{ id: 'ground', name: 'Ground', solid: true }] }],
   ['engine.generate.chunks', 'arena2d', { chunks: [{ id: 'crates', rows: CHUNK_ROWS }], legend: { '.': {}, o: { archetype: 'coin' }, '#': { archetype: 'crate', blocks: true } }, along: 'columns', axis: 'x', cross: 'y', origin: [0, 0], firstAt: 8, end: 44 }],
   ['engine.generate.layout.shapes', 'arena2d', S], ['engine.generate.layout.shapes', 'physics2d', S],
   ['engine.generate.dungeon.rooms', 'grid', S], ['engine.generate.dungeon.rooms', 'tilemapTd', S], ['engine.generate.dungeon.rooms', 'mesh3d', S],
@@ -216,7 +216,7 @@ test('generator × space matrix: preflight, real content, a clean generation pro
   const rows = [], failures = [];
   for (const [id, kind, config, content = {}] of MATRIX) {
     const base = DOCS[kind]();
-    for (const [k, list] of Object.entries(content)) base.content[k] = [...(base.content[k] || []), ...list];
+    for (const [k, more] of Object.entries(content)) base.content[k] = Array.isArray(more) ? [...(base.content[k] || []), ...more] : { ...(base.content[k] || {}), ...more }; // lists append; content.models is a map by model id
     let doc = is3d(kind) && id !== 'engine.generate.terrain.noise' ? addGenerator(base, registry, 0, 'engine.generate.terrain.noise') : base; // 3D overlays stand on terrain
     const ground = doc;
     doc = addGenerator(doc, registry, 0, id, config);

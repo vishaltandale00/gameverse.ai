@@ -31,6 +31,8 @@ const ctxOf = doc => {
 const base = (id, spaces, systems, content, extra = {}) => ({ schema: 'gameverse.v2.game/0.2', id, title: id, seed: 9, spaces, systems, content, ...extra });
 const spawn = rules => ({ use: 'engine.spawner', with: { intervalSec: 0, rules: rules.map(r => ({ unique: true, activation: 'always', respawnSec: 0, ...r })) } });
 const won = [{ do: 'end_game', outcome: 'won' }], lost = [{ do: 'end_game', outcome: 'lost' }];
+/** A match board's gem colours: content.blocks ids the document defines (gameplay.match colors is a required reference list). */
+const GEMS = ['red', 'orange', 'yellow', 'green', 'blue'];
 const board = (w, h) => ({ name: 'board', at: [0, 0], size: [w, h], axes: [0, 1], fall: -1 });
 const grid = (id, w, h, systems, extra = {}) => base(id, [{ id: 'g', use: 'engine.space.grid', with: { size: [w, h] } }], systems, { archetypes: [] }, extra);
 
@@ -100,8 +102,8 @@ const DOCS = {
   },
   'falling-blocks': () => grid('falling', 10, 22, [{ use: 'gameplay.falling.pieces', with: { board: board(10, 22), clearFrames: 0, next: 1 } }, { use: 'plot.ending' }],
     { plot: { endings: [{ id: 'cleared', title: 'Lines cleared', when: { var: 'falling.lines', gte: 2 }, outcome: 'won' }] } }),
-  'match-board': () => grid('match', 6, 6, [{ use: 'gameplay.match', with: { board: board(6, 6), moves: 12, clearFrames: 0, settleFrames: 0, swapFrames: 0 } }, { use: 'plot.ending' }],
-    { plot: { endings: [{ id: 'scored', title: 'Score', when: { var: 'score', gte: 600 }, outcome: 'won' }] } }),
+  'match-board': () => grid('match', 6, 6, [{ use: 'gameplay.match', with: { board: board(6, 6), colors: GEMS, moves: 12, clearFrames: 0, settleFrames: 0, swapFrames: 0 } }, { use: 'plot.ending' }],
+    { plot: { endings: [{ id: 'scored', title: 'Score', when: { var: 'score', gte: 600 }, outcome: 'won' }] }, content: { archetypes: [], blocks: GEMS.map(id => ({ id })) } }),
   'slide-merge': () => grid('slide', 4, 4, [{ use: 'gameplay.slide.merge', with: { board: board(4, 4), slideFrames: 0, target: 32, onTarget: won } }]),
   collect: () => {
     const pellets = [];
@@ -116,7 +118,7 @@ const DOCS = {
   },
   story: () => withExitGate(manor()),
   crawl: () => base('crawl', [{ id: 'd', use: 'engine.space.grid', with: { size: [24, 24], exclusive: true },
-    generators: [{ use: 'engine.generate.dungeon.rooms', with: { rooms: 3, keys: ['key_1'], roomSize: [5, 5], boss: 'ogre' } }] }],
+    generators: [{ use: 'engine.generate.dungeon.rooms', with: { rooms: 3, keys: ['key_1'], roomSize: [5, 5], boss: 'ogre', palette: { wall: 'stone', door: 'locked_door' }, archetypes: { key: 'key', lock: 'locked_door', chest: 'chest' } } }] }],
     [{ use: 'gameplay.move.grid' }, { use: 'gameplay.combat.health' }, { use: 'gameplay.combat.melee' },
       { use: 'gameplay.combat.boss', with: { bosses: [{ id: 'ogre', archetype: 'ogre', start: 'sight', phases: [{ at: 1 }], onDefeat: won }] } }],
     { archetypes: [{ id: 'hero', components: { health: { max: 10 }, melee: { moves: { w1: { name: 'Sweep', damage: 2, reach: 1.2, arc: 360, startup: 6, active: 6, recovery: 12, units: 'world' } } } } },
@@ -124,7 +126,7 @@ const DOCS = {
     items: [{ id: 'key_1', name: 'Key' }], blocks: [{ id: 'stone', solid: true }, { id: 'locked_door', solid: true }] }, { player: { archetype: 'hero' } }),
   farm: () => base('farm', [{ id: 'plot', use: 'engine.space.grid', with: { size: [6, 5] }, generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', terrain: [{ block: 'dirt' }], density: 0.8, symmetry: 'none', teams: 1, deployDepth: 1 } }] }],
     [{ use: 'gameplay.move.grid' }, { use: 'gameplay.inventory', with: { start: [{ item: 'hoe' }, { item: 'bean_seed', count: 2 }, { item: 'leek_seed', count: 1 }] } },
-      { use: 'gameplay.farming', with: { crops: [{ item: 'bean', seed: 'bean_seed', days: 1 }, { item: 'leek', seed: 'leek_seed', days: 2 }], tillable: ['dirt'], daySec: 2 } }, { use: 'plot.ending' }],
+      { use: 'gameplay.farming', with: { crops: [{ item: 'bean', seed: 'bean_seed', days: 1 }, { item: 'leek', seed: 'leek_seed', days: 2 }], tillable: ['dirt'], farmland: 'farmland', daySec: 2 } }, { use: 'plot.ending' }],
     { items: [{ id: 'hoe', name: 'Hoe', kind: 'tool', tool: { kind: 'hoe', tier: 0 } }, { id: 'bean_seed', name: 'Bean seed', kind: 'material' }, { id: 'bean', name: 'Bean', kind: 'food' }, { id: 'leek_seed', name: 'Leek seed', kind: 'material' }, { id: 'leek', name: 'Leek', kind: 'food' }],
       blocks: [{ id: 'dirt', name: 'Dirt', solid: false }, { id: 'farmland', name: 'Farmland', solid: false }], archetypes: [{ id: 'hero', components: {} }] },
     { plot: { endings: [{ id: 'harvest', title: 'Harvest', when: { count: 'harvested', gte: 3 }, outcome: 'won' }] }, player: { archetype: 'hero', at: [0, 0] } }),

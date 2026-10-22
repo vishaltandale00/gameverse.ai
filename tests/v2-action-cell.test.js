@@ -52,7 +52,7 @@ test('farming on the top-down farm: a press tills the cell the farmer faces afte
 });
 
 test('farming without a cell in a side view acts below the feet; mine and place aim along the full facing in a plane', () => {
-  const side = doc({ systems: [{ use: 'gameplay.inventory', with: { start: [{ item: 'hoe' }] } }, { use: 'gameplay.farming', with: { crops: [{ item: 'wheat', seed: 'seeds' }, { item: 'oat', seed: 'oat_seeds' }], tillable: ['dirt'] } }],
+  const side = doc({ systems: [{ use: 'gameplay.inventory', with: { start: [{ item: 'hoe' }] } }, { use: 'gameplay.farming', with: { crops: [{ item: 'wheat', seed: 'seeds' }, { item: 'oat', seed: 'oat_seeds' }], tillable: ['dirt'], farmland: 'farmland' } }],
     space: { gravity: -20 }, at: [2, 1, 0], content: { items: [{ id: 'hoe', name: 'Hoe', kind: 'tool', tool: { kind: 'hoe' } }, { id: 'seeds', name: 'S' }, { id: 'wheat', name: 'W' }, { id: 'oat_seeds', name: 'S' }, { id: 'oat', name: 'O' }],
       blocks: [{ id: 'dirt', name: 'Dirt' }, { id: 'farmland', name: 'Farmland' }], archetypes: [{ id: 'hero', kind: 'player', components: { body: { size: [1, 1, 1] } } }] } });
   side.views = { primary: 'side' };

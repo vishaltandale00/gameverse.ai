@@ -6,6 +6,8 @@ import { PRIMITIVES } from '../v2/primitives/index.js';
 
 const go = d => compile(d, { primitives: PRIMITIVES });
 const base = (spaces, systems, extra = {}) => ({ schema: 'gameverse.v2.game/0.2', id: 'real', title: 'Real', seed: 9, spaces, systems, ...extra });
+/** A match board's gem colours: content.blocks ids the document defines (gameplay.match colors is a required reference list). */
+const GEMS = ['red', 'orange', 'yellow', 'green', 'blue'];
 const board = (w, h, more = {}) => ({ name: 'board', at: [0, 0], size: [w, h], axes: [0, 1], fall: -1, ...more });
 
 test('real grid: guideline falling pieces play through options and replay deterministically', () => {
@@ -38,7 +40,7 @@ test('real grid: puyo pairs pop and settle through the grid settle capability', 
 });
 
 test('real grid: match-3 swaps resolve with grid gravity and refill; slide boards slide', () => {
-  const m = go(base([{ id: 'g', use: 'engine.space.grid', with: { size: [8, 8] } }], [{ use: 'gameplay.match', with: { board: board(8, 8), clearFrames: 1, settleFrames: 1, swapFrames: 1 } }])).rt;
+  const m = go(base([{ id: 'g', use: 'engine.space.grid', with: { size: [8, 8] } }], [{ use: 'gameplay.match', with: { board: board(8, 8), colors: GEMS, clearFrames: 1, settleFrames: 1, swapFrames: 1 } }], { content: { blocks: GEMS.map(id => ({ id })) } })).rt;
   for (let i = 0; i < 3; i++) { const o = m.availableOptions(); assert.ok(o.length); m.step({ actions: o[0].actions }); for (let k = 0; k < 200 && !m.availableOptions().length; k++) m.step(); }
   assert.equal(m.state.counts.move, 3);
   assert.ok(m.state.counts.settled >= 1, 'grid settle ran');

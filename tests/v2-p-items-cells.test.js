@@ -139,7 +139,7 @@ test('blocks.place: replay and bad config codes', () => {
 // A side-on world (the test space with depth has up = y, card.frame): the stage block goes in the cell above the farmland.
 // (Corrected expectation: this world was a plane seen from above, where [2, 1, 0] is the neighbouring field cell, not
 // the cell above; the plane case is the farm template test below.)
-const farm = () => { const d = world([{ use: 'gameplay.farming', with: { crops: [{ item: 'wheat', seed: 'seeds', days: 2, seasons: ['spring', 'summer'], yield: [2, 3], block: 'crop_wheat', regrow: 1 }], tillable: ['dirt'] } }], [{ item: 'hoe' }, { item: 'seeds', count: 3 }]); d.spaces[0].with.size = [32, 16, 2]; return d; };
+const farm = () => { const d = world([{ use: 'gameplay.farming', with: { crops: [{ item: 'wheat', seed: 'seeds', days: 2, seasons: ['spring', 'summer'], yield: [2, 3], block: 'crop_wheat', regrow: 1 }], tillable: ['dirt'], farmland: 'farmland' } }], [{ item: 'hoe' }, { item: 'seeds', count: 3 }]); d.spaces[0].with.size = [32, 16, 2]; return d; };
 
 test('farming: till, plant, water, grow by day and season, harvest, regrow, wither', () => {
   assert.ok(checkWith(farm()).ok, JSON.stringify(checkWith(farm()).errors));
