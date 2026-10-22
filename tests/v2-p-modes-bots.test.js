@@ -14,7 +14,7 @@ import { replayMacros } from '../v2/verify/strategies/turn-board.js';
 import { replayRace } from '../v2/verify/strategies/race.js';
 import { modeCatalogue, liveCatalogue } from '../v2/planner/catalog.js';
 import { modeShapeErrors, modesIn, modeApplies } from '../v2/primitives/gameplay/modes-lib-mode.js';
-import { interactionsOf, appliesTo } from '../v2/planner/loop.js';
+import { interactionsOf, appliesTo } from '../v2/kernel/loop.js';
 import { fitsInteraction } from '../v2/planner/select.js';
 import { checkComposition } from '../v2/planner/compose-check.js';
 

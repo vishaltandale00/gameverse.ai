@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { liveCatalogue } from '../v2/planner/catalog.js';
-import { cardLoop, endsGame, loopOf } from '../v2/planner/loop.js';
+import { cardLoop, endsGame, loopOf } from '../v2/kernel/loop.js';
 import { loopReport, loopInstances, movesPlayer, playerChanges, evaluatesEndings, readsOf, LOOP_CODES } from '../v2/planner/loop-check.js';
 
 // The live catalogue: promoted primitives are held to the same loop properties.

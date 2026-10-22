@@ -11,7 +11,7 @@ import { writeOutline } from '../v2/planner/outline.js';
 import { preset, structureOf } from '../v2/planner/presets.js';
 import { kindViewPreserved } from '../v2/planner/census.js';
 import { coreLoopProblems } from '../v2/planner/core-loop.js';
-import { cardLoop, endsGame, loopOf } from '../v2/planner/loop.js';
+import { cardLoop, endsGame, loopOf } from '../v2/kernel/loop.js';
 import { preflight } from '../v2/kernel/document.js';
 import { fakeWriter, selectionOf } from './v2-p-pipeline-fixtures.js';
 

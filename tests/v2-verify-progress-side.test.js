@@ -2,12 +2,12 @@
 // loop's win reads toward it). A loop played against participants (racers, teams, sides: card mode/loop needs
 // participants) whose win reads an event counts the player's side only: the read declares `of: 'player'` and the event
 // is emitted typed (`name:*`, rt.emitTyped by subject), so the gate's measure (verify/objective.js winMeasure, through
-// planner/loop.js winQuantity) counts `event:<subject>` of the player and the sides it joins, never a rival's lap or the
+// kernel/loop.js winQuantity) counts `event:<subject>` of the player and the sides it joins, never a rival's lap or the
 // other team's goal. Catalogue-wide over the cards; and on the race template, idling (the rivals lap) moves nothing.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildCatalogue } from '../v2/planner/catalog.js';
-import { cardLoop, readsOf, winQuantity } from '../v2/planner/loop.js';
+import { cardLoop, readsOf, winQuantity } from '../v2/kernel/loop.js';
 import { winMeasure } from '../v2/verify/objective.js';
 import { templateById } from '../v2/templates/registry.js';
 import { controlledMaker, hostPreflight } from '../v2/verify/controls.js';

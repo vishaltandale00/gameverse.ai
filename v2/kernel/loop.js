@@ -40,11 +40,11 @@
 // }
 // card.mode is the richer form of the same declaration on primitives that own a whole loop (interaction, opponent,
 // preferred spaces, a bot that proves it): cardLoop() merges the two, card.loop winning field by field.
-import { isObj, isList, isStr, list, objects, prop } from '../kernel/guards.js';
-import { checkFields } from '../kernel/params.js';
-import { sideDecl, playerSides } from '../kernel/sides.js';
+import { isObj, isList, isStr, list, objects, prop } from './guards.js';
+import { checkFields } from './params.js';
+import { sideDecl, playerSides } from './sides.js';
 
-/** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
+/** @typedef {import('./types.js').RegistryLike} RegistryLike */
 /** What changes the state a loop end reads. @typedef {{ actions?: string[], effects?: string[], events?: string[], movement?: boolean }} ReadsBy */
 /** @typedef {{ component?: string, of?: string, event?: string, var?: string, from?: string, by?: ReadsBy }} EndReads */
 /** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, shown?: unknown, once?: boolean, applies?: { param: string, field?: string, is?: unknown, given?: boolean }, reads?: EndReads }} LoopEnd */

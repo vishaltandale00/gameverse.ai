@@ -37,7 +37,7 @@
 //            pieces on a board of gems; compose_player_misplaced: an avatar's start on it).
 //
 // Every problem has a stable code (COMPOSE_RULES). Nothing here names a primitive, a template or a pair.
-import { cardLoop } from './loop.js';
+import { cardLoop } from '../kernel/loop.js';
 import { modesIn } from '../primitives/gameplay/modes-lib-mode.js';
 import { definedSections, sectionOfKind, referenceOf, declaredAt, contractsOf, participantsOf, placeParticipants, startProblems, ZONES, SECTIONS } from './content.js';
 import { declaredOutcomes, wireOutcomes, configureInner, configureEncounters, skinSections } from './presets.js';

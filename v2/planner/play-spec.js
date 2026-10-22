@@ -6,7 +6,7 @@
 // how the ideas' core mechanics join (nested, union, skin): adapters realise each relation (card.adapts.relation).
 // A field the spec leaves undecided (null) is decided by the collection's declarations, never guessed from words.
 import { isObj, isStr } from '../kernel/guards.js';
-import { cardLoop } from './loop.js';
+import { cardLoop } from '../kernel/loop.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 

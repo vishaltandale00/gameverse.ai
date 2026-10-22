@@ -1,6 +1,6 @@
 // Templates fit their loops and their presentation (ARCHITECTURE.md §3, §5): a template is a verified document, so the
 // space it puts each loop on is one that loop's card declares (card.mode.space / card.loop.space, read by the one
-// interpretation the composition check uses: planner/loop.js spaceFitsEntry), and the view it declares
+// interpretation the composition check uses: kernel/loop.js spaceFitsEntry), and the view it declares
 // (views.primary) is one the renderer the host mounts for its play space (ui-defaults.js rendererFor) shows. A race
 // on the shooter arena, drawn by the arena renderer, is the defect class this catches.
 import test from 'node:test';
@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { TEMPLATES } from '../v2/templates/registry.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { compositionSpaces } from '../v2/planner/compose-check.js';
-import { cardLoop, loopSpaceFits } from '../v2/planner/loop.js';
+import { cardLoop, loopSpaceFits } from '../v2/kernel/loop.js';
 import { modesIn } from '../v2/primitives/gameplay/modes-lib-mode.js';
 import { rendererFor } from '../v2/primitives/graphics/ui-defaults.js';
 

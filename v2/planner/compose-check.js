@@ -79,7 +79,7 @@ import { buildLogic } from '../kernel/world.js';
 import { Registry } from '../kernel/registry.js';
 import { strategies as STRATEGIES } from '../verify/strategies/index.js';
 import { OUTLINE_AUTHORS, carriedContent, unitGives } from './space-content.js';
-import { cardLoop, loopSpaceFits, loopExists, loopInstances, winOwner, unwired } from './loop.js';
+import { cardLoop, loopSpaceFits, loopExists, loopInstances, winOwner, unwired } from '../kernel/loop.js';
 import { list, prop } from '../kernel/guards.js';
 import { hostDocument } from '../web/host-doc.js';
 import { uncontrolledVerbs } from '../verify/controls.js';
@@ -682,7 +682,7 @@ export function checkComposition(input, registry, opts = {}) {
       const win = winner?.use === u.use ? winner.loop.win : null;
       if (win && !winChecked && ((typeof win.param === 'string' && !win.param.includes('.')) || typeof win.end === 'string')) {
         winChecked = true;
-        const why = unwired(docLike, /** @type {import('./loop.js').LoopInstance} */ (winner), win, 'won', registry);
+        const why = unwired(docLike, /** @type {import('../kernel/loop.js').LoopInstance} */ (winner), win, 'won', registry);
         if (why) fail({ check: 'mode', code: 'mode_win_unwired', unit: u.use, message: `'${u.use}' wins the game and its win reaches no ending: ${why}`, hint: `end the game there (end_game)${typeof win.end === 'string' ? ` or set with.${win.end}` : ''}`, adaptable: false });
       }
       // interaction: an input primitive that serves the interaction the loop is played in (the play spec's when the

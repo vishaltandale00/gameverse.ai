@@ -7,10 +7,10 @@ import assert from 'node:assert/strict';
 import { TEMPLATES } from '../v2/templates/registry.js';
 import { catalogue, PRIMITIVES } from '../v2/primitives/index.js';
 import { hostDocument } from '../v2/web/host-doc.js';
-import { cardLoop } from '../v2/planner/loop.js';
+import { cardLoop } from '../v2/kernel/loop.js';
 import { readsOf } from '../v2/planner/loop-check.js';
 import { DRAWS, showsOf, drawsOf, mustShow, presentationProblems, shownZones, loopSpaces } from '../v2/primitives/graphics/presentation.js';
-import { loopInstances } from '../v2/planner/loop.js';
+import { loopInstances } from '../v2/kernel/loop.js';
 import { Registry } from '../v2/kernel/registry.js';
 import { mount } from './v2-p-ui-dom.js';
 

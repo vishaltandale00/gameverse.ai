@@ -11,7 +11,7 @@ import { loopEvents, loopShown } from '../verify/objective.js';
 import { createWorld } from '../kernel/world.js';
 import { worldProblems, spacesNeedingWorld } from './world.js';
 import { isObj, objects, prop } from '../kernel/guards.js';
-import { winQuantity } from './loop.js';
+import { winQuantity } from '../kernel/loop.js';
 import { presentationProblems } from '../primitives/graphics/presentation.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */

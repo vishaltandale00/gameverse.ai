@@ -6,7 +6,7 @@
 // saying what is wrong. Nothing here reads the idea's words: structure comes from the templates' documents and the
 // cards in them, judgement from the model's small checked choices.
 import { specSchema, decode, fieldForm, formKey, answerProblems, obj as strictObj, arr as strictArr } from './outline-form.js';
-import { cardLoop } from './loop.js';
+import { cardLoop } from '../kernel/loop.js';
 import { modesIn } from '../primitives/gameplay/modes-lib-mode.js';
 import { parseReply } from './writer.js';
 import { preflight } from '../kernel/document.js';

@@ -14,7 +14,7 @@ import { composeTemplates, offeredTemplates } from '../v2/planner/templates.js';
 import { proceduralOutline } from '../v2/planner/outline.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { normalize } from '../v2/planner/decompose.js';
-import { cardLoop } from '../v2/planner/loop.js';
+import { cardLoop } from '../v2/kernel/loop.js';
 import { mazeWriter, selectionOf } from './v2-p-pipeline-fixtures.js';
 
 const { registry, logic } = buildCatalogue();

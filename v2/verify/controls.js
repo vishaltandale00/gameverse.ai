@@ -17,7 +17,7 @@ import { createWorld } from '../kernel/world.js';
 import { preflight } from '../kernel/document.js';
 import { compile, sample, deviceOf, hostView, AXIS_KEYS } from '../primitives/engine/runtime-lib-input.js';
 import { uiControls, choiceVerbs, verbControl, verbInstances, instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
-import { cardLoop } from '../planner/loop.js';
+import { cardLoop } from '../kernel/loop.js';
 import { hostDocument } from '../web/host-doc.js';
 
 /** The input primitive: the device -> verb mapping a person's keys go through (its state is what the devices held, not the game). */

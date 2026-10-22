@@ -30,7 +30,7 @@ import { obj, prop, str, list, isObj } from '../kernel/guards.js';
 import { TEMPLATES } from '../templates/registry.js';
 import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn, narrowPick, checkPick, chooseReading, templateLoops } from './templates.js';
 import { EXTEND_VERSION, extendDocument, extensionFaults, paramsForm, recordingWriter, unengaged } from './extend.js';
-import { cardLoop } from './loop.js';
+import { cardLoop } from '../kernel/loop.js';
 import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */

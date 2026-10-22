@@ -7,7 +7,7 @@
 //   interaction: the interaction the loop is played in, or the list of every one its code serves:
 //                'avatar-realtime' | 'avatar-grid' | 'pieces-turns' | 'cursor-board' | 'menu'
 //                ('any' only for wrapper modes, which take the interaction of the mode they wrap);
-//                planner/loop.js cardLoop reads it as a set (loop.interactions), loopServes tests it;
+//                kernel/loop.js cardLoop reads it as a set (loop.interactions), loopServes tests it;
 //   opponent:    'none' | 'ai-rival' | 'ai-side' | 'hazards' | 'clock';
 //   space:       preferred spaces, in order: space primitive ids, or capability lists any space providing them satisfies;
 //   needs: {

@@ -9,7 +9,7 @@ import { preset, loopCore } from '../v2/planner/presets.js';
 import { partialCheck, selectionCollection } from '../v2/planner/build-steps.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { normalize } from '../v2/planner/decompose.js';
-import { cardLoop, endsGame } from '../v2/planner/loop.js';
+import { cardLoop, endsGame } from '../v2/kernel/loop.js';
 import { loopProblems, playerChanges, readsOf, LOOP_CODES } from '../v2/planner/loop-check.js';
 import { servesContext } from '../v2/planner/retrieval.js';
 import { fakeWriter, buildAnswer } from './v2-p-pipeline-fixtures.js';

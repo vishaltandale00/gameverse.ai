@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import { liveCatalogue } from '../v2/planner/catalog.js';
 import { checkComposition } from '../v2/planner/compose-check.js';
 import { loopReport, readsOf, LOOP_CODES } from '../v2/planner/loop-check.js';
-import { cardLoop, endsGame, loopInstances, unwired, typedEvents, fills } from '../v2/planner/loop.js';
+import { cardLoop, endsGame, loopInstances, unwired, typedEvents, fills } from '../v2/kernel/loop.js';
 import { contractsOf, participantsOf } from '../v2/planner/content.js';
 import { placedBy } from '../v2/planner/census.js';
 import { BOARD_CONTENT } from '../v2/primitives/gameplay/puzzle-lib-board.js';

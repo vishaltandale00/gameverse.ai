@@ -15,7 +15,7 @@
 //   labels    the label a block declares (content.blocks[].label: a 2048 tile's number), drawn on its cells;
 //   marks     per-cell state a primitive keeps outside cells and entities (crop stages), read from the service its card
 //             names in card.marks (marks(spaceId) → [{ at, kind, stage, stages, ready }]).
-import { cardLoop, loopInstances, loopSpaceFits } from '../../planner/loop.js';
+import { cardLoop, loopInstances, loopSpaceFits } from '../../kernel/loop.js';
 
 export const DRAWS = Object.freeze(['entities', 'cells', 'zones', 'labels', 'marks']);
 export const PRESENTATION_CODES = Object.freeze({ missing: 'render_missing', undeclared: 'shows_undeclared' });

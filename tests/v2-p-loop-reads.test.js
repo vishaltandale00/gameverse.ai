@@ -1,4 +1,4 @@
-// Every registered card that declares a win or a lose (card.loop / card.mode, v2/planner/loop.js) declares what that
+// Every registered card that declares a win or a lose (card.loop / card.mode, v2/kernel/loop.js) declares what that
 // end reads (`reads`: a component, an event or a var, with `by`: what changes it), and every name in it is one the
 // primitive's code actually uses. The check is derived from the code: each primitive's source file (and the local
 // modules it imports) is read, and each declared name must be something that source writes, emits, registers or
@@ -10,7 +10,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildCatalogue } from '../v2/planner/catalog.js';
-import { cardLoop, outcomeOf } from '../v2/planner/loop.js';
+import { cardLoop, outcomeOf } from '../v2/kernel/loop.js';
 import { ownersOf } from '../v2/planner/loop-check.js';
 
 const { registry, logic } = buildCatalogue();

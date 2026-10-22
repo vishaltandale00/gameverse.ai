@@ -29,7 +29,7 @@
 // preflight to pass on its instance, every engagement config its card fills from its own params to be filled, and the
 // player to get its verbs (runtime-lib-controls.js instanceVerbs: a gun with no weapon gives no `fire`).
 // Nothing here names a primitive, a template or a game.
-import { cardLoop } from './loop.js';
+import { cardLoop } from '../kernel/loop.js';
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
 import { preflight } from '../kernel/document.js';
 import { checkComposition } from './compose-check.js';

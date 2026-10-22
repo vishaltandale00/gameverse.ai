@@ -1,7 +1,7 @@
 // @ts-check
 // Who is on whose side: the one reading of the side declarations primitives make (KERNEL_API.md §2 Sides). Every
 // consumer that asks whether an entity is the player's or an opponent reads it here: the win a loop reads of its
-// 'opponents' or of the 'player' (verify/objective.js winMeasure, planner/loop-check.js, planner/loop.js
+// 'opponents' or of the 'player' (verify/objective.js winMeasure, planner/loop-check.js, kernel/loop.js
 // playerSubjects), the bots (verify/drive.js foes), combat's teams (gameplay/combat-lib.js teamOf: friendly fire, shots
 // and contact), AI hostility (gameplay/ai-brain.js hostile), and what a person sees (renderers, the HUD).
 //

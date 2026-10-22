@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { compile } from '../v2/kernel/testing.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { loopProblems, LOOP_CODES, drivesOf } from '../v2/planner/loop-check.js';
-import { cardLoop } from '../v2/planner/loop.js';
+import { cardLoop } from '../v2/kernel/loop.js';
 import { repairLoop } from '../v2/planner/presets.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
 import { zonePoint } from '../v2/primitives/gameplay/ai-lib.js';

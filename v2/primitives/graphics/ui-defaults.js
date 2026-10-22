@@ -6,7 +6,7 @@
 // Nothing game-specific: every rule keys off primitive ids, cards and data.
 
 import { unclaimedChoices } from '../engine/runtime-lib-controls.js';
-import { loopInstances, readsOf, winQuantity, endsGame } from '../../planner/loop.js';
+import { loopInstances, readsOf, winQuantity, endsGame } from '../../kernel/loop.js';
 
 const has = (registry, id) => (registry ? registry.has(id) : true);
 const sysOf = (doc, id) => (doc.systems || []).find(s => s.use === id || s.use.startsWith(id + '.'));
@@ -74,7 +74,7 @@ export function defaultWorldGraphics(doc, registry) {
 }
 
 // ---- The quantities a person watches: what the loops' win and lose read (card.loop win/lose reads; the win's is
-// planner/loop.js winQuantity, the quantity the gate measures), as the end declares a person watches it:
+// kernel/loop.js winQuantity, the quantity the gate measures), as the end declares a person watches it:
 //   end.shown  { var, max?, label? } | { bar } | [...] | (config, doc) => [...]: what shows it when that is not the read
 //              itself (a measurement var, an event every racer emits); max a number, a var or { param } of the instance;
 //   end.once   the end happens at the first occurrence of what it reads: there is no quantity to watch;

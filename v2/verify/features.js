@@ -15,7 +15,7 @@
 // A failing feature is a problem `feature_<code>` naming the primitive and verb; the table of every feature goes into
 // the gate's report. A choice verb no reached state offers a value for (travel in a map without zones) is reported as
 // a warning (feature_unreached): its control is there, and this game gives it nothing to choose yet. The search is bounded by steps, not wall time, so the same document always gets the same table.
-import { cardLoop, loopExists } from '../planner/loop.js';
+import { cardLoop, loopExists } from '../kernel/loop.js';
 import { uncontrolledVerbs } from './controls.js';
 import { instanceVerbs, choiceValues } from '../primitives/engine/runtime-lib-controls.js';
 import { absentParticipants, startOfPlay } from '../planner/content.js';

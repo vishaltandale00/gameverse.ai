@@ -12,7 +12,7 @@
 // The smallest composing companion set wins (fewest primitives, then declaration order); a bundle never exceeds
 // MAX_BUNDLE primitives. Nothing here names a primitive, a genre or a game.
 import { requirementsOf, satisfying, isSpace, isGraphics, isGenerator } from './catalog.js';
-import { cardLoop } from './loop.js';
+import { cardLoop } from '../kernel/loop.js';
 import { vocabIndex } from './select.js';
 import { isStr, isObj } from '../kernel/guards.js';
 

@@ -24,7 +24,7 @@
 // example); placeContent(doc) deterministically places archetypes that exist but nothing puts in the world.
 import { placements, spawnRules, spawnEffects } from './census.js';
 import { spawnerId } from './engage.js';
-import { cardLoop } from './loop.js';
+import { cardLoop } from '../kernel/loop.js';
 import { spaceExtent } from './world.js';
 import { matches } from '../primitives/gameplay/modes-lib-util.js';
 import { createWorld } from '../kernel/world.js';

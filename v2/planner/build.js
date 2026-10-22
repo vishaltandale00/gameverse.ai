@@ -47,7 +47,7 @@
 import { documentedBy } from './compose-check.js';
 import { spaceVariants, requirementsOf, satisfying, isSpace, dataShapes } from './catalog.js';
 import { contractsOf } from './content.js';
-import { cardLoop } from './loop.js';
+import { cardLoop } from '../kernel/loop.js';
 import { isAvatar, unplayedLoops } from './play-spec.js';
 import { spaceSlug } from './select.js';
 import { unfurnishable } from './world.js';

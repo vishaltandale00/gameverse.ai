@@ -27,7 +27,7 @@
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
 import { checkComposition, capsOf } from './compose-check.js';
 import { resolveAdapters, adaptersFor, adapterInstanceId, uniqueId, instanceIds, keepMashupAdapters } from './adapters.js';
-import { cardLoop, endsGame, composeLoop, loopServes } from './loop.js';
+import { cardLoop, endsGame, composeLoop, loopServes } from '../kernel/loop.js';
 import { readsOf, drivesOf, drivesOwn, drivesLoop, drivesBy, ownersOf, logicOf, playerChanges, LOOP_CODES } from './loop-check.js';
 import { preset, coreOf, declaredOutcomes, skinSections, innerOf } from './presets.js';
 import { mashupSides } from './play-spec.js';
@@ -201,7 +201,7 @@ const problemEnd = (registry, p) => { const loop = cardLoop(cardOf(registry, p.p
 
 /** The text of what a loop end reads. @param {import('./loop-check.js').LoopReads | null} r */
 const readsText = r => (!r ? 'nothing declared' : r.component ? `the ${r.of || 'opponents'}' "${r.component}"` : r.event ? `the event "${r.event}"` : `the var "${r.var}"`);
-/** @param {import('./loop.js').ReadsBy | undefined} by */
+/** @param {import('../kernel/loop.js').ReadsBy | undefined} by */
 const byText = by => (by ? [by.actions?.length && `actions ${by.actions.join('/')}`, by.effects?.length && `effects ${by.effects.join('/')}`, by.events?.length && `events ${by.events.join('/')}`, by.movement && 'movement'].filter(Boolean).join(', ') : '') || 'nothing declared';
 
 /**
@@ -243,7 +243,7 @@ function answers(registry, logic, need, { reads, used }) {
     if (name && (card.provides?.vars || []).some((/** @type {string} */ v) => v === name || String(name).startsWith(v + '.') || (v.endsWith('*') && String(name).startsWith(v.slice(0, -1))))) return true;
     if ((by?.effects || []).some(e => logic.owners.effect.get(e) === card.id)) return true;
     if ((by?.actions || []).some(a => (card.provides?.actions || []).includes(a))) return true;
-    return Boolean(by) && playerChanges(registry, card, /** @type {import('./loop.js').ReadsBy} */ (by), { logic, used });
+    return Boolean(by) && playerChanges(registry, card, /** @type {import('../kernel/loop.js').ReadsBy} */ (by), { logic, used });
   };
 }
 

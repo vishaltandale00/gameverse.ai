@@ -8,7 +8,7 @@ import { selectPrimitives } from '../v2/planner/select.js';
 import { preset } from '../v2/planner/presets.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { normalize } from '../v2/planner/decompose.js';
-import { cardLoop, endsGame, loopServes } from '../v2/planner/loop.js';
+import { cardLoop, endsGame, loopServes } from '../v2/kernel/loop.js';
 import { readsOf, drivesOf, loopProblems, LOOP_CODES } from '../v2/planner/loop-check.js';
 import { fakeWriter, buildAnswer } from './v2-p-pipeline-fixtures.js';
 

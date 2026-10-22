@@ -11,7 +11,7 @@ import { servesContext, MAX_LIST } from '../v2/planner/retrieval.js';
 import { checkComposition, documentedBy } from '../v2/planner/compose-check.js';
 import { resolveAdapters } from '../v2/planner/adapters.js';
 import { buildCatalogue, dataShapes, isSpace, isGenerator, isGraphics } from '../v2/planner/catalog.js';
-import { cardLoop } from '../v2/planner/loop.js';
+import { cardLoop } from '../v2/kernel/loop.js';
 import { normalize } from '../v2/planner/decompose.js';
 import { preflight, DOC_SCHEMA } from '../v2/kernel/document.js';
 import { Logic } from '../v2/kernel/logic.js';

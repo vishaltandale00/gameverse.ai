@@ -1,5 +1,5 @@
 // What a person plays toward is on screen: the quantity a loop's win reads and the quantity its lose reads (card.loop
-// win/lose reads; the win's is planner/loop.js winQuantity, the one the gate measures), as the end declares a person
+// win/lose reads; the win's is kernel/loop.js winQuantity, the one the gate measures), as the end declares a person
 // watches it (end.shown, end.once). Derived for the HUD by graphics/ui-defaults.js hudGoals, never from a list of
 // primitives; displayed by the HUD or by another mounted UI whose card declares it displays it (card.displays).
 import test from 'node:test';
@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { TEMPLATES } from '../v2/templates/registry.js';
 import { catalogue, PRIMITIVES } from '../v2/primitives/index.js';
 import { hostDocument } from '../v2/web/host-doc.js';
-import { cardLoop, readsOf, winQuantity, loopInstances, endsGame } from '../v2/planner/loop.js';
+import { cardLoop, readsOf, winQuantity, loopInstances, endsGame } from '../v2/kernel/loop.js';
 import { hudGoals } from '../v2/primitives/graphics/ui-defaults.js';
 import { hudModel } from '../v2/primitives/graphics/ui-hud.js';
 import { mount } from './v2-p-ui-dom.js';

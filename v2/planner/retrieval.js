@@ -23,7 +23,7 @@
 // Nothing here names a primitive, a genre or a game.
 import { resolveAdapters } from './adapters.js';
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
-import { cardLoop, loopServes } from './loop.js';
+import { cardLoop, loopServes } from '../kernel/loop.js';
 import { servesInteraction, vocabIndex } from './select.js';
 import { formBundle, bundleLabel } from './bundles.js';
 import { mashupSides } from './play-spec.js';

@@ -10,7 +10,7 @@ import { controlsOf, controlledMaker, hostPreflight, ControlsMissing, uncontroll
 import { verbInstances, loopVerbs } from '../v2/primitives/engine/runtime-lib-controls.js';
 import { compile, sample } from '../v2/primitives/engine/runtime-lib-input.js';
 import { touchButtons } from '../v2/primitives/engine/input-actions.js';
-import { cardLoop } from '../v2/planner/loop.js';
+import { cardLoop } from '../v2/kernel/loop.js';
 import { INTERACTIONS } from '../v2/primitives/gameplay/modes-lib-mode.js';
 
 const { registry, logic } = await liveCatalogue();

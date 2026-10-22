@@ -13,7 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildCatalogue } from '../v2/planner/catalog.js';
-import { cardLoop, readsOf, loopInstances } from '../v2/planner/loop.js';
+import { cardLoop, readsOf, loopInstances } from '../v2/kernel/loop.js';
 import { catalogueDocuments } from './v2-catalogue-documents.js';
 import { preflight } from '../v2/kernel/document.js';
 import { sideDecl, sideOf, onPlayerSide, sidesOf, staticSides } from '../v2/kernel/sides.js';

@@ -32,7 +32,7 @@
 // Each failure is a stable problem code with a path, a hint and `need` (what is missing, as data) that the preset's
 // structural repair (presets.js repairLoop) and the build's loop steps (build-steps.js) act on. Nothing here names a
 // primitive, a genre or a game: every rule reads a card declaration.
-import { readsOf, cardLoop, endsGame, effectsIn, loopInstances, winOwner, unwired, evaluatesEndings, hostOf } from './loop.js';
+import { readsOf, cardLoop, endsGame, effectsIn, loopInstances, winOwner, unwired, evaluatesEndings, hostOf } from '../kernel/loop.js';
 import { contractsOf, participantsOf } from './content.js';
 import { spawnRules, placedBy } from './census.js';
 import { defaultsOf } from './catalog.js';
@@ -43,13 +43,13 @@ import { staticSides, playerSides } from '../kernel/sides.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
-/** @typedef {import('./loop.js').Loop} Loop */
-/** @typedef {import('./loop.js').LoopEnd} LoopEnd */
+/** @typedef {import('../kernel/loop.js').Loop} Loop */
+/** @typedef {import('../kernel/loop.js').LoopEnd} LoopEnd */
 /**
  * The state a loop's win (or lose) reads: a component of its opponents (or the player, or every participant), an
  * event count or a var. Declared as win.reads; a `when` template's count/var is its read when none is declared.
  * `from`: the primitive whose code writes it (when not this one or the component's owner); `by`: what changes it.
- * @typedef {{ component?: string, of?: string, event?: string, var?: string, from?: string, by?: import('./loop.js').ReadsBy }} LoopReads
+ * @typedef {{ component?: string, of?: string, event?: string, var?: string, from?: string, by?: import('../kernel/loop.js').ReadsBy }} LoopReads
  */
 /**
  * What a problem says is missing, as data for repair and re-planning. `pending`: the list param whose entries (content
@@ -58,7 +58,7 @@ import { staticSides, playerSides } from '../kernel/sides.js';
  * archetypes it would drive, and `by`: what its driven entities must be able to do (the loop's lose.reads.by).
  * @typedef {{ kind: 'participants' | 'seat' | 'opponent' | 'group' | 'component' | 'owner' | 'action' | 'event' | 'var' | 'win' | 'lose' | 'reads' | 'driver',
  *   param?: string, min?: number, where?: Record<string, unknown>, group?: string, component?: string, archetypes?: string[], owners?: string[],
- *   event?: string, var?: string, of?: string, pending?: string, control?: string, loop?: string, by?: import('./loop.js').ReadsBy }} LoopNeed
+ *   event?: string, var?: string, of?: string, pending?: string, control?: string, loop?: string, by?: import('../kernel/loop.js').ReadsBy }} LoopNeed
  */
 /**
  * A card's drives declaration, normalised (card.drives; types.d.ts Drives).
@@ -68,9 +68,9 @@ import { staticSides, playerSides } from '../kernel/sides.js';
  * @typedef {{ code: string, path: string, message: string, hint: string, severity: 'error' | 'warning', stage: 'loop', primitive: string, need: LoopNeed }} LoopProblem
  */
 /** @typedef {{ logic?: LogicLike | null, core?: Iterable<string> | null, opponent?: string | null }} LoopCheckOptions */
-/** @typedef {import('./loop.js').LoopInstance} LoopInstance */
+/** @typedef {import('../kernel/loop.js').LoopInstance} LoopInstance */
 
-// The win reading the composition check shares (planner/loop.js): re-exported for this module's callers.
+// The win reading the composition check shares (kernel/loop.js): re-exported for this module's callers.
 export { effectsIn, loopInstances, winOwner, unwired, evaluatesEndings };
 
 export const LOOP_CHECK_VERSION = 'loop-check/0.1';
@@ -102,7 +102,7 @@ export const drivesOwn = d => !d.components.length && !d.loops.length && !d.targ
 export const drivesLoop = (d, use, loop) => d.loops.some(r => satisfies(use, r)) || (d.targets && Boolean(loop?.targets));
 /**
  * Can what a driver's entities do change what a loop end reads (its reads.by)? Their declared actions, effects, events
- * or movement, plus `effects`: the effects its instance's action data runs. @param {Driving} d @param {import('./loop.js').ReadsBy} by @param {string[]} [effects]
+ * or movement, plus `effects`: the effects its instance's action data runs. @param {Driving} d @param {import('../kernel/loop.js').ReadsBy} by @param {string[]} [effects]
  */
 export function drivesBy(d, by, effects = []) {
   const has = (/** @type {string[] | undefined} */ want, /** @type {string[]} */ got) => (want || []).some(x => got.includes(x));
@@ -347,7 +347,7 @@ export function loopReport(doc, registry, { logic = null, core = null, opponent 
       // pending until a draft, but only when the document declares a player-driven way to change it (what its reads.by
       // names: playerChanges, or the player's own movement, which selection completes with a base locomotion for avatar
       // play); otherwise no content can drive it and the collection lacks a primitive.
-      const hooked = signal === 'idle' && (!reads.by || Boolean(reads.by.movement) || [...used].some(id => playerChanges(registry, cardWithId(registry, id), /** @type {import('./loop.js').ReadsBy} */ (reads.by), { logic: lg, used })));
+      const hooked = signal === 'idle' && (!reads.by || Boolean(reads.by.movement) || [...used].some(id => playerChanges(registry, cardWithId(registry, id), /** @type {import('../kernel/loop.js').ReadsBy} */ (reads.by), { logic: lg, used })));
       if (signal !== true) push(LOOP_CODES.unaffected, l, l.path, `its win counts the ${what} "${name}", which no player-driven primitive of the document produces${signal === 'idle' ? hooked ? ' (its providers are driven by nothing in the document yet)' : ` (its providers are driven by nothing in the document, and no player-driven primitive of it declares what changes it: ${byText(reads.by || {})})` : ''}`, `add a primitive whose player verbs (or the player's movement) produce ${what} ${name}`, { kind: what, [what]: name, ...(hooked ? { pending: 'drive' } : {}) });
     }
   }
@@ -435,7 +435,7 @@ export const movesPlayer = card => Boolean(card) && ((isStr(card.locomotion) && 
  * (its own player verbs, or a space capability it needs while the collection moves the player's body: movesPlayer) and
  * provides one of the actions or events `by` names (any event for '*'), moves the player's body when `by` names movement, or
  * runs effects from its params when `by` names an effect a primitive of `used` (or the card itself) owns.
- * @param {RegistryLike} registry @param {any} card @param {import('./loop.js').ReadsBy} by @param {{ logic: LogicLike, used: Iterable<unknown> }} context
+ * @param {RegistryLike} registry @param {any} card @param {import('../kernel/loop.js').ReadsBy} by @param {{ logic: LogicLike, used: Iterable<unknown> }} context
  */
 export function playerChanges(registry, card, by, { logic, used }) {
   if (!card) return false;
@@ -545,7 +545,7 @@ export function driversIn(doc, registry) {
   });
   return out;
 }
-/** @param {import('./loop.js').ReadsBy} by */
+/** @param {import('../kernel/loop.js').ReadsBy} by */
 const byText = by => [by.actions?.length && `actions ${by.actions.join('/')}`, by.effects?.length && `effects ${by.effects.join('/')}`, by.events?.length && `events ${by.events.join('/')}`, by.movement && 'movement'].filter(Boolean).join(', ') || 'nothing declared';
 /** @param {LoopReads | null} r */
 const readsText = r => (!r ? 'nothing declared' : r.component ? `the ${r.of || 'opponents'}' "${r.component}"` : r.event ? `the event "${r.event}"` : `the var "${r.var}"`);

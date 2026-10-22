@@ -38,7 +38,7 @@ import { repairDocument } from './repair.js';
 import { configureGenerators, furnishWorld, planWorld, needSets, contentOfGenerator, selectedContent } from './world.js';
 import { contractsOf, participantsOf, placeParticipants } from './content.js';
 import { isAvatar, mashupSides } from './play-spec.js';
-import { cardLoop, composeLoop } from './loop.js';
+import { cardLoop, composeLoop } from '../kernel/loop.js';
 import { engageDocument } from './engage.js';
 import { applySkins, ensureInstanceFields } from './adapters.js';
 import { loopProblems, loopReport, readsOf, evaluatesEndings, effectsIn, ownersOf, logicOf, drivesBy, drivesOwn, driversIn } from './loop-check.js';
@@ -47,8 +47,8 @@ import { isList, isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** @typedef {import('../kernel/types.js').LogicLike} LogicLike */
-/** @typedef {import('./loop.js').Loop} Loop */
-/** @typedef {import('./loop.js').LoopEnd} LoopEnd */
+/** @typedef {import('../kernel/loop.js').Loop} Loop */
+/** @typedef {import('../kernel/loop.js').LoopEnd} LoopEnd */
 /** @typedef {import('./decompose.js').Decomposition} Decomposition */
 /** @typedef {import('./select.js').Selection} Selection */
 /** How a space's zones are written. @typedef {{ exits: boolean, rect: boolean, range?: boolean, bounds: boolean, slot?: boolean, extent: number[] | null, length?: number }} ZoneShape */
