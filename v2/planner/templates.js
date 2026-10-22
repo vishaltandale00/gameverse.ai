@@ -200,13 +200,22 @@ export function pickForm(templates, registry) {
       template: template('this concept read as a game or genre (a joined game keeps its own); none when it is read as a theme, setting or character'),
       relation: choice(READING_RELATIONS, 'how the concept read as a game joins the primary (nested or union); none when it is read as a theme, setting or character'),
     }), 'every concept the idea can ALSO mean another way, so the player is asked instead of guessed for: a name that is both a game (its loop is played) and a character or theme in another game, or a game that could join the primary the other way; [] when the idea reads one way'),
-    mechanics: strictArr(strictObj({
-      name: text('the mechanic as a short verb phrase, as the idea says it'),
-      says: text('the idea\'s own words that ask for this mechanic, copied exactly from the idea (never a theme\'s, a setting\'s, a character\'s or a game\'s words)'),
-      verb: choice([...catalogueVerbs(registry), 'none'], 'the player verb a primitive declares (card.loop.verbs) that IS this mechanic; none when no declared verb is'),
-      importance: choice(IMPORTANCE, 'core: the idea is not itself without it; extra: it adds to the idea'),
-    }), 'every player-facing mechanic the idea names (what the player can DO) that the chosen templates\' loops do not declare (each template lists its verbs); [] when the templates give the idea all it names'),
+    mechanics: mechanicsField(registry, 'idea', 'every player-facing mechanic the idea names (what the player can DO) that the chosen templates\' loops do not declare (each template lists its verbs); [] when the templates give the idea all it names'),
   }) };
+}
+
+/**
+ * The strict mechanics field: the pick's (`what` 'idea') and a revision's (`what` 'change'), one shape and one rule: each
+ * entry's `says` is the request's own words (saidMechanics), its verb one the catalogue declares or none.
+ * @param {RegistryLike} registry @param {'idea' | 'change'} what @param {string} description
+ */
+export function mechanicsField(registry, what, description) {
+  return strictArr(strictObj({
+    name: text(`the mechanic as a short verb phrase, as the ${what} says it`),
+    says: text(`the ${what}'s own words that ask for this mechanic, copied exactly from the ${what}${what === 'idea' ? ' (never a theme\'s, a setting\'s, a character\'s or a game\'s words)' : ''}`),
+    verb: choice([...catalogueVerbs(registry), 'none'], 'the player verb a primitive declares (card.loop.verbs) that IS this mechanic; none when no declared verb is'),
+    importance: choice(IMPORTANCE, `core: the ${what} is not itself without it; extra: it adds to the ${what}`),
+  }), description);
 }
 
 /**
@@ -260,8 +269,10 @@ export const narrowPick = v => ({
   games: objects(prop(v, 'games')).map(c => ({ ...narrowPrimary(c), relation: String(c.relation ?? '') })),
   themes: objects(prop(v, 'themes')).map(c => ({ name: String(c.name ?? ''), kind: String(c.kind ?? '') })),
   readings: objects(prop(v, 'readings')).map(c => ({ name: String(c.name ?? ''), kind: String(c.kind ?? ''), template: String(c.template ?? ''), relation: String(c.relation ?? '') })),
-  mechanics: objects(prop(v, 'mechanics')).map(c => ({ name: String(c.name ?? ''), says: String(c.says ?? ''), verb: String(c.verb ?? ''), importance: String(c.importance ?? '') })),
+  mechanics: narrowMechanics(prop(v, 'mechanics')),
 });
+/** Mechanics as written, narrowed (strings kept as written). @param {unknown} v @returns {PickMechanic[]} */
+export const narrowMechanics = v => objects(v).map(c => ({ name: String(c.name ?? ''), says: String(c.says ?? ''), verb: String(c.verb ?? ''), importance: String(c.importance ?? '') }));
 
 /** The entry events a document's loops declare (card.loop.involves; compose.js entryTriggers). @param {Record<string, any>} doc @param {RegistryLike} registry */
 export function entryEvents(doc, registry) {
@@ -274,23 +285,51 @@ const plain = t => t.toLowerCase().replace(/\s+/g, ' ').trim();
 const spanOf = (text, part) => { const p = plain(part), i = p ? plain(text).indexOf(p) : -1; return i < 0 ? null : [i, i + p.length]; };
 
 /**
+ * The rule codes a request's mechanics are held to its words by, and what the request is called: the pick's (the idea)
+ * and a revision's (the change, CHANGE_RULES). @typedef {{ unsaid: string, concept: string | null, what: string }} SaidRule
+ */
+/** @type {SaidRule} */
+const PICK_SAID = { unsaid: 'pick_mechanic_unsaid', concept: 'pick_mechanic_is_concept', what: 'idea' };
+
+/**
+ * Mechanics held to the words of the request that names them: each mechanic's `says` is written in `words`, and none of
+ * it is the words of one of `concepts` where the request writes them (a concept's words are that concept's, a mechanic's
+ * its own). -> problems at mechanics[i].says
+ * @param {readonly PickMechanic[]} mechanics @param {ReadonlyArray<{ name: string }>} concepts @param {string} words @param {SaidRule} rule @returns {FormProblem[]}
+ */
+export function saidProblems(mechanics, concepts, words, rule) {
+  /** @type {FormProblem[]} */
+  const out = [];
+  const spans = concepts.map(c => ({ name: c.name, span: spanOf(words, c.name) }));
+  mechanics.forEach((m, i) => {
+    const at = spanOf(words, m.says ?? '');
+    if (!at) { out.push({ code: rule.unsaid, field: `mechanics[${i}].says`, message: `the ${rule.what} does not say "${m.says ?? ''}": a mechanic is one the ${rule.what} names, its words copied exactly; remove it from mechanics when the ${rule.what} does not name it (mechanics: [] when the ${rule.what} names none)` }); return; }
+    // A concept's words: where the text writes its name, or (a name not written as such) the name itself.
+    const c = spans.find(x => (x.span ? x.span[0] < at[1] && at[0] < x.span[1] : false) || (plain(x.name) !== '' && (plain(x.name).includes(plain(m.says ?? '')) || plain(m.says ?? '').includes(plain(x.name)))));
+    if (c && rule.concept) out.push({ code: rule.concept, field: `mechanics[${i}].says`, message: `"${m.says}" is words of '${c.name}', a concept the pick names: a game is played by its template and a theme, setting or character restyles it, neither is a mechanic; remove it from mechanics when the ${rule.what} names no other` });
+  });
+  return out;
+}
+
+/**
  * The mechanics' words held to the idea (pick_mechanic_unsaid, pick_mechanic_is_concept): each mechanic's `says` is
  * written in the idea, and none of it is the words of a concept the pick names (the primary, a game, a theme) where the
  * idea writes them. The pick partitions the idea's words: a concept's are that concept's, a mechanic's its own.
  * @param {Pick} pick @param {string} prompt @returns {FormProblem[]}
  */
 export function mechanicProblems(pick, prompt) {
-  /** @type {FormProblem[]} */
-  const out = [];
-  const concepts = [pick.primary, ...pick.games, ...pick.themes].map(c => ({ name: c.name, span: spanOf(prompt, c.name) }));
-  pick.mechanics.forEach((m, i) => {
-    const at = spanOf(prompt, m.says ?? '');
-    if (!at) { out.push({ code: 'pick_mechanic_unsaid', field: `mechanics[${i}].says`, message: `the idea does not say "${m.says ?? ''}": a mechanic is one the idea names, its words copied exactly; remove it from mechanics when the idea does not name it (mechanics: [] when the idea names none)` }); return; }
-    // A concept's words: where the idea writes its name, or (a name not written as such) the name itself.
-    const c = concepts.find(x => (x.span ? x.span[0] < at[1] && at[0] < x.span[1] : false) || (plain(x.name) !== '' && (plain(x.name).includes(plain(m.says ?? '')) || plain(m.says ?? '').includes(plain(x.name)))));
-    if (c) out.push({ code: 'pick_mechanic_is_concept', field: `mechanics[${i}].says`, message: `"${m.says}" is words of '${c.name}', a concept the pick names: a game is played by its template and a theme, setting or character restyles it, neither is a mechanic; remove it from mechanics when the idea names no other` });
-  });
-  return out;
+  return saidProblems(pick.mechanics, [pick.primary, ...pick.games, ...pick.themes], prompt, PICK_SAID);
+}
+
+/**
+ * Mechanics split by their problems (saidProblems): `kept`, the ones the request names; `removed`, each entry that is no
+ * mechanic it names, with why. @param {readonly PickMechanic[]} mechanics @param {FormProblem[]} problems
+ * @returns {{ kept: PickMechanic[], removed: Array<{ name: string, says: string, why: string }> }}
+ */
+function splitSaid(mechanics, problems) {
+  const bad = new Map(problems.map(p => [Number(/\[(\d+)\]/.exec(p.field)?.[1]), p]));
+  return { kept: mechanics.filter((_, i) => !bad.has(i)),
+    removed: mechanics.flatMap((m, i) => { const p = bad.get(i); return p ? [{ name: m.name, says: m.says ?? '', why: `${p.code}: ${p.message}`.slice(0, 240) }] : []; }) };
 }
 
 /**
@@ -302,9 +341,7 @@ export function mechanicProblems(pick, prompt) {
  * @returns {{ kept: PickMechanic[], removed: Array<{ name: string, says: string, why: string }> }}
  */
 export function namedMechanics(pick, prompt) {
-  const bad = new Map(mechanicProblems(pick, prompt).map(p => [Number(/\[(\d+)\]/.exec(p.field)?.[1]), p]));
-  return { kept: pick.mechanics.filter((_, i) => !bad.has(i)),
-    removed: pick.mechanics.flatMap((m, i) => { const p = bad.get(i); return p ? [{ name: m.name, says: m.says ?? '', why: `${p.code}: ${p.message}`.slice(0, 240) }] : []; }) };
+  return splitSaid(pick.mechanics, mechanicProblems(pick, prompt));
 }
 
 /**
@@ -529,6 +566,58 @@ export async function askPick({ writer, escalate, attempts, prompt, templates, r
   const r = await askForm({ writer, escalate, attempts, calls, clock, system: pickSystem(templates, registry), user: `Idea: ${prompt}`, schema: pickForm(templates, registry), narrow,
     check: pick => checkPick(pick, { templates, registry, prompt }).problems, code: 'template_pick_failed', what: 'The template pick' });
   return { pick: r.value, stepPath: checkPick(r.value, { templates, registry }).stepPath, calls: r.calls, unnamed, unreadable };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// A revision's mechanics: the change's own words, in the pick's mechanics shape and held to the same rule.
+// ---------------------------------------------------------------------------------------------------------------
+
+/** The rules of a change's mechanics form, each with its stable code (the pick's mechanic rule, for a change). */
+export const CHANGE_RULES = Object.freeze({
+  change_form: 'the answer satisfies the change\'s mechanics form\'s schema: its fields, the verbs\' enum and patterns',
+  change_mechanic_unsaid: 'a mechanic is one the change names: its `says` is the change\'s own words, copied exactly',
+});
+/** A change names no concept: its mechanics are held to its words only. @type {SaidRule} */
+const CHANGE_SAID = { unsaid: 'change_mechanic_unsaid', concept: null, what: 'change' };
+
+/** The change's mechanics form: the pick's mechanics field (mechanicsField), for a change. @param {RegistryLike} registry @returns {ReplySchema} */
+export function changeMechanicsForm(registry) {
+  return { name: 'change_mechanics', schema: strictObj({
+    mechanics: mechanicsField(registry, 'change', 'every player-facing mechanic the change names (what the player can DO or use in play) that the game\'s verbs do not give; [] when the change names none'),
+  }) };
+}
+
+/** The change's mechanics form instructions: the game and the verbs its primitives give the player (declaredVerbs). @param {Record<string, any>} doc @param {RegistryLike} registry */
+export function changeMechanicsSystem(doc, registry) {
+  const verbs = [...declaredVerbs(doc, registry)].map(([verb, uses]) => `${verb} (${uses.join(', ')})`);
+  return `You read a change a person asks of an existing game and list the player mechanics it names that the game does not give.
+The game: ${String(doc.title ?? '')}${isStr(doc.logline) ? `: ${doc.logline}` : ''}
+What the player can do in it now (the verbs its primitives give): ${verbs.join('; ') || 'none'}
+
+Fill the form:
+- mechanics: what the player can DO or use in play that the change names and the game's verbs do not give ("give him a gun" in a racing game), each with the change's own words that ask for it (says, copied exactly), the declared verb that is it (none when no verb is) and whether the change needs it (core) or it adds to it (extra). A change to a setting, a speed, a size, a name, the look or the content is not a mechanic, and neither is a verb the game already gives. [] when the change names none.`;
+}
+
+/**
+ * The mechanics a change names, asked and checked (askForm): entries the change does not say are removed by code before
+ * the check and reported (`unnamed`), as the pick's are (namedMechanics); the change names no concept. A form still
+ * failing is a 422 'change_mechanics_failed'.
+ * @param {{ writer: Writer, escalate: Writer | null, attempts: number, change: string, doc: Record<string, any>, registry: RegistryLike, calls: TemplateCall[], clock: Clock }} args
+ * @returns {Promise<{ mechanics: PickMechanic[], unnamed: Array<{ name: string, says: string, why: string }>, calls: number }>}
+ */
+export async function askChangeMechanics({ writer, escalate, attempts, change, doc, registry, calls, clock }) {
+  const schema = changeMechanicsForm(registry);
+  /** @type {Array<{ name: string, says: string, why: string }>} */
+  let unnamed = [];
+  const narrow = (/** @type {unknown} */ v) => {
+    const all = narrowMechanics(prop(v, 'mechanics')), named = splitSaid(all, saidProblems(all, [], change, CHANGE_SAID));
+    unnamed = named.removed;
+    return { mechanics: named.kept };
+  };
+  const r = await askForm({ writer, escalate, attempts, calls, clock, system: changeMechanicsSystem(doc, registry), user: `Change: ${change}`, schema, narrow,
+    check: v => [...answerProblems(schema.schema, v).map(p => ({ code: 'change_form', field: p.path, message: p.message })), ...saidProblems(v.mechanics, [], change, CHANGE_SAID)],
+    code: 'change_mechanics_failed', what: 'The change\'s mechanics' });
+  return { mechanics: r.value.mechanics, unnamed, calls: r.calls };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -763,6 +852,19 @@ export function frameTuneForm(template, doc, { registry, logic }) {
   return { schema, narrow, check, apply, slots };
 }
 
+/** An extension's params form (extend.js paramsForm) with the mechanic it gives. @typedef {{ schema: ReplySchema, narrow: (v: unknown) => Record<string, unknown>, check: (v: Record<string, unknown>) => FormProblem[], apply: (d: Record<string, any>, v: Record<string, unknown>) => void, use: string, intent: string, mechanic: string }} ExtraForm */
+
+/**
+ * The params forms of the primitives extensions added, asked side by side (each checked and repaired on its own, askForm):
+ * the template path's content round asks them with its other forms, a revision's extension asks them alone.
+ * `forWhat`: what the params are set for ('the idea', or the change). -> each form's answer, in order
+ * @param {{ writer: Writer, escalate: Writer | null, attempts: number, calls: TemplateCall[], clock: Clock, system: string, code: string, title: string, extra: readonly ExtraForm[], forWhat: string }} args
+ * @returns {Promise<Array<{ value: Record<string, unknown>, calls: number }>>}
+ */
+export function askParamsForms({ title, extra, forWhat, ...base }) {
+  return Promise.all(extra.map(f => askForm({ ...base, user: `'${title}' also has "${f.mechanic}", given by ${f.use} (${f.intent}). Set its params for ${forWhat} (null keeps a param as the primitive declares it).`, schema: f.schema, narrow: f.narrow, check: f.check, what: `The ${f.schema.name} form` })));
+}
+
 /**
  * Ask every content form of the composed document in parallel (Promise.all), each checked and repaired on its own,
  * and apply the answers to a copy of the document: frame_tune, and one names form per template of the composition
@@ -775,7 +877,7 @@ export function frameTuneForm(template, doc, { registry, logic }) {
  * -> { doc, forms: [{ form, calls }], rounds (the most calls any one form made: they run side by side), answers }
  * @param {{ writer: Writer, escalate: Writer | null, attempts: number, template: Template, doc: Record<string, any>, pick: Pick, themes: Theme[],
  *   registry: RegistryLike, logic: LogicLike, calls: TemplateCall[], clock: Clock, parts?: ComposedPart[], onto?: Record<string, any>,
- *   extra?: Array<{ schema: ReplySchema, narrow: (v: unknown) => Record<string, unknown>, check: (v: Record<string, unknown>) => FormProblem[], apply: (d: Record<string, any>, v: Record<string, unknown>) => void, use: string, intent: string, mechanic: string }>,
+ *   extra?: ExtraForm[],
  *   reuse?: { frame: { value: any, calls: number }, named: Array<{ value: any, calls: number }> } | null }} args
  */
 export async function writeContent({ writer, escalate, attempts, template, doc, pick, themes, registry, logic, calls, clock, parts = [{ template, ids: definedIds(doc, registry) }], onto = doc, extra = [], reuse = null }) {
@@ -795,7 +897,7 @@ Write only what the form asks, in the game's theme. Ids and structure are fixed.
   const [frameAnswer, answers, extras] = await Promise.all([
     reuse ? kept(reuse.frame) : askForm({ ...base, user: `Write the logline of '${pick.title}' and set its tuning (each slot names its current value).`, schema: frame.schema, narrow: frame.narrow, check: frame.check, what: 'The frame_tune form' }),
     Promise.all(named.map((f, i) => reuse ? kept(reuse.named[i]) : askForm({ ...base, user: `Rewrite the text a person reads (names, titles, lines, descriptions) of every entry of '${pick.title}' that the template '${f.template.id}' (${f.template.concept}) brings, for its theme: ${f.sections.map(s => s.label).join('; ')}. Keep each one's role in the game.`, schema: f.schema, narrow: f.narrow, check: f.check, what: `The ${f.schema.name} form` }))),
-    Promise.all(extra.map(f => askForm({ ...base, user: `'${pick.title}' also has "${f.mechanic}", given by ${f.use} (${f.intent}). Set its params for the idea (null keeps a param as the primitive declares it).`, schema: f.schema, narrow: f.narrow, check: f.check, what: `The ${f.schema.name} form` }))),
+    askParamsForms({ ...base, title: pick.title, extra, forWhat: 'the idea' }),
   ]);
   const ta = performance.now();
   const out = structuredClone(onto);

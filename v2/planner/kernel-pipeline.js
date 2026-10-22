@@ -26,12 +26,12 @@ import { loopProblems } from './loop-check.js';
 import { loopCore } from './presets.js';
 import { catalogHash } from './catalog.js';
 import { quality as measureQuality } from '../verify/quality.js';
-import { obj, prop, str, list, isObj } from '../kernel/guards.js';
+import { obj, prop, str, list, isObj, isStr } from '../kernel/guards.js';
 import { TEMPLATES } from '../templates/registry.js';
-import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn, narrowPick, checkPick, chooseReading, templateLoops } from './templates.js';
-import { EXTEND_VERSION, extendDocument, extensionFaults, paramsForm, recordingWriter, unengaged } from './extend.js';
+import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn, narrowPick, checkPick, chooseReading, templateLoops, askChangeMechanics, askParamsForms } from './templates.js';
+import { modesIn } from '../primitives/gameplay/modes-lib-mode.js';
+import { EXTEND_VERSION, extendDocument, extendUntilPlayed, engageExtensions, paramsForm, recordingWriter, templateCoverage } from './extend.js';
 import { cardLoop } from '../kernel/loop.js';
-import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 import { explainProblems } from './explain.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
@@ -166,7 +166,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const composed = composeTemplates(pick, { templates, registry, logic });
     clock.codeMs += performance.now() - tc;
     if (!composed.doc || !composed.template) throw fail(composed.problems[0]?.code ?? 'template_composition_failed', 'composition', composed.problems);
-    const template = composed.template;
+    const template = composed.template, composedDoc = composed.doc;
     const used = composed.parts.map(p => p.template.id);
     // A check failing after composition is a defect of the template, or of the composition of several (never repaired around).
     const defect = used.length > 1 ? 'composition_defect' : 'template_defect';
@@ -185,79 +185,64 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const interactions = [...new Set(templateLoops(composed.parts[0].template, registry).loops.flatMap(l => l.interactions))];
     // The extension steps are the step path's machinery: time-boxed (cfg.stepPathMs) and reported (stepPath).
     const deadline = cfg.stepPathMs > 0 ? performance.now() + cfg.stepPathMs : null;
-    /** Per mechanic, the extension picks the gate proved do not work in the game. @type {Map<string, Array<{ id: string, why: string }>>} */
-    const dropped = new Map();
     const header = `Game idea: ${prompt}\nThe game: ${pick.title}: ${pick.premise}\nBuilt from the verified templates ${composed.parts.map(p => `'${p.template.id}' (${p.template.concept})`).join(' and ')}, played as ${interactions.join(' or ') || 'its loops are'}.`;
     const base0 = { registry, logic };
-    /** @type {Awaited<ReturnType<typeof extendDocument>>} */
-    let ext;
-    /** @type {Awaited<ReturnType<typeof writeContent>> | null} */
-    let content = null;
-    /** @type {Awaited<ReturnType<typeof gateVersion>>} */
-    let gate;
-    /** @type {ReturnType<typeof firstPlayable>} */
-    let fp;
+    /** The last content round's answers, kept when only the extensions change. @type {Awaited<ReturnType<typeof writeContent>> | null} */
+    let lastContent = null;
     let extensionCalls = 0, contentRounds = 0;
     /** @type {Record<string, unknown>} */
     let stepUse = {};
-    for (;;) {
-      ({ registry, logic } = base0);
-      t = performance.now();
-      const before = calls.length;
-      ext = await extendDocument({ deadline, doc: composed.doc, mechanics: pick.mechanics, registry, logic, writer: recordingWriter(writer, calls), attempts: cfg.modelAttempts, interactions,
-        header, gaps: { mode: cfg.gaps, service: gapService, max: cfg.maxGapPrimitives }, catalogue, stage: (name, detail) => ctx.stage(name, detail), dropped });
-      if (pick.mechanics.length) timings.extendMs = (timings.extendMs ?? 0) + ms(t);
-      else timings.extendMs = null;
-      extensionCalls += calls.length - before;
-      stepUse = { used: ext.coverage.some(c => c.by !== 'template'), mechanics: ext.coverage.filter(c => c.by !== 'template').map(c => c.mechanic), budgetMs: cfg.stepPathMs || null, ms: timings.extendMs, calls: extensionCalls };
-      if (stepUse.used) ctx.stage('step_path', { during: 'extension', mechanics: stepUse.mechanics, budgetMs: stepUse.budgetMs, ms: stepUse.ms, calls: extensionCalls });
-      checkpoint('extensions', { coverage: ext.coverage, added: ext.added, dropped: Object.fromEntries(dropped) });
-      if (ext.missing.length) throw fail('extension_missing', 'extension', ext.missing.map(c => ({ code: 'extension_missing', path: `mechanics.${c.mechanic}`, message: `"${c.mechanic}" (${c.importance}${c.verb !== 'none' ? `, verb '${c.verb}'` : ''}) is still missing: ${c.why}${dropped.has(c.mechanic) ? `; dropped as not working in the game: ${(dropped.get(c.mechanic) ?? []).map(d => `${d.id} (${d.why})`).join('; ')}` : ''}` })));
-      ({ registry, logic } = ext);
-      const extended = ext.doc;
-      const extUses = new Set(ext.coverage.filter(c => c.by === 'extension' || c.by === 'gap').flatMap(c => c.primitives));
-      /** @type {NonNullable<ReturnType<typeof paramsForm>>[]} */
-      const paramForms = [];
-      for (const use of ext.added) { const f = paramsForm(extended, use, { registry, logic }); if (f) paramForms.push(f); }
-      t = performance.now();
-      content = await writeContent({ writer, escalate, attempts: cfg.modelAttempts, template, doc: composed.doc, pick, themes: composed.themes, registry, logic, calls, clock, parts: composed.parts, onto: extended,
-        extra: paramForms.map(f => ({ ...f, mechanic: ext.coverage.find(c => c.primitives[0] === f.use)?.mechanic ?? f.use })), reuse: content?.answers ?? null });
-      timings.contentMs = (timings.contentMs ?? 0) + ms(t);
-      contentRounds += content.rounds;
-      ctx.stage('content_written', { ms: timings.contentMs, forms: content.forms });
-      // Checks of the document that will be played: preflight, the loop check, first playable. A template is complete,
-      // so nothing of it is engaged, furnished or isolated here; an extension's primitives are engaged as their cards
-      // declare (engage.js `only`), and the player must get their verbs.
-      tc = performance.now();
-      /** @type {Record<string, any>} */
-      let played = content.doc;
-      if (extUses.size) {
-        const unfilled = unengaged(played, [...extUses], { registry, logic });
-        if (unfilled.length) throw fail('extension_unengaged', 'extension', unfilled.map(u => ({ code: 'extension_unengaged', path: u.use, message: u.message })));
-        const engaged = engageDocument(/** @type {Doc} */ (played), registry, logic, { only: extUses });
-        if (!engaged.ok) throw fail('extension_unengaged', 'extension', engaged.errors);
-        played = engaged.doc;
-        const unusable = ext.added.filter(use => { const card = registry.get(use)?.card; return (cardLoop(card)?.verbs ?? []).length > 0 && !instancesIn(played).some(i => i.use === use && instanceVerbs(card, i, played).length > 0); });
-        if (unusable.length) throw fail('extension_unusable', 'extension', unusable.map(use => ({ code: 'extension_unusable', path: use, message: `the player gets none of ${use}'s verbs` })));
-      }
-      const pre = preflight(played, registry, logic);
-      if (!pre.ok) throw fail(defect, 'preflight', pre.errors);
-      const loop = loopProblems(pre.doc, registry, { logic });
-      if (loop.length) throw fail(defect, 'loop', loop);
-      fp = firstPlayable(pre.doc, registry, logic, { seed, protect: new Set(instancesIn(pre.doc).map(i => String(i.use))), maxIsolations: 0, furnish: false });
-      clock.codeMs += performance.now() - tc;
-      if (!fp.ok) throw fail(defect, 'first_playable', [...fp.errors, ...fp.problems]);
-      timings.composeMs = Math.round(clock.codeMs);
-      // The version gate every new version passes (version-gate.js): the same checks a revision of it will pass.
-      const tg = performance.now();
-      gate = await gateVersion(fp.doc, { registry, logic, playable: true, template });
-      timings.gateMs = (timings.gateMs ?? 0) + ms(tg);
-      if (gate.ok && gate.doc && gate.verification) break;
-      const faults = extensionFaults(gate.problems, ext.coverage);
-      if (!faults.length || (deadline !== null && performance.now() > deadline)) throw fail(gate.stage === 'gate' ? 'not_playable' : defect, gate.stage ?? 'gate', gate.problems, gate.doc);
-      for (const f of faults) dropped.set(f.mechanic, [...(dropped.get(f.mechanic) ?? []), { id: f.id, why: f.why }]);
-      ctx.stage('extension_dropped', { picks: faults });
-    }
+    const { ext, played: { gate, fp, written: content } } = await extendUntilPlayed({ deadline, stage: (name, detail) => ctx.stage(name, detail),
+      extend: async dropped => {
+        t = performance.now();
+        const before = calls.length;
+        const ext = await extendDocument({ deadline, doc: composedDoc, mechanics: pick.mechanics, ...base0, writer: recordingWriter(writer, calls), attempts: cfg.modelAttempts, interactions,
+          header, gaps: { mode: cfg.gaps, service: gapService, max: cfg.maxGapPrimitives }, catalogue, stage: (name, detail) => ctx.stage(name, detail), dropped });
+        if (pick.mechanics.length) timings.extendMs = (timings.extendMs ?? 0) + ms(t);
+        else timings.extendMs = null;
+        extensionCalls += calls.length - before;
+        stepUse = { used: ext.coverage.some(c => c.by !== 'template'), mechanics: ext.coverage.filter(c => c.by !== 'template').map(c => c.mechanic), budgetMs: cfg.stepPathMs || null, ms: timings.extendMs, calls: extensionCalls };
+        if (stepUse.used) ctx.stage('step_path', { during: 'extension', mechanics: stepUse.mechanics, budgetMs: stepUse.budgetMs, ms: stepUse.ms, calls: extensionCalls });
+        checkpoint('extensions', { coverage: ext.coverage, added: ext.added, dropped: Object.fromEntries(dropped) });
+        return ext;
+      },
+      missing: problems => fail('extension_missing', 'extension', problems),
+      play: async ext => {
+        ({ registry, logic } = ext);
+        const extended = ext.doc;
+        /** @type {NonNullable<ReturnType<typeof paramsForm>>[]} */
+        const paramForms = [];
+        for (const use of ext.added) { const f = paramsForm(extended, use, { registry, logic }); if (f) paramForms.push(f); }
+        t = performance.now();
+        const written = await writeContent({ writer, escalate, attempts: cfg.modelAttempts, template, doc: composedDoc, pick, themes: composed.themes, registry, logic, calls, clock, parts: composed.parts, onto: extended,
+          extra: paramForms.map(f => ({ ...f, mechanic: ext.coverage.find(c => c.primitives[0] === f.use)?.mechanic ?? f.use })), reuse: lastContent?.answers ?? null });
+        lastContent = written;
+        timings.contentMs = (timings.contentMs ?? 0) + ms(t);
+        contentRounds += written.rounds;
+        ctx.stage('content_written', { ms: timings.contentMs, forms: written.forms });
+        // Checks of the document that will be played: preflight, the loop check, first playable. A template is complete,
+        // so nothing of it is engaged, furnished or isolated here; an extension's primitives are engaged as their cards
+        // declare (engage.js `only`), and the player must get their verbs.
+        tc = performance.now();
+        const engaged = engageExtensions(written.doc, ext, { registry, logic });
+        if (!engaged.ok) throw fail(engaged.code, 'extension', engaged.problems);
+        const pre = preflight(engaged.doc, registry, logic);
+        if (!pre.ok) throw fail(defect, 'preflight', pre.errors);
+        const loop = loopProblems(pre.doc, registry, { logic });
+        if (loop.length) throw fail(defect, 'loop', loop);
+        const fp = firstPlayable(pre.doc, registry, logic, { seed, protect: new Set(instancesIn(pre.doc).map(i => String(i.use))), maxIsolations: 0, furnish: false });
+        clock.codeMs += performance.now() - tc;
+        if (!fp.ok) throw fail(defect, 'first_playable', [...fp.errors, ...fp.problems]);
+        timings.composeMs = Math.round(clock.codeMs);
+        // The version gate every new version passes (version-gate.js): the same checks a revision of it will pass.
+        const tg = performance.now();
+        const gate = await gateVersion(fp.doc, { registry, logic, playable: true, template });
+        timings.gateMs = (timings.gateMs ?? 0) + ms(tg);
+        return { gate, fp, written };
+      },
+      refuse: ({ gate }) => fail(gate.stage === 'gate' ? 'not_playable' : defect, gate.stage ?? 'gate', gate.problems, gate.doc),
+    });
+    if (!gate.doc || !gate.verification) throw Error('extendUntilPlayed returned an ungated version');
     const v = gate.verification;
     t = performance.now();
     const quality = qualityReport(v, registry, logic, { budgetMs: cfg.qualityMs });
@@ -438,14 +423,24 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
   /**
    * A revision: a new immutable version checked like a new game (ARCHITECTURE §4). The change applies to the version
    * the job names, else to the game's latest version when the job runs (a change queued behind another builds on it).
-   * A parameter tweak (one strict model choice among the declared params; on a template game its tune slots within the ranges its template tunes them) else the model's ops,
-   * preflighted (a failing draft goes back to the model with the errors; nothing is repaired around, stubbed or
-   * dropped). Then the version gate (version-gate.js) on the document a person plays, against the base version
-   * verified with the same budgets: preflight, the template's tune ranges, composition, loop, controls, the publish
-   * gate with its feature checks, no feature that worked stops working, and every named bot that won the base still
-   * wins. A failing gate refuses the version (422) with its stage and problems. The version published is the revised
-   * document itself (the host adds its input and UI when it mounts it); its provenance names the base, the change and
-   * every op that turns the base into it.
+   * One parallel model round first: a parameter tweak (one strict model choice among the declared params; on a template
+   * game its tune slots within the ranges its template tunes them) and the player mechanics the change names (one strict
+   * form in the pick's mechanics shape, held to the change's own words: templates.js askChangeMechanics).
+   * - A mechanic whose verb no primitive of the game gives (extend.js templateCoverage) is built by the extension step,
+   *   exactly as a create builds an idea's extra mechanics (extend.js extendDocument: one strict option question over
+   *   cards proven valid by declarations, the gap layer, else the change fails naming it: 422 'extension_missing'); its
+   *   params forms are asked side by side, its primitives engaged (engage.js `only`) and usable, the game's content kept;
+   *   an extension the gate proves inert is dropped and its step asked again (extend.js extendUntilPlayed). A mechanic is
+   *   never faked with whatever the document's schemas allow.
+   * - A change that names no new mechanic takes the tweak, else the model's ops, preflighted (a failing draft goes back to
+   *   the model with the errors; nothing is repaired around, stubbed or dropped).
+   * Then the version gate (version-gate.js) on the document a person plays, against the base version verified with the
+   * same budgets: preflight, the template's tune ranges, composition, loop, controls, the publish gate with its feature
+   * checks, no feature that worked stops working, and every named bot that won the base still wins. A failing gate
+   * refuses the version (422) with its stage and problems. The version published is the revised document itself (the host
+   * adds its input and UI when it mounts it); its provenance names the base, the change and every op that turns the base
+   * into it. modelCalls counts every call, modelRounds the sequential ones (the first round's most calls, then the ops'
+   * drafts, or the extension questions and the params round).
    * @param {JobSpec} job @param {JobContext} ctx
    */
   async function revise(job, ctx) {
@@ -457,7 +452,8 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const previous = obj(job.base !== undefined && job.base !== null ? await ctx.store.version(job.gameId, Number(job.base)) : await ctx.store.latest(job.gameId));
     if (!previous.doc) throw Object.assign(Error('That version is missing.'), { status: 404 });
     const baseVersion = Number(previous.version ?? job.base);
-    const { registry, logic } = await catalogue(previous.doc);
+    const stored0 = await catalogue(previous.doc);
+    let { registry, logic } = stored0;
     // The stored document becomes a Doc through preflight (published versions are preflighted documents, so this is
     // the same document unless the catalogue changed since).
     const stored = preflight(previous.doc, registry, logic);
@@ -467,11 +463,34 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const template = versionTemplate(previous.provenance, /** @type {readonly Template[]} */ (TEMPLATES));
     // A revise job carries its change (api.mjs); a missing one is written to the models as empty.
     const change = str(job.change);
+    const checkpoint = (/** @type {string} */ name, /** @type {unknown} */ value) => ctx.checkpoint?.(name, value);
     ctx.stage('revising', { change: job.change, base: baseVersion });
-    // A parameter tweak first: one small strict model choice among the declared params (doc-revise.js tweakDocument).
+    /** Every model call of the revision. @type {import('./templates.js').TemplateCall[]} */
+    const calls = [];
+    const clock = { codeMs: 0 }, escalate = writers.code || null;
+    // The first round, side by side: the tweak and the mechanics the change names (neither waits for the other).
     let t = performance.now();
-    const tweak = await tweakDocument(before, job.change, { registry, writer: spec, attempts: cfg.modelAttempts, limits: template ? tuneLimits(template, before, { registry, logic }) : null });
-    timings.tweakMs = ms(t);
+    /** @type {Awaited<ReturnType<typeof tweakDocument>>} */
+    let tweak;
+    /** @type {Awaited<ReturnType<typeof askChangeMechanics>> | null} */
+    let named;
+    try {
+      [tweak, named] = await Promise.all([
+        tweakDocument(before, job.change, { registry, writer: spec ? recordingWriter(spec, calls) : null, attempts: cfg.modelAttempts, limits: template ? tuneLimits(template, before, { registry, logic }) : null })
+          .then(r => { timings.tweakMs = ms(t); return r; }),
+        spec ? askChangeMechanics({ writer: spec, escalate, attempts: cfg.modelAttempts, change, doc: before, registry, calls, clock }).then(r => { timings.mechanicsMs = ms(t); return r; }) : Promise.resolve(null),
+      ]);
+    } catch (error) {
+      const problems = list(prop(error, 'problems')).filter(isObj);
+      checkpoint('revision', { base: baseVersion, change: job.change, path: 'mechanics', problems: problems.slice(0, 20), calls });
+      throw Object.assign(Error(`That change wasn't published. ${explainProblems(problems, { doc: before, registry })}`), { status: 422, code: String(prop(error, 'code') || 'change_mechanics_failed'), report: { path: 'mechanics', stage: 'mechanics', problems: problems.slice(0, 20), calls } });
+    }
+    timings.firstRoundMs = ms(t);
+    let modelRounds = Math.max(calls.filter(c => c.form === 'tweak_param').length, named?.calls ?? 0);
+    // The mechanics a primitive of the game already gives need nothing added (extend.js templateCoverage).
+    const mechanics = named ? templateCoverage(named.mechanics, before, registry) : [];
+    const uncovered = mechanics.filter(c => !c.by);
+    ctx.stage('change_mechanics', { ms: timings.mechanicsMs ?? null, mechanics: mechanics.map(c => ({ mechanic: c.mechanic, verb: c.verb, by: c.by })), unnamed: named?.unnamed ?? [] });
     /** @type {Doc | null} */
     let after = null;
     /** @type {Array<{ request: unknown, why?: unknown }>} */
@@ -483,48 +502,130 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     /** @type {unknown[]} */
     let opsApplied = [];
     /** A world-size change (doc-revise scaleWorld): its factor and the spaces it scaled. @type {{ factor: number, [k: string]: unknown } | null} */
-    let scaled = tweak.scaled || null;
-    if (tweak.matched) { after = tweak.doc; path = tweak.scaled ? 'scale' : 'tweak'; opsApplied = tweak.ops; ctx.stage('tweaked', { ms: timings.tweakMs, ops: tweak.ops.length, source: tweak.source }); }
-    if (!after && spec) {
-      t = performance.now();
-      /** @type {Awaited<ReturnType<typeof reviseDocument>> | null} */
-      let r = null;
-      /** @type {ReturnType<typeof preflight> | null} */
-      let checked = null;
-      let applied = applyOps(before, []);
-      // The model's ops, checked against the card-derived schemas; a failing draft goes back with its errors.
-      for (let n = 0; n <= cfg.reviseRepairs && !checked?.ok; n++) {
-        r = await reviseDocument({ writer: spec, doc: before, change, registry, logic, ...(checked ? { errors: describeErrors(checked.errors), previous: r?.ops } : {}) });
-        modelMs = (modelMs ?? 0) + r.ms; unsupported = r.unsupported;
-        // Ops that only resize a space's extent become scaleWorld, so the generated content grows with the container.
-        const routed = routeWorldScale(before, r.ops, registry);
-        scaled = routed.scaled.length ? { factor: routed.scaled[0].factor, spaces: routed.scaled } : null;
-        applied = applyOps(routed.doc, routed.ops);
-        checked = preflight(applied.doc, registry, logic);
-      }
-      timings.reviseMs = ms(t); timings.reviseModelMs = modelMs;
-      if (!checked?.ok) {
-        const errors = checked?.errors ?? [];
-        ctx.checkpoint?.('revision', { base: baseVersion, change: job.change, path: 'model', ops: (r?.ops || []).slice(0, 50), unsupported, errors: errors.slice(0, 20), timings: { ...timings }, doc: applied.doc });
-        throw Object.assign(Error(`The change failed checks: ${errors.slice(0, 3).map(e => `${e.code} ${e.path}`).join('; ')}`), { status: 422, code: 'revision_invalid' });
-      }
-      after = checked.doc; path = 'model'; opsApplied = applied.applied;
-      ctx.stage('revised', { ms: timings.reviseMs, ops: applied.applied.length, failed: applied.failed.length });
-    }
-    if (!after) {
-      // Nothing can carry the change out here: no tweakable param matched and no writer is connected.
-      after = before; path = 'none';
-      unsupported = [{ request: job.change, why: 'No parameter of this game matches that change, and no model is connected to write it.' }];
-    }
-    t = performance.now();
-    ctx.checkpoint?.('revision', { base: baseVersion, change: job.change, path, ops: opsApplied.slice(0, 50), unsupported, timings: { ...timings }, doc: after });
-    // The version gate, against the base verified with the same budgets (comparable baselines; made only once the
-    // static stages pass).
+    let scaled = null;
+    // The version gate's baseline: the base verified with the same budgets, once (made only when the regression stages
+    // need it, and reused by an extension's retries).
     const budgets = { playable: true };
-    const gate = await gateVersion(after, { registry, logic, ...budgets, template, base: { doc: before, verify: () => verifyDocument(before, registry, logic, budgets), proof: prop(previous.report, 'proof') } });
-    timings.gateMs = ms(t); timings.botsMs = gate.ms.bots ?? null;
+    /** @type {Promise<Verification> | null} */
+    let baseRun = null;
+    const baseline = { doc: before, verify: () => (baseRun ??= verifyDocument(before, stored0.registry, stored0.logic, budgets)), proof: prop(previous.report, 'proof') };
+    /** @type {Awaited<ReturnType<typeof gateVersion>>} */
+    let gate;
+    /** What the extension step did (reported). @type {{ mechanics: import('./extend.js').Coverage[], [k: string]: unknown } | null} */
+    let extension = null;
+    if (uncovered.length && spec && named) {
+      // The change names a mechanic the game lacks: the extension step builds it, as a create builds an idea's.
+      path = 'extension';
+      const asked = named;
+      const interactions = template ? [...new Set(templateLoops(template, registry).loops.flatMap(l => l.interactions))]
+        : [...new Set(modesIn(before, registry).filter(m => !m.mode.wraps).flatMap(m => cardLoop(registry.get(m.use)?.card)?.interactions ?? []))];
+      const deadline = cfg.stepPathMs > 0 ? performance.now() + cfg.stepPathMs : null;
+      const header = `The game: ${String(before.title ?? '')}${isStr(before.logline) ? `: ${before.logline}` : ''}\nThe change asked of it: ${change}\n${template ? `Built from the verified template '${template.id}' (${template.concept}), played` : 'Played'} as ${interactions.join(' or ') || 'its loops are'}.`;
+      const system = `You set the params of a mechanic added to the game '${String(before.title ?? '')}'${isStr(before.logline) ? ` (${before.logline})` : ''}, for the change a person asked: ${change}\nWrite only what the form asks, in the game's theme. Ids and structure are fixed.`;
+      const base0 = { registry, logic }, writer = spec;
+      let extensionCalls = 0, paramsRounds = 0;
+      /** @type {import('./extend.js').Coverage[]} */
+      let lastCoverage = mechanics;
+      /** @param {string} code @param {string} stage @param {ReadonlyArray<{ code?: unknown, path?: unknown, message?: unknown }>} problems */
+      const refuse = (code, stage, problems) => {
+        checkpoint('revision', { base: baseVersion, change: job.change, path: 'extension', stage, code, problems: problems.slice(0, 20), mechanics: lastCoverage, unnamed: asked.unnamed, calls, timings: { ...timings } });
+        ctx.stage('not_buildable', { path: 'extension', stage, code, missing: problems.slice(0, 8).map(p => `${String(p.code ?? '')} ${String(p.path ?? '')}: ${String(p.message ?? '').slice(0, 200)}`) });
+        return Object.assign(Error(`That change wasn't published. ${explainProblems(problems, { doc: before, registry })}`), { status: 422, code,
+          report: { path: 'extension', stage, problems: problems.slice(0, 20), mechanics: lastCoverage, unnamedMechanics: asked.unnamed, calls } });
+      };
+      const out = await extendUntilPlayed({ deadline, stage: (name, detail) => ctx.stage(name, detail),
+        extend: async dropped => {
+          const te = performance.now(), n = calls.length;
+          const ext = await extendDocument({ deadline, doc: before, mechanics: asked.mechanics, ...base0, writer: recordingWriter(writer, calls), attempts: cfg.modelAttempts, interactions,
+            header, gaps: { mode: cfg.gaps, service: gapService, max: cfg.maxGapPrimitives }, catalogue, stage: (name, detail) => ctx.stage(name, detail), dropped, source: 'change' });
+          timings.extendMs = (timings.extendMs ?? 0) + ms(te);
+          extensionCalls += calls.length - n;
+          lastCoverage = ext.coverage;
+          checkpoint('extensions', { coverage: ext.coverage, added: ext.added, dropped: Object.fromEntries(dropped) });
+          return ext;
+        },
+        missing: problems => refuse('extension_missing', 'extension', problems),
+        play: async ext => {
+          ({ registry, logic } = ext);
+          const forms = ext.added.map(use => paramsForm(ext.doc, use, { registry, logic })).filter(/** @returns {f is NonNullable<typeof f>} */ f => f !== null);
+          const tp = performance.now();
+          /** @type {Awaited<ReturnType<typeof askParamsForms>>} */
+          let answers;
+          try {
+            answers = await askParamsForms({ writer, escalate, attempts: cfg.modelAttempts, calls, clock, system, code: 'extension_params', title: String(before.title ?? ''), forWhat: `the change "${change}"`,
+              extra: forms.map(f => ({ ...f, mechanic: ext.coverage.find(c => c.primitives[0] === f.use)?.mechanic ?? f.use })) });
+          } catch (error) { throw refuse('extension_params', 'params', list(prop(error, 'problems')).filter(isObj)); }
+          timings.paramsMs = (timings.paramsMs ?? 0) + ms(tp);
+          paramsRounds += Math.max(0, ...answers.map(a => a.calls));
+          // The game's content is kept: only the added primitives' params are written onto the extended document.
+          const written = structuredClone(ext.doc);
+          forms.forEach((f, i) => f.apply(written, answers[i].value));
+          const engaged = engageExtensions(written, ext, { registry, logic });
+          if (!engaged.ok) throw refuse(engaged.code, 'extension', engaged.problems);
+          const pre = preflight(engaged.doc, registry, logic);
+          if (!pre.ok) throw refuse('revision_invalid', 'preflight', pre.errors);
+          const tg = performance.now();
+          const gate = await gateVersion(pre.doc, { registry, logic, ...budgets, template, base: baseline });
+          timings.gateMs = (timings.gateMs ?? 0) + ms(tg);
+          return { gate, forms: forms.map((f, i) => ({ form: f.schema.name, calls: answers[i].calls })) };
+        },
+        refuse: ({ gate }) => {
+          checkpoint('versionGate', { stage: gate.stage, problems: gate.problems.slice(0, 20), ms: gate.ms, baseProof: gate.baseProof, proof: gate.proof });
+          return gateError(gate, 'That change', { registry });
+        },
+      });
+      gate = out.played.gate;
+      modelRounds += extensionCalls + paramsRounds;
+      if (gate.doc) opsApplied = sectionOps(before, gate.doc);
+      extension = { mechanics: out.ext.coverage, added: out.ext.added, dropped: Object.fromEntries(out.dropped), extensionCalls, params: out.played.forms, ms: timings.extendMs ?? null,
+        // The first round's tweak is not applied with an extension: the extension step builds what the change names.
+        tweak: { matched: tweak.matched, ops: tweak.ops, applied: false } };
+      ctx.stage('extended', { ms: timings.extendMs ?? null, mechanics: out.ext.coverage.map(c => ({ mechanic: c.mechanic, by: c.by, primitives: c.primitives })), calls: extensionCalls });
+    } else {
+      scaled = tweak.scaled || null;
+      if (tweak.matched) { after = tweak.doc; path = tweak.scaled ? 'scale' : 'tweak'; opsApplied = tweak.ops; ctx.stage('tweaked', { ms: timings.tweakMs, ops: tweak.ops.length, source: tweak.source }); }
+      if (!after && spec) {
+        t = performance.now();
+        /** @type {Awaited<ReturnType<typeof reviseDocument>> | null} */
+        let r = null;
+        /** @type {ReturnType<typeof preflight> | null} */
+        let checked = null;
+        let applied = applyOps(before, []);
+        // The model's ops, checked against the card-derived schemas; a failing draft goes back with its errors.
+        for (let n = 0; n <= cfg.reviseRepairs && !checked?.ok; n++) {
+          r = await reviseDocument({ writer: recordingWriter(spec, calls), doc: before, change, registry, logic, ...(checked ? { errors: describeErrors(checked.errors), previous: r?.ops } : {}) });
+          modelRounds++;
+          modelMs = (modelMs ?? 0) + r.ms; unsupported = r.unsupported;
+          // Ops that only resize a space's extent become scaleWorld, so the generated content grows with the container.
+          const routed = routeWorldScale(before, r.ops, registry);
+          scaled = routed.scaled.length ? { factor: routed.scaled[0].factor, spaces: routed.scaled } : null;
+          applied = applyOps(routed.doc, routed.ops);
+          checked = preflight(applied.doc, registry, logic);
+        }
+        timings.reviseMs = ms(t); timings.reviseModelMs = modelMs;
+        if (!checked?.ok) {
+          const errors = checked?.errors ?? [];
+          checkpoint('revision', { base: baseVersion, change: job.change, path: 'model', ops: (r?.ops || []).slice(0, 50), unsupported, errors: errors.slice(0, 20), timings: { ...timings }, doc: applied.doc });
+          throw Object.assign(Error(`The change failed checks: ${errors.slice(0, 3).map(e => `${e.code} ${e.path}`).join('; ')}`), { status: 422, code: 'revision_invalid' });
+        }
+        after = checked.doc; path = 'model'; opsApplied = applied.applied;
+        ctx.stage('revised', { ms: timings.reviseMs, ops: applied.applied.length, failed: applied.failed.length });
+      }
+      if (!after) {
+        // Nothing can carry the change out here: no tweakable param matched and no writer is connected.
+        after = before; path = 'none';
+        unsupported = [{ request: job.change, why: 'No parameter of this game matches that change, and no model is connected to write it.' }];
+      }
+      t = performance.now();
+      checkpoint('revision', { base: baseVersion, change: job.change, path, ops: opsApplied.slice(0, 50), unsupported, timings: { ...timings }, doc: after });
+      // The version gate, against the base verified with the same budgets (comparable baselines; made only once the
+      // static stages pass).
+      gate = await gateVersion(after, { registry, logic, ...budgets, template, base: baseline });
+      timings.gateMs = ms(t);
+    }
+    timings.botsMs = gate.ms.bots ?? null;
     if (!gate.ok || !gate.doc || !gate.verification) {
-      ctx.checkpoint?.('versionGate', { stage: gate.stage, problems: gate.problems.slice(0, 20), ms: gate.ms, baseProof: gate.baseProof, proof: gate.proof });
+      checkpoint('versionGate', { stage: gate.stage, problems: gate.problems.slice(0, 20), ms: gate.ms, baseProof: gate.baseProof, proof: gate.proof });
       throw gateError(gate, 'That change', { registry });
     }
     const v = gate.verification, published = gate.doc, vBefore = gate.baseVerification;
@@ -559,9 +660,10 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       doc: published, stage: `revision: ${job.change}`,
       // hot 'restart': a new version is checked from its start, so a running session restarts on it (the state of
       // another version is never carried into it: a revised start, such as lives or seed counts, applies at once).
-      report: { kind: 'kernel', change: job.change, base: baseVersion, path, ...(growth ? { growth: { grew: growth.grew, what: growth.what, before: growth.before, after: growth.after } } : {}), ops: opsApplied.slice(0, 20), changes: guard.changes, notes: guard.notes || [], diffLines: guard.lines, revisionCheck, gaps, verified: true, verification: summarizeVerify(v), features: v.features ?? null, gate: { version: VERSION_GATE_VERSION, ms: gate.ms }, ...(proof ? { proof } : {}), quality, ...(selection ? { selection } : {}), hot: 'restart', timings },
+      report: { kind: 'kernel', change: job.change, base: baseVersion, path, mechanics, unnamedMechanics: named?.unnamed ?? [], ...(extension ? { extension } : {}), modelCalls: calls.length, modelRounds, calls, ...(growth ? { growth: { grew: growth.grew, what: growth.what, before: growth.before, after: growth.after } } : {}), ops: opsApplied.slice(0, 20), changes: guard.changes, notes: guard.notes || [], diffLines: guard.lines, revisionCheck, gaps, verified: true, verification: summarizeVerify(v), features: v.features ?? null, gate: { version: VERSION_GATE_VERSION, ms: gate.ms }, ...(proof ? { proof } : {}), quality, ...(selection ? { selection } : {}), hot: 'restart', timings },
       provenance: revisionProvenance(previous, { pipeline: KERNEL_PIPELINE_VERSION, catalogHash: catalogHash(registry), base: baseVersion, baseHash: hashOf(previous.doc), change: job.change, revisePath: path, ops: opsApplied, ...(scaled ? { scaled } : {}), gate: VERSION_GATE_VERSION, revise: REVISE_VERSION,
-        models: { spec: path === 'model' ? spec?.model : null, specProvider: path === 'model' ? spec?.provider || null : null, decisions: decisions?.provider || null } }),
+        ...(extension ? { extend: EXTEND_VERSION, mechanics: extension.mechanics.map(c => ({ mechanic: c.mechanic, by: c.by, option: c.option ?? null, primitives: c.primitives })) } : {}),
+        models: { spec: path === 'model' || path === 'extension' ? spec?.model : null, specProvider: path === 'model' || path === 'extension' ? spec?.provider || null : null, decisions: decisions?.provider || null } }),
     });
   }
 
@@ -569,6 +671,16 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
   pipeline.version = KERNEL_PIPELINE_VERSION;
   pipeline.create = create; pipeline.revise = revise;
   return pipeline;
+}
+
+/**
+ * The ops that turn a base document into a version: one set (or remove) per top-level section that differs, so
+ * applyOps over the base reproduces the version (an extension adds instances and engages them; its ops are the sections
+ * it changed). @param {Record<string, unknown>} before @param {Record<string, unknown>} after @returns {Array<Record<string, unknown>>}
+ */
+export function sectionOps(before, after) {
+  return [...new Set([...Object.keys(before), ...Object.keys(after)])].filter(k => JSON.stringify(before[k] ?? null) !== JSON.stringify(after[k] ?? null))
+    .map(k => (k in after ? { op: 'set', path: k, value: structuredClone(after[k]) } : { op: 'remove', path: k }));
 }
 
 /**

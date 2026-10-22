@@ -74,7 +74,9 @@ test('end to end with a stubbed model: decompose, select, outline, first playabl
   const calls = spec.calls.length;
   const tweaked = await pipeline({ gameId: 'g', kind: 'revise', base: versions.length, change: 'more inventory slots' }, ctx);
   assert.equal(tweaked.report.path, 'tweak');
-  assert.deepEqual(spec.calls.slice(calls).map(c => c.schema?.name), ['tweak_param'], 'one small strict call for a tweak');
+  // One round: the tweak and the mechanics the change names, side by side (a change naming none adds no round).
+  assert.deepEqual(spec.calls.slice(calls).map(c => c.schema?.name).sort(), ['change_mechanics', 'tweak_param'], 'one small strict call for a tweak, beside the change\'s mechanics');
+  assert.equal(tweaked.report.modelRounds, 1);
   // Every new version restarts a running session on its own start (ARCHITECTURE §4: checked like a new game).
   assert.equal(tweaked.report.hot, 'restart');
   const renamed = await pipeline({ gameId: 'g', kind: 'revise', base: versions.length, change: 'rename the game to Lamp of the Deep' }, ctx);

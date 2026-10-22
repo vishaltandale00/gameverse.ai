@@ -214,13 +214,14 @@ export function recordingWriter(writer, calls) {
  * mechanics nothing covers: the caller fails the build naming them) }
  * @param {{ doc: Record<string, any>, mechanics: readonly PickMechanic[], registry: RegistryLike, logic: LogicLike, writer: Writer, attempts: number, interactions: string[],
  *   header: string, gaps: { mode: string, service: GapService | null, max: number }, catalogue: (doc: unknown) => Promise<{ registry: RegistryLike, logic: LogicLike }>, stage?: (name: string, detail: Record<string, unknown>) => void,
- *   deadline?: number | null, dropped?: Map<string, Array<{ id: string, why: string }>> }} args
+ *   deadline?: number | null, dropped?: Map<string, Array<{ id: string, why: string }>>, source?: 'idea' | 'change' }} args
  *   deadline: the step path's time box (a performance.now() value): a step's question is not asked after it, and the
  *   mechanic is missing with why (build-steps.js makeAsk, step_path_timeout)
  *   dropped: per mechanic (its name), the picks the publish gate proved do not work in the game (a feature check of the
  *   pick's own primitive: pressing its verb did nothing); they are not offered again and the question says why
+ *   source: what names the mechanics ('idea' for a create, 'change' for a revision), as the questions say it
  */
-export async function extendDocument({ doc: input, mechanics, registry: reg, logic: lg, writer, attempts, interactions, header, gaps, catalogue, stage = () => {}, deadline = null, dropped = new Map() }) {
+export async function extendDocument({ doc: input, mechanics, registry: reg, logic: lg, writer, attempts, interactions, header, gaps, catalogue, stage = () => {}, deadline = null, dropped = new Map(), source = 'idea' }) {
   let doc = structuredClone(input), registry = reg, logic = lg, calls = 0, written = 0;
   const ask = makeAsk({ writer, attempts, count: () => { calls++; }, deadline });
   const coverage = templateCoverage(mechanics, doc, registry);
@@ -241,7 +242,7 @@ export async function extendDocument({ doc: input, mechanics, registry: reg, log
     /** Why the step's own question failed (its answers kept failing), when it did. */
     let failed = '';
     const mechanic = /** @type {import('./decompose.js').Mechanic} */ ({ id: formKey(m.name).replace(/[^A-Za-z0-9_]/g, '_').slice(0, 40) || 'mechanic', verb: m.verb === 'none' ? '' : m.verb, description: m.name, from: '', importance: m.importance === 'core' ? 'core' : 'supporting' });
-    const head = `${header}\nPrimitives in the game: ${[...usesOf(doc)].join(', ')}\nThe idea also names "${m.name}" (${m.importance}${m.verb !== 'none' ? `, the verb '${m.verb}'` : ''}), which no primitive of the game gives the player yet.`;
+    const head = `${header}\nPrimitives in the game: ${[...usesOf(doc)].join(', ')}\nThe ${source} also names "${m.name}" (${m.importance}${m.verb !== 'none' ? `, the verb '${m.verb}'` : ''}), which no primitive of the game gives the player yet.`;
     while (open.length) {
       /** @type {Awaited<ReturnType<typeof pickOption>>} */
       let a;
@@ -310,6 +311,62 @@ export function extensionFaults(problems, coverage) {
     if (p) out.push({ mechanic: c.mechanic, id: c.option, why: `${String(p.code)}: ${String(p.message ?? '')}`.slice(0, 240) });
   }
   return out;
+}
+
+/** A mechanic's step that left it missing, as the problem a build or a revision fails with (explain.js says it). @param {readonly Coverage[]} missing @param {ReadonlyMap<string, Array<{ id: string, why: string }>>} dropped */
+export function missingProblems(missing, dropped) {
+  return missing.map(c => ({ code: 'extension_missing', path: `mechanics.${c.mechanic}`, message: `"${c.mechanic}" (${c.importance}${c.verb !== 'none' ? `, verb '${c.verb}'` : ''}) is still missing: ${c.why}${dropped.has(c.mechanic) ? `; dropped as not working in the game: ${(dropped.get(c.mechanic) ?? []).map(d => `${d.id} (${d.why})`).join('; ')}` : ''}` }));
+}
+
+/**
+ * The extensions engaged in the document a person plays: the primitives extension steps and the gap layer added are
+ * engaged as their cards declare (engage.js `only`; the rest of the game is engaged already), each engagement config
+ * filled, and the player gets the verbs of every primitive a step added. -> { ok, doc } or the code and problems.
+ * @param {Record<string, any>} doc the extended document with its params written
+ * @param {{ coverage: readonly Coverage[], added: readonly string[] }} ext @param {{ registry: RegistryLike, logic: LogicLike }} cat
+ * @returns {{ ok: true, doc: Record<string, any> } | { ok: false, code: 'extension_unengaged' | 'extension_unusable', problems: Array<{ code: string, path: string, message: string }> }}
+ */
+export function engageExtensions(doc, ext, { registry, logic }) {
+  const uses = new Set(ext.coverage.filter(c => c.by === 'extension' || c.by === 'gap').flatMap(c => c.primitives));
+  if (!uses.size) return { ok: true, doc };
+  const unfilled = unengaged(doc, [...uses], { registry, logic });
+  if (unfilled.length) return { ok: false, code: 'extension_unengaged', problems: unfilled.map(u => ({ code: 'extension_unengaged', path: u.use, message: u.message })) };
+  const engaged = engageDocument(/** @type {any} */ (doc), registry, logic, { only: uses });
+  if (!engaged.ok) return { ok: false, code: 'extension_unengaged', problems: engaged.errors.map(e => ({ code: String(e.code), path: String(e.path), message: String(e.message) })) };
+  const unusable = ext.added.filter(use => { const card = cardOf(registry, use); return (cardLoop(card)?.verbs ?? []).length > 0 && !instancesIn(engaged.doc).some(i => i.use === use && instanceVerbs(card, i, engaged.doc).length > 0); });
+  if (unusable.length) return { ok: false, code: 'extension_unusable', problems: unusable.map(use => ({ code: 'extension_unusable', path: use, message: `the player gets none of ${use}'s verbs` })) };
+  return { ok: true, doc: engaged.doc };
+}
+
+/** What a version gate answers that the extension loop reads. @typedef {{ ok: boolean, doc: unknown, verification: unknown, problems: ReadonlyArray<{ code?: unknown, use?: unknown, message?: unknown, severity?: unknown }> }} GateLike */
+/** An extension stage's result (extendDocument). @typedef {Awaited<ReturnType<typeof extendDocument>>} Extension */
+
+/**
+ * The extension loop a create and a revision share: extend the document (`extend`, given the picks dropped so far), fail
+ * naming every mechanic still missing (`missing`), build and gate the version (`play`); when the gate proves an
+ * extension pick does not work in the game (extensionFaults: its own feature check failed), that pick is dropped and its
+ * mechanic's step asked again without it. The retries end when a step runs out of valid options (its mechanic is
+ * missing), when a gate failure is no extension pick's (`refuse`), or at the step path's time box (`deadline`).
+ * -> { ext, played (what `play` returned, its gate passed), dropped }
+ * @template {{ gate: GateLike }} P
+ * @param {{ deadline?: number | null, extend: (dropped: Map<string, Array<{ id: string, why: string }>>) => Promise<Extension>,
+ *   missing: (problems: ReturnType<typeof missingProblems>, ext: Extension, dropped: Map<string, Array<{ id: string, why: string }>>) => Error,
+ *   play: (ext: Extension) => Promise<P>, refuse: (played: P, ext: Extension) => Error, stage?: (name: string, detail: Record<string, unknown>) => void }} args
+ * @returns {Promise<{ ext: Extension, played: P, dropped: Map<string, Array<{ id: string, why: string }>> }>}
+ */
+export async function extendUntilPlayed({ deadline = null, extend, missing, play, refuse, stage = () => {} }) {
+  /** Per mechanic, the extension picks the gate proved do not work in the game. @type {Map<string, Array<{ id: string, why: string }>>} */
+  const dropped = new Map();
+  for (;;) {
+    const ext = await extend(dropped);
+    if (ext.missing.length) throw missing(missingProblems(ext.missing, dropped), ext, dropped);
+    const played = await play(ext);
+    if (played.gate.ok && played.gate.doc && played.gate.verification) return { ext, played, dropped };
+    const faults = extensionFaults(played.gate.problems, ext.coverage);
+    if (!faults.length || (deadline !== null && performance.now() > deadline)) throw refuse(played, ext);
+    for (const f of faults) dropped.set(f.mechanic, [...(dropped.get(f.mechanic) ?? []), { id: f.id, why: f.why }]);
+    stage('extension_dropped', { picks: faults });
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------
