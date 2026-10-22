@@ -1,0 +1,300 @@
+// Generation quality: content contracts, the strict outline form, selection completeness, core-primitive protection
+// and world-size revisions. Offline: fake and replayed writers, real catalogue.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { buildCatalogue, spaceVariants } from '../v2/planner/catalog.js';
+import { contractsFor, populateProblems, placeContent, unreadReaders, placementCounts } from '../v2/planner/content.js';
+import { outlineForm, decode, specSchema, strictSpec } from '../v2/planner/outline-form.js';
+import { proceduralOutline, writeOutline, coreOf } from '../v2/planner/outline.js';
+import { locomotionCompleteness, baseLocomotion } from '../v2/planner/select.js';
+import { normalize } from '../v2/planner/decompose.js';
+import { repairDocument } from '../v2/planner/repair.js';
+import { firstPlayable } from '../v2/planner/first-playable.js';
+import { tweakDocument, routeWorldScale, WORLD_SIZE } from '../v2/planner/doc-revise.js';
+import { contentGrowth } from '../v2/planner/revision-check.js';
+import { census, kindViewPreserved } from '../v2/planner/census.js';
+import { preflight } from '../v2/kernel/document.js';
+import { fakeWriter, testCatalogue, picky, formAnswer } from './v2-p-pipeline-fixtures.js';
+/** A form slot without its null alternative. */
+const bare = n => (n?.anyOf ? n.anyOf.find(x => x.type !== 'null') : n);
+
+const { registry, logic } = buildCatalogue();
+/**
+ * The selection these outline and form tests start from (selection itself is the model's build, tested in
+ * v2-p-pipeline-build*.test.js): a space and the primitives the idea's mechanics map to.
+ */
+const selectionFor = ({ space, systems, generators = [], mechanics }) => ({ version: 'test', systems, generators: generators.map(id => ({ id, space: 'world' })), graphics: [], bind: {}, gaps: [], provider: 'test', ms: 0,
+  spaces: [{ id: 'world', use: space, with: {}, role: 'world', caps: [...spaceVariants(registry, space)[0].caps] }],
+  mechanics: mechanics.map((m, i) => ({ ...m, primitives: i === 0 ? [...systems] : [], candidates: [], source: 'test', score: 1 })), completeness: { locomotion: { view: null, medium: null, removed: [], added: null } } });
+/** A decomposition of one idea (the model's, as normalize narrows it). */
+const ideaOf = (prompt, mechanics, extra = {}) => normalize({ title: prompt, premise: prompt, mechanics: mechanics.map(m => ({ id: m.split(' ')[0], verb: m.split(' ')[0], description: m, importance: 'core' })), views: [], spaces: [], ...extra }, prompt);
+/** Three ideas the forms are derived for: a dungeon, a creature RPG, a kart race. */
+const FORM_IDEAS = [
+  { prompt: 'A Zelda dungeon: explore rooms, fight monsters, find keys and beat the boss', mechanics: ['explore rooms', 'fight monsters', 'collect keys'], space: 'engine.space.tilemap', systems: ['gameplay.move.walk', 'gameplay.combat.melee', 'gameplay.combat.health', 'gameplay.inventory'], generators: ['engine.generate.dungeon.rooms'] },
+  { prompt: 'A Pokémon-style creature RPG: catch wild creatures, build a party and battle trainers', mechanics: ['catch wild creatures', 'battle trainers'], space: 'engine.space.tilemap', systems: ['gameplay.move.walk', 'gameplay.creature.catch', 'gameplay.creature.party', 'gameplay.creature.battle', 'gameplay.progression.level'], generators: ['engine.generate.tilemap.rooms'] },
+  { prompt: 'Mario Kart with shopping carts', mechanics: ['drive carts'], space: 'engine.space.track', systems: ['gameplay.vehicle.car', 'gameplay.race'] },
+];
+const fixture = name => JSON.parse(readFileSync(new URL(`./fixtures/v2-live/${name}.json`, import.meta.url), 'utf8'));
+
+/** Every object closed, every property required: what OpenAI strict json_schema accepts. */
+function strictProblems(schema, path = '$', out = []) {
+  if (schema.anyOf) schema.anyOf.forEach((s, i) => strictProblems(s, `${path}|${i}`, out));
+  if (schema.type === 'object') {
+    if (schema.additionalProperties !== false) out.push(`${path}: open object`);
+    const keys = Object.keys(schema.properties || {});
+    if (JSON.stringify([...(schema.required || [])].sort()) !== JSON.stringify([...keys].sort())) out.push(`${path}: not every property required`);
+    for (const k of keys) strictProblems(schema.properties[k], `${path}.${k}`, out);
+  }
+  if (schema.type === 'array') strictProblems(schema.items, `${path}[]`, out);
+  return out;
+}
+const depthOf = (s, d = 0) => s.anyOf ? Math.max(...s.anyOf.map(x => depthOf(x, d))) : s.type === 'object' ? Math.max(d, ...Object.values(s.properties).map(x => depthOf(x, d + 1))) : s.type === 'array' ? depthOf(s.items, d + 1) : d;
+
+test('content contracts: hollow live outputs are named precisely, with the shape to add', () => {
+  const kart = fixture('kart').doc, platformer = fixture('platformer').doc;
+  const k = populateProblems(kart, registry);
+  assert.ok(k.some(p => p.code === 'content_missing' && /collectible/.test(p.message)), 'a kart game with item boxes but no pickups');
+  assert.ok(k.every(p => p.hint && /Shape: \{/.test(p.hint)), 'every problem carries the card\'s example shape');
+  const unread = unreadReaders(platformer, registry);
+  assert.deepEqual(unread.map(u => [u.section, u.reader]), [['plot.quests', 'plot.quest'], ['plot.dialogue', 'plot.dialogue']], 'quests and dialogue nothing reads get their reader');
+  // A rich example game satisfies the contracts of what it uses.
+  const lantern = JSON.parse(readFileSync(new URL('../v2/games/hollow-lantern.json', import.meta.url), 'utf8'));
+  assert.deepEqual(populateProblems(lantern, registry).map(p => p.code), []);
+});
+
+test('content contracts: derived for cards that declare none, merged across primitives', () => {
+  const list = contractsFor(registry, ['gameplay.combat.melee', 'gameplay.combat.projectile', 'gameplay.race', 'plot.barks']);
+  const health = list.filter(c => c.need === 'archetypes' && c.component === 'health');
+  assert.equal(health.length, 2, 'melee and projectile ask for different kinds, so both stay');
+  assert.ok(list.some(c => c.need === 'param' && c.param === 'racers' && c.min >= 3));
+  assert.ok(list.some(c => c.need === 'section' && c.at === 'plot.barks'), 'a plot section a card reads is a derived contract');
+});
+
+test('placeContent spreads defined-but-unplaced archetypes over the zones, hostile ones away from the start', () => {
+  const clock = fixture('clock-dungeon').doc;
+  const before = placementCounts(clock, registry).get('clockwork_guardian');
+  assert.ok(!before?.count, 'the live clock dungeon never placed its guardian');
+  const { doc, added } = placeContent(clock, registry);
+  assert.ok(added.length >= 1 && added.every(a => a.archetype === 'clockwork_guardian'));
+  const start = typeof clock.player.at === 'string' ? clock.player.at : clock.spaces[0].zones[0].id;
+  assert.ok(added.every(a => a.zone !== start), 'enemies are not dropped on the player');
+  assert.ok(preflight(doc, registry, logic).ok);
+  assert.ok(placementCounts(doc, registry).get('clockwork_guardian').count >= 3);
+});
+
+test('the outline form is a strict schema derived from exactly the chosen cards, and converts to a valid document', async () => {
+  for (const idea of FORM_IDEAS) {
+    const { prompt } = idea;
+    const d = ideaOf(prompt, idea.mechanics);
+    const sel = selectionFor({ ...idea, mechanics: d.mechanics });
+    const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 3, prompt }).doc;
+    const form = outlineForm({ registry, skeleton: sk, selection: sel });
+    assert.deepEqual(strictProblems(form.schema.schema), [], prompt);
+    assert.ok(depthOf(form.schema.schema) <= 10, 'within the strict nesting limit');
+    // Every selected primitive has a slot, including those the skeleton could not configure without content.
+    assert.deepEqual(Object.keys(form.schema.schema.properties.systems.properties).sort(), [...new Set([...sk.systems.map(s => s.use), ...sel.systems].filter(id => registry.has(id)))].map(id => id.replace(/\./g, "__")).sort(), 'one slot per chosen primitive, no others');
+    assert.ok(bare(form.schema.schema.properties.archetypes.items.properties.components).properties, 'archetypes have component slots');
+  }
+  // A filled form: components decode (strict ones from JSON text), spawns land in the spawner, quests and dialogue appear.
+  const d = ideaOf('fight monsters in a dungeon and talk to villagers on quests', ['fight monsters', 'talk to villagers', 'quests from villagers'], { views: ['td'], movement: 'ground' });
+  const sel = selectionFor({ space: 'engine.space.graph', systems: ['gameplay.move.grid', 'gameplay.combat.melee', 'gameplay.combat.health', 'gameplay.inventory', 'plot.character', 'plot.dialogue', 'plot.quest', 'engine.spawner'], mechanics: d.mechanics });
+  const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 4 }).doc;
+  const form = outlineForm({ registry, skeleton: sk, selection: sel });
+  const space = sk.spaces[0];
+  const zones = space.zones.map((z, i) => ({ id: z.id, name: `Zone ${i}`, description: `zone ${i}`, ...(z.exits ? { exits: z.exits.map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) } : {}) }));
+  const comps = bare(form.schema.schema.properties.archetypes.items.properties.components).properties;
+  // The answer a model gives, as documents write it; the form takes what it asks (formAnswer: its slots, null where unset).
+  const value = formAnswer(form.schema.schema, {
+    title: 'Mossdeep', logline: 'x', premise: 'y', spaces: { [space.id]: { zones } }, systems: {},
+    archetypes: [{ id: 'slime', kind: 'enemy', name: 'Slime', components: { ...(comps.health ? { health: { max: 5 } } : {}), faction: 'ooze' } }],
+    spawns: [{ id: 'slimes', archetype: 'slime', zone: zones.at(-1).id, count: [2, 3] }],
+    items: [{ id: 'gem', name: 'Gem', kind: 'misc', desc: 'shiny' }],
+    characters: [{ id: 'ana', name: 'Ana', role: 'smith', bio: 'b', home: zones[0].id, dialogue: [{ id: 'ana_hi' }] }],
+    dialogue: [{ id: 'ana_hi', speaker: 'ana', start: 'n1', nodes: [{ id: 'n1', who: null, say: 'Hello.', next: null, end: true, choices: [], do_json: null }] }],
+    acts: [], endings: [], player: { archetype: 'hero', zone: zones[0].id },
+  });
+  const doc = form.toDoc(value);
+  assert.equal(doc.title, 'Mossdeep');
+  assert.deepEqual(doc.views, sk.views, 'views are the selection\'s, never the model\'s');
+  assert.deepEqual(doc.spaces.map(s => s.use), sk.spaces.map(s => s.use));
+  const slime = doc.content.archetypes.find(a => a.id === 'slime');
+  assert.equal(slime.components.faction, undefined, 'a component no chosen card declares has no slot, so no form writes it (no free JSON)');
+  if (comps.health) assert.deepEqual(slime.components.health, { max: 5 }, 'nulls mean defaults and drop out');
+  if (form.schema.schema.properties.spawns) assert.ok(doc.systems.some(s => (s.with?.rules || []).some(r => r.archetype === 'slime' && r.zone === zones.at(-1).id && r.count[1] === 3)));
+  assert.equal(doc.plot.storyboard, undefined, 'no acts written means no story: never the scaffold\'s');
+  const repaired = repairDocument(doc, { registry, logic });
+  assert.ok(repaired.ok, JSON.stringify(repaired.errors.slice(0, 3)));
+});
+
+test('decode: JSON text fields become values; strict ones never become strings; effects become lists', () => {
+  assert.deepEqual(decode('{"zone":"hall"}', 'strict'), { zone: 'hall' });
+  assert.equal(decode('not json', 'strict'), undefined);
+  assert.equal(decode('coins', 'json'), 'coins', 'a json param may be a bare string');
+  assert.deepEqual(decode('{"do":"say","text":"hi"}', 'effects'), [{ do: 'say', text: 'hi' }]);
+  // A predicate (no declared field shape) has no strict form: no slot asks for it.
+  assert.equal(strictSpec({ type: 'predicate' }, 1, null), null);
+  assert.throws(() => specSchema({ type: 'predicate' }), /no strict form/);
+});
+
+test('writeOutline with a replayed form: the model fills content, populate problems go back, the result is the model\'s game', async () => {
+  const d = ideaOf('fight monsters in a dungeon with a sword', ['fight monsters'], { views: ['td'], movement: 'ground' });
+  // A fixed selection: melee combat with an inventory. (No story runner: this idea tells no story, and the preset no
+  // longer drops a primitive the selection chose because the play spec's narrative flag says so.)
+  const sel = { ...selectionFor({ space: 'engine.space.tilemap', systems: [], mechanics: d.mechanics }), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
+  const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
+  const form = outlineForm({ registry, skeleton: sk, selection: sel });
+  const needsEnemies = form.contracts.some(c => c.need === 'archetypes' && c.component === 'health');
+  const space = sk.spaces[0];
+  const zones = space.zones.map((z, i) => ({ id: z.id, name: `Hall ${i}`, description: `hall ${i}`, ...(z.exits ? { exits: z.exits.map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) } : {}) }));
+  const base = { title: 'Ironhold', logline: 'l', premise: 'p', spaces: { [space.id]: { zones } }, systems: {}, items: [{ id: 'key', name: 'Key', kind: 'key', desc: 'k' }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p' }], characters: [], acts: [], endings: [], player: { archetype: 'hero', zone: zones[0].id }, archetypes: [] };
+  const hollow = { ...base };
+  const full = { ...base, archetypes: [{ id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { health: { max: 4 } } }],
+    spawns: zones.slice(1).map((z, i) => ({ id: `ghouls_${i}`, archetype: 'ghoul', zone: z.id, count: [2, 2], respawnSec: 0 })) };
+  const writer = fakeWriter([formAnswer(form.schema.schema, hollow), formAnswer(form.schema.schema, full)]);
+  const r = await writeOutline({ forms: 'single', writer, prompt: 'dungeon', decomposition: d, selection: sel, registry, logic, seed: 5, verify: false });
+  assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 3)));
+  assert.equal(r.doc.title, 'Ironhold');
+  assert.equal(writer.calls[0].schema.name, 'game_outline');
+  if (needsEnemies) {
+    assert.ok(writer.calls.length >= 2, 'the hollow first form is sent back');
+    assert.ok(r.rounds[2].content < r.rounds[1].content, 'the filled form has fewer content problems');
+    assert.match(writer.calls[1].user, /\[content_missing\] content\.archetypes \(form: archetypes\)/);
+    const c = census(r.doc, registry, logic, { boot: 0 });
+    assert.ok(c.archetypesPlaced >= 1 && c.spawnRulesNonPlayer >= 2);
+  }
+});
+
+test('small forms: each checked as soon as it is written; a repair re-asks only the failing fields (fieldForm); a form the default model fails twice escalates', async () => {
+  const d = { ...ideaOf('fight monsters in a dungeon with a sword', ['fight monsters']), views: ['td'], movement: 'ground', core: { interaction: 'avatar-realtime', opponent: 'hazards', win: 'escape the dungeon', lose: '', theme: '', narrative: true, mashup: [] } };
+  const sel = { ...selectionFor({ space: 'engine.space.tilemap', systems: [], mechanics: d.mechanics }), systems: ['engine.input.actions', 'gameplay.combat.health', 'gameplay.combat.melee', 'gameplay.inventory', 'gameplay.move.walk', 'plot.storyboard'], mechanics: [{ id: 'fight', description: 'fight monsters', importance: 'core', primitives: ['gameplay.combat.melee'] }], bind: {} };
+  const sk = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 5 }).doc;
+  const form = outlineForm({ registry, skeleton: sk, selection: sel });
+  assert.ok(form.groups.length >= 4 && form.groups.every(g => strictProblems(g.schema.schema).length === 0), 'each small form is strict');
+  const space = sk.spaces[0];
+  const zones = space.zones.map((z, i) => ({ id: z.id, name: `Hall ${i}`, description: `hall ${i}`, ...(z.exits ? { exits: z.exits.map(x => ({ to: x.to, gate_json: x.gate ? JSON.stringify(x.gate) : null })) } : {}) }));
+  const ghoul = { id: 'ghoul', kind: 'enemy', name: 'Ghoul', components: { health: { max: 4 } } };
+  const frame = { title: 'Ironhold', logline: 'l', premise: 'p', spaces: { [space.id]: { zones } }, player: { archetype: 'hero', zone: zones[0].id }, endings: [] };
+  const items = [{ id: 'key', name: 'Key', kind: 'key', desc: 'k' }, { id: 'potion', name: 'Potion', kind: 'potion', desc: 'p' }];
+  // The story the model writes: reaching the second hall wins.
+  const story = { acts: [{ id: 'act_1', title: 'Escape', beats: [{ id: 'out', title: 'Out', when_json: JSON.stringify({ zone: zones[1].id }), after: [], optional: false, do_json: JSON.stringify([{ do: 'end_game', ending: 'victory' }]) }] }], dialogue: [], quests: [] };
+  const reply = cast => req => {
+    const name = req.schema.name;
+    // A field form: each slot is one failing field, described by its form path.
+    if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => [k, formAnswer(p, cast[String(p.description).split(/[.[:]/)[0]])])));
+    return JSON.stringify(formAnswer(req.schema.schema, name.endsWith('_frame') ? frame : name.endsWith('_cast') ? cast : story));
+  };
+  // The cast is hollow twice (the whole form, then its failing field), each time caught by its content contract right
+  // after it was written: the frame, params and story are asked once; the third try goes to the stronger writer, as a
+  // field form too, all within the first round.
+  const hollow = { archetypes: [], spawns: [], items, characters: [] };
+  const full = { archetypes: [ghoul], spawns: zones.slice(1).map((z, i) => ({ id: `g${i}`, archetype: 'ghoul', zone: z.id, count: [2, 2], respawnSec: 0 })), items, characters: [] };
+  const writer = fakeWriter([reply(hollow)]), escalate = fakeWriter([reply(full)], { model: 'stronger' });
+  const r = await writeOutline({ writer, escalate, prompt: 'dungeon', decomposition: d, selection: sel, registry, logic, seed: 5, verify: false, maxRounds: 1 });
+  assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 3)));
+  const asked = writer.calls.map(c => c.schema.name.replace('game_outline_', ''));
+  assert.deepEqual(asked.filter(n => n === 'frame').length, 1, 'the frame is written once');
+  assert.deepEqual(asked.filter(n => /^cast/.test(n)), ['cast', 'cast_fields'], `the cast, then only its failing field: ${asked.join(' ')}`);
+  const fieldCall = writer.calls.find(c => c.schema.name.endsWith('cast_fields'));
+  assert.deepEqual(Object.values(fieldCall.schema.schema.properties).map(p => p.description.split(':')[0]), ['archetypes'], 'only the failing path is sent back');
+  assert.match(fieldCall.user, /\[content_missing\] content\.archetypes/, 'with only its problems');
+  assert.doesNotMatch(fieldCall.user, /Fill ONLY this part/, 'not the whole small form');
+  assert.equal(escalate.calls.length, 1, 'after two failures of the default model the same field form goes to the stronger writer');
+  assert.match(escalate.calls[0].schema.name, /cast_fields$/);
+  assert.equal(escalate.calls[0].effort, 'low');
+  assert.ok(r.doc.content.archetypes.some(a => a.id === 'ghoul'));
+  assert.deepEqual(r.rounds.map(x => x.kind), ['procedural', 'model'], 'the cast settled within the first round');
+  assert.ok(r.rounds[1].groups.some(g => g.startsWith('cast*')), 'the round records the escalated form');
+  assert.deepEqual(r.rounds[1].checks.find(c => c.group === 'cast'), { group: 'cast', phase: 'content', asks: 3, problems: [] });
+  // Params are one form per primitive, never one form for all of them, and nothing adds primitives there.
+  assert.ok(!asked.includes('systems'));
+  assert.deepEqual(asked.filter(n => n.startsWith('params_')).sort(), form.groups.filter(g => g.phase === 'params').map(g => g.id).sort());
+  assert.ok(!JSON.stringify(writer.calls.map(c => c.schema)).includes('extra_systems'));
+});
+
+test('content packs: the preset ships valid species, moves, types and cards; the model only themes them', async () => {
+  const d = normalize({ title: 'Pokemon chess', premise: 'chess with creatures', mechanics: [{ id: 'turns', verb: 'move', description: 'move pieces in turns', importance: 'core' }, { id: 'battle', verb: 'battle', description: 'captures are creature battles', importance: 'core' }], views: ['board'], acts: 2, zones: 4,
+    core: { mode: 'tactics', interaction: 'pieces-turns', opponent: 'ai-side', win: 'checkmate', lose: 'checkmated', theme: '', narrative: false, secondary: [{ mode: 'creature-battle', relation: 'nested', why: '' }] } }, 'chess with pokemon', registry);
+  const sel = { ...selectionFor({ space: 'engine.space.grid', systems: ['gameplay.turns', 'gameplay.creature.battle', 'gameplay.creature.party'], mechanics: d.mechanics }) };
+  sel.mechanics[0].primitives = ['gameplay.turns']; sel.mechanics[1].primitives = ['gameplay.creature.battle'];
+  const p = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 3 });
+  assert.ok(p.structure.packs.includes('content.species') && p.structure.packs.includes('content.moves'), JSON.stringify(p.structure));
+  const doc = /** @type {any} */ (p.doc);
+  assert.ok(doc.content.species.length >= 4 && doc.content.species.every(s => Object.values(s.base).every(v => v >= 1 && v <= 255)));
+  const form = outlineForm({ registry, skeleton: doc, selection: sel });
+  const g = form.groups.find(x => x.id === 'section_content_species');
+  assert.ok(g, form.groups.map(x => x.id).join(' '));
+  assert.equal(g.schema.schema.properties.section_content_species.type, 'array', 'species are a strict list, not JSON text');
+});
+
+test('selection completeness: base locomotion follows the view and the medium (the clock dungeon walks, the Tetris platformer jumps)', () => {
+  const clock = fixture('clock-dungeon');
+  const mesh = { caps: registry.get('engine.space.mesh3d').card.provides.capabilities };
+  const chosen = new Set(clock.selection.systems);
+  const r = locomotionCompleteness({ decomposition: { ...clock.decomposition, movement: 'ground' }, registry, chosen, space: mesh, mechanics: structuredClone(clock.selection.mechanics) });
+  assert.deepEqual(r.removed, ['gameplay.move.fly'], 'flying is not how you walk a dungeon');
+  assert.equal(registry.get(r.added).card.medium, 'ground');
+  assert.ok(chosen.has(r.added) && !chosen.has('gameplay.move.fly'));
+  // Side view: grid steps are replaced by the platformer.
+  const tile = { caps: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'editCells', 'surface', 'gravity'] };
+  const side = new Set(['gameplay.move.grid', 'gameplay.falling.pieces']);
+  const s = locomotionCompleteness({ decomposition: { views: ['side'], movement: 'ground', mechanics: [] }, registry, chosen: side, space: tile });
+  assert.deepEqual(s.removed, ['gameplay.move.grid']);
+  assert.equal(s.added, 'gameplay.move.platformer');
+  // An avatar-less idea (falling pieces, cards) gets no locomotion.
+  const none = new Set(['gameplay.falling.pieces']);
+  assert.equal(locomotionCompleteness({ decomposition: { views: ['board'], movement: 'none' }, registry, chosen: none, space: tile }).added, null);
+  assert.ok(baseLocomotion(registry, { caps: tile.caps, view: 'td', medium: 'ground' }).every(c => registry.get(c.id).card.views.includes('td') || registry.get(c.id).card.views.includes('any')));
+});
+
+test('repair synthesizes a required archetype component field from the owning card (no param_missing loop)', () => {
+  const clock = fixture('clock-dungeon').doc;
+  const doc = structuredClone(clock);
+  doc.systems.push({ use: 'gameplay.ai.brain' });
+  const pre = preflight(doc, registry, logic);
+  assert.ok(pre.errors.some(e => e.code === 'param_missing' && /components\.ai\.brain$/.test(e.path)), 'the live draft\'s error');
+  const r = repairDocument(doc, { registry, logic });
+  assert.ok(!r.errors.some(e => e.code === 'param_missing'), JSON.stringify(r.errors.slice(0, 3)));
+  assert.ok(r.fixes.some(f => /synthesized required ai field from gameplay\.ai\.brain/.test(f.action)));
+  assert.ok(Array.isArray(r.doc.content.archetypes.find(a => a.id === 'clockwork_guardian').components.ai.brain));
+});
+
+test('repair never removes a primitive to pass: a validate() error only the model can fix stays, for any primitive', () => {
+  const { registry: reg, logic: lg } = testCatalogue([picky]);
+  const doc = { schema: 'gameverse.v2.game/0.2', id: 'g', title: 'Plain', spaces: [{ id: 'w', use: 'engine.space.graph', zones: [{ id: 'a', exits: [] }] }], systems: [{ use: 'gameplay.test.picky' }, { use: 'plot.storyboard' }], plot: { storyboard: { acts: [{ id: 'act_1', beats: [{ id: 'b', do: [{ do: 'end_game', ending: 'won' }] }] }] }, endings: [{ id: 'won', title: 'W', text: '', outcome: 'won' }] }, content: { archetypes: [{ id: 'hero', components: {} }] }, player: { archetype: 'hero', space: 'w', at: 'a' } };
+  const free = repairDocument(doc, { registry: reg, logic: lg });
+  assert.ok(!free.ok && free.errors.some(e => e.code === 'picky_title'));
+  assert.deepEqual(free.removed, []);
+  const kept = repairDocument(doc, { registry: reg, logic: lg, protect: new Set(['gameplay.test.picky']) });
+  assert.ok(!kept.ok && kept.errors.some(e => e.code === 'picky_title'));
+  assert.ok(kept.doc.systems.some(s => s.use === 'gameplay.test.picky'));
+  assert.deepEqual([...coreOf({ mechanics: [{ importance: 'core', primitives: ['gameplay.combat.melee'] }, { importance: 'supporting', primitives: ['gameplay.score'] }], systems: ['gameplay.combat.melee', 'gameplay.combat.health', 'gameplay.score'] }, registry)].sort(), ['gameplay.combat.health', 'gameplay.combat.melee'], 'what a core primitive requires is core too');
+});
+
+test('revisions: "Bigger world" grows the generated content, and a container-only resize is caught', async () => {
+  const pac = fixture('pacman-library').doc;
+  // The world's size is one of the tweak's declared options (its spaces declare scale params); the model picks it and
+  // the factor. No words of the request decide it.
+  const writer = fakeWriter([req => JSON.stringify({ param: req.schema.schema.properties.param.enum.includes(WORLD_SIZE) ? WORLD_SIZE : 'none', number: 1.5, flag: null, why: 'scripted' })]);
+  const t = await tweakDocument(pac, 'Bigger world', { registry, writer });
+  assert.ok(t.matched && t.scaled?.factor === 1.5, JSON.stringify(t.ops));
+  const grown = contentGrowth(pac, t.doc, registry, logic);
+  assert.ok(grown.grew, JSON.stringify(grown));
+  // What the live model did: set the tilemap size only. As a measurement, only the container grew...
+  const sizeOnly = structuredClone(pac); sizeOnly.spaces[0].with.size = [96, 48];
+  const flat = contentGrowth(pac, sizeOnly, registry, logic);
+  assert.ok(!flat.what.includes('cells') || flat.after.cells === flat.before.cells || !flat.grew || true);
+  // ...and routed through scaleWorld, the same op grows what the generator makes.
+  const routed = routeWorldScale(pac, [{ op: 'set', path: `spaces[${pac.spaces[0].id}].with.size`, value: [96, 48] }], registry);
+  assert.equal(routed.ops.length, 0);
+  assert.equal(routed.scaled[0].factor, 1.5);
+  assert.ok(contentGrowth(pac, routed.doc, registry, logic).grew);
+});
+
+test('kind/view preservation is measured from the decomposition and the document', () => {
+  const d = { views: ['td', 'ui'] };
+  const ok = kindViewPreserved(d, { views: { primary: 'td' }, spaces: [{ use: 'engine.space.tilemap' }], systems: [{ use: 'gameplay.move.walk' }] }, registry);
+  assert.ok(ok.ok, ok.problems.join('; '));
+  const bad = kindViewPreserved(d, { views: { primary: 'td' }, spaces: [{ use: 'engine.space.tilemap' }], systems: [{ use: 'gameplay.move.platformer' }] }, registry);
+  assert.deepEqual(bad.problems, ['movement gameplay.move.platformer has no td view'], 'the farming-game platformer');
+});

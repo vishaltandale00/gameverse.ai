@@ -1,0 +1,21 @@
+{
+  // Strict type checking of plain JavaScript through JSDoc and v2/kernel/types.d.ts. No build step: noEmit.
+  // Scope: v2/kernel, v2/planner and v2/server. Every file there starts with `// @ts-check`, which
+  // v2/tools/typecheck.mjs enforces, so a new file cannot skip checking. checkJs stays false globally so the
+  // modules these import from elsewhere (primitives, engine, verify, experiments...) contribute their
+  // inferred types without their own errors being reported: those workstreams opt in file by file.
+  // `npm run typecheck`.
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2023"],
+    "types": ["node"],
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["v2/kernel/**/*.js", "v2/kernel/**/*.d.ts", "v2/planner/**/*.js", "v2/planner/**/*.d.ts", "v2/server/**/*.js", "v2/server/**/*.mjs"]
+}

@@ -1,0 +1,164 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { compile, testSpace, run } from '../v2/kernel/testing.js';
+import { Registry } from '../v2/kernel/registry.js';
+import { Logic } from '../v2/kernel/logic.js';
+import { buildLogic } from '../v2/kernel/world.js';
+import { preflight } from '../v2/kernel/document.js';
+import generators from '../v2/primitives/engine/generate2d.index.js';
+import SPACES2D from '../v2/primitives/engine/spaces2d.index.js';
+import { Raster } from '../v2/primitives/engine/generate2d-lib.js';
+import { proveReach, navMover, ROLE } from '../v2/primitives/engine/generate2d-reach.js';
+import platformer from '../v2/primitives/gameplay/move-platformer.js';
+import walk from '../v2/primitives/gameplay/move-walk.js';
+
+// The proof holds for the document's player: its movement (gameplay.move.platformer here) and body.
+const PRIMS = [testSpace, ...generators, platformer, walk];
+const KEY = 'spaces.w.generators[0]';
+const rooms = () => [
+  { id: 'hall', zone: 'a', rect: [0, 0, 30, 20], style: 'hall', gaps: 2, hazards: ['spikes'], exits: [{ side: 'r' }, { side: 't' }], features: [{ kind: 'bench', id: 'bench_1' }, { kind: 'spawn', ref: 'slime', count: 2 }] },
+  { id: 'cave', zone: 'a', rect: [30, 0, 60, 20], style: 'cave', platforms: 3, exits: [{ side: 'l' }, { side: 'r', to: 'b' }] },
+  { id: 'shaft', zone: 'a', rect: [0, 20, 30, 50], style: 'shaft', exits: [{ side: 'b' }, { side: 'r' }] },
+  { id: 'pool', zone: 'a', rect: [30, 20, 60, 40], style: 'flooded', exits: [{ side: 'l' }] },
+  { id: 'arena', zone: 'b', rect: [60, 0, 90, 20], style: 'arena', exits: [{ side: 'l', to: 'a' }], features: [{ kind: 'boss_spawn', ref: 'golem' }] },
+];
+const doc = (w = {}, seed = 3) => ({
+  schema: 'gameverse.v2.game/0.2', id: 'rooms', title: 'Rooms', seed,
+  spaces: [{ id: 'w', use: 'engine.space.test', with: { size: [100, 60, 1] }, zones: [{ id: 'a', rect: [0, 0, 60, 60] }, { id: 'b', rect: [60, 0, 100, 60] }],
+    generators: [{ use: 'engine.generate.tilemap.rooms', with: { rooms: rooms(), ...w } }] }],
+  systems: [{ use: w.mode === 'topdown' ? 'gameplay.move.walk' : 'gameplay.move.platformer' }],
+  content: { archetypes: [{ id: 'hero', components: {} }, { id: 'slime', components: {} }, { id: 'golem', components: {} }], blocks: [{ id: 'spikes', solid: false, tags: ['hazard'] }] },
+  player: { archetype: 'hero', at: [3, 3] },
+});
+const codes = d => { const r = new Registry(PRIMS); return preflight(d, r, buildLogic(r, Logic)).errors.map(e => e.code); };
+
+test('tilemap.rooms: generates every room, proves it and announces it', () => {
+  const { rt } = compile(doc(), { primitives: PRIMS });
+  run(rt, 3);
+  const st = rt.store(KEY);
+  assert.deepEqual(st.problems, [], JSON.stringify(st.problems));
+  assert.equal(rt.state.counts['generated:w'], 1);
+  assert.equal(st.rooms.length, 5);
+  // Walls on the shell, openings matched between neighbours, rungs through the shared hall/shaft wall.
+  assert.ok(rt.test({ cell: [0, 5], space: 'w', block: 'stone' }));
+  const hall = st.rooms.find(r => r.id === 'hall');
+  assert.deepEqual(hall.exits.map(e => [e.side, e.peer]), [['r', 'cave'], ['t', 'shaft']]);
+  for (const [x, y] of hall.exits[0].cells) assert.equal(rt.space('w').getCell([x, y]), null, 'the shared wall is cut');
+  assert.ok(hall.exits[1].cells.some(([x, y]) => rt.space('w').getCell([x, y - 1]) === 'rung'), 'a rung stack climbs through the shared wall');
+  // Features spawn as entities on reachable tiles, the boss inside its own room.
+  assert.equal(rt.entity('bench_1').components.feature.kind, 'bench');
+  assert.equal(rt.query('feature').filter(e => e.archetype === 'slime').length, 2);
+  const boss = rt.query('feature').find(e => e.archetype === 'golem');
+  assert.equal(rt.service('rooms').roomAt(boss.at), 'arena');
+  assert.deepEqual(rt.service('rooms:w').graph().edges.length, 4);
+});
+
+test('tilemap.rooms: unreachable positions and dangling exits are reported, never hidden', () => {
+  const d = doc();
+  d.spaces[0].generators[0].with.rooms[3].features = [{ kind: 'chest', at: [45, 38] }]; // in the air under the ceiling
+  d.spaces[0].generators[0].with.rooms[4].exits.push({ side: 't' });
+  const { rt } = compile(d, { primitives: PRIMS });
+  const st = rt.store(KEY), got = st.problems.map(p => p.code);
+  assert.ok(got.includes('feature_unreachable'), got.join());
+  assert.ok(got.includes('exit_unmatched'), got.join());
+  assert.equal(rt.state.counts.generate_problem, st.problems.length);
+});
+
+test('tilemap.rooms: the proof walks the mover\'s envelope and body on the tilemap\'s own navigation', () => {
+  const floor = () => { const g = new Raster(20, 12, ROLE.EMPTY); g.rect(0, 0, 20, 1, ROLE.SOLID); return g; };
+  const at = (g, x, y) => new Map([[y * g.w + x, 'goal']]);
+  const hits = (g, mover, goal, from = { x: 1, y: 1 }, mode = 'side') => proveReach(g, mode, navMover(mover), [from], goal).hit.has('goal');
+  const plat = h => { const g = floor(); g.rect(8, h, 3, 1, ROLE.SOLID); return g; };
+  // The envelope is physical reach; navigation offers whole tiles with the arc's clearance: a 3.6 rise lands 3 rows up.
+  const base = { envelope: { jumpHeight: 3.6, jumpGap: 4 } };
+  assert.ok(hits(plat(3), base, at(plat(3), 9, 4)), 'a 3-high ledge is in reach');
+  assert.ok(!hits(plat(3), { envelope: { jumpHeight: 3.2, jumpGap: 4 } }, at(plat(3), 9, 4)), 'a rise that only just reaches its top does not land on it');
+  assert.ok(!hits(plat(5), base, at(plat(5), 9, 6)), 'a 5-high one is not');
+  assert.ok(hits(plat(5), { envelope: { ...base.envelope, doubleJump: true } }, at(plat(5), 9, 6)), 'double jump reaches it');
+  const pit = w => { const g = floor(); g.rect(5, 0, w, 1, ROLE.HAZARD); return g; };
+  assert.ok(hits(pit(3), base, at(pit(3), 15, 1)), 'a 3-wide pit is cleared');
+  assert.ok(!hits(pit(6), base, at(pit(6), 15, 1)), 'a 6-wide pit is not');
+  const low = w => { const g = pit(w); g.rect(4, 4, w + 2, 1, ROLE.SOLID); return g; }; // a ceiling 3 rows above the floor
+  assert.ok(!hits(low(3), base, at(low(3), 15, 1)), 'under a low ceiling only a low arc fits, and a low arc is a short hop');
+  assert.ok(hits(pit(6), { envelope: { ...base.envelope, dash: 3 } }, at(pit(6), 15, 1)), 'the envelope\'s dash extends the jump');
+  const wall = () => { const g = floor(); g.rect(10, 0, 1, 9, ROLE.SOLID); g.rect(11, 0, 9, 1, ROLE.SOLID); return g; };
+  assert.ok(!hits(wall(), base, at(wall(), 15, 1)));
+  assert.ok(hits(wall(), { envelope: { ...base.envelope, wallJump: true } }, at(wall(), 15, 1)), 'wall jumping scales the wall');
+  // The body: a one-tile crawlspace passes a one-tile body and stops a 1.4-tall one.
+  const crawl = () => { const g = floor(); g.rect(6, 2, 6, 10, ROLE.SOLID); return g; };
+  assert.ok(hits(crawl(), { ...base, width: 0.8, height: 0.95 }, at(crawl(), 15, 1)));
+  assert.ok(!hits(crawl(), { ...base, width: 0.8, height: 1.4 }, at(crawl(), 15, 1)), 'a body taller than the gap cannot pass');
+  const td = new Raster(5, 5, ROLE.EMPTY); td.rect(2, 0, 1, 5, ROLE.WATER);
+  assert.ok(!proveReach(td, 'topdown', navMover({}), [{ x: 0, y: 0 }], new Map([[4, 'g']])).hit.has('g'));
+  assert.ok(proveReach(td, 'topdown', navMover({ envelope: { swim: true } }), [{ x: 0, y: 0 }], new Map([[4, 'g']])).hit.has('g'));
+});
+
+test('tilemap.rooms: the generated layout is proven for the player\'s real body and envelope', () => {
+  for (const size of [[0.8, 0.95], [0.8, 1.4]]) {
+    const d = doc(); d.content.archetypes[0].components = { body: { size } }; d.player.at = [3.5, 3.5];
+    const { rt } = compile(d, { primitives: PRIMS });
+    const st = rt.store(KEY);
+    assert.deepEqual(st.problems, [], `${size}: ${JSON.stringify(st.problems)}`);
+    assert.ok(st.targets.length > 0 && Array.isArray(st.from), 'the proof publishes what it guarantees');
+  }
+});
+
+test('tilemap.rooms: top-down mode generates and proves too', () => {
+  const { rt } = compile(doc({ mode: 'topdown' }), { primitives: PRIMS });
+  assert.deepEqual(rt.store(KEY).problems, []);
+});
+
+test('tilemap.rooms: same seed replays exactly; another seed differs', () => {
+  const a = compile(doc(), { primitives: PRIMS }).rt, b = compile(doc(), { primitives: PRIMS }).rt, c = compile(doc({}, 99), { primitives: PRIMS }).rt;
+  run(a, 10); run(b, 10); run(c, 10);
+  assert.deepEqual(a.snapshot(), b.snapshot());
+  assert.notDeepEqual(a.snapshot().spaces.w.cells, c.snapshot().spaces.w.cells);
+});
+
+test('tilemap.rooms: preflight rejects bad configs with stable codes', () => {
+  const d = doc();
+  const rs = d.spaces[0].generators[0].with.rooms;
+  rs[1].rect = [20, 0, 50, 20];                // overlaps hall
+  rs[2].style = 'volcano';                      // unknown style
+  rs[3].requiresAbilities = ['teleport_jump'];  // neither defined by the document nor a movement ability
+  rs.push({ id: 'tiny', zone: 'b', rect: [90, 50, 93, 52] }, { id: 'out', zone: 'a', rect: [50, 50, 70, 60] });
+  const got = codes(d);
+  for (const c of ['room_overlap', 'room_style_unknown', 'ability_unknown', 'room_rect_invalid', 'room_outside_zone']) assert.ok(got.includes(c), `${c} in ${got}`);
+  const e = doc(); e.spaces[0].generators[0].with.rooms[0].exits[0].side = 'up';
+  assert.ok(codes(e).includes('param_option'));
+});
+
+test('tilemap.rooms: on the real tilemap the space\'s own pathing agrees every exit is reachable', () => {
+  const blocks = [{ id: 'stone', solid: true }, { id: 'plank', solid: true }, { id: 'rung', tags: ['one_way'] }, { id: 'spikes', solid: false, tags: ['hazard'] }, { id: 'water', solid: false, tags: ['liquid'] }, { id: 'door', solid: true }];
+  for (const seed of [1, 2, 3]) {
+    const d = doc({}, seed);
+    d.spaces[0] = { ...d.spaces[0], use: 'engine.space.tilemap', with: { size: [100, 60], mode: 'side' } };
+    d.content.blocks = blocks; d.content.archetypes[0].components = { body: { size: [0.8, 0.9] } }; d.player.at = [3.5, 3.5];
+    const { rt } = compile(d, { primitives: [...PRIMS, ...SPACES2D] });
+    const st = rt.store(KEY), api = rt.space('w');
+    assert.deepEqual(st.problems, [], `seed ${seed}`);
+    assert.equal(rt.state.spaces.w.log.length, 0, 'generation is baseline, not edits');
+    for (const r of st.rooms) for (const e of r.exits) assert.ok(e.cells.some(c => api.canReach(rt.player().at, [c[0] + 0.5, c[1] + 0.5], rt, {})), `seed ${seed}: ${r.id}.${e.side}`);
+  }
+});
+
+test('tilemap.rooms: doors to other zones pair up, are proven as links and carry the player (gates apply)', () => {
+  const d = doc();
+  d.spaces[0].generators[0].with.rooms = [
+    { id: 'west', zone: 'a', rect: [0, 0, 20, 12], exits: [{ side: 'r', to: 'b', gate: { flag: 'key_turned' } }] },
+    { id: 'east', zone: 'b', rect: [70, 0, 90, 12], style: 'arena', exits: [{ side: 'l', to: 'a' }] },
+  ];
+  const { rt } = compile(d, { primitives: PRIMS });
+  run(rt, 1);
+  const st = rt.store(KEY), svc = rt.service('rooms'), [west] = svc.doors(), api = rt.space('w');
+  assert.deepEqual(st.problems, []);
+  assert.deepEqual(svc.doors().map(x => [x.room, x.pair.room]), [['west', 'east'], ['east', 'west']]);
+  api.setPos(rt.player(), west.port, rt); run(rt, 1);
+  assert.equal(svc.roomAt(rt.player().at), 'west', 'the gate holds');
+  assert.equal(rt.state.counts.blocked, 1);
+  rt.run([{ do: 'set_flag', flag: 'key_turned' }]);
+  api.setPos(rt.player(), [west.port[0] - 1, west.port[1]], rt); run(rt, 1);
+  api.setPos(rt.player(), west.port, rt); run(rt, 1);
+  assert.equal(svc.roomAt(rt.player().at), 'east');
+  assert.equal(rt.state.counts['room_door:b'], 1);
+});

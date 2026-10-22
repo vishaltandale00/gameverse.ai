@@ -1,0 +1,937 @@
+{
+ "gameId": "mario-kart-with-shopping-carts-mvhc55md",
+ "version": 1,
+ "stage": "first_playable",
+ "created": "2026-10-20T23:50:14.525Z",
+ "docHash": "4c72066120b2fb352c80230d028f9c9ee86f126e5dfd41024b3012bc7187b9b6",
+ "provenance": {
+  "pipeline": "v2-kernel/0.1",
+  "catalogHash": "2eb8cca1ace3a062d612fd275f4b63ac7a6225da5efde26f0ca52ac0a7f625d8",
+  "models": {
+   "spec": "gpt-4.1-mini",
+   "specProvider": "openai",
+   "decisions": "d1"
+  },
+  "seed": 1074124244,
+  "prompt": "Mario Kart with shopping carts",
+  "answers": [
+   {
+    "question": "Which art style fits the game?",
+    "answer": "bold cel-shaded cartoon"
+   },
+   {
+    "question": "What pace should gameplay have?",
+    "answer": "fast and frantic"
+   },
+   {
+    "question": "What's the game difficulty level?",
+    "answer": "casual and accessible"
+   },
+   {
+    "question": "What tone suits the story?",
+    "answer": "lighthearted and comedic"
+   }
+  ],
+  "outlineSource": "gpt-4.1-mini-2025-04-14",
+  "decompositionHash": "9570eb6fc6816e953cd8288cda6061662154d64f62682c5ccbfe8712d04cb385",
+  "outlineHash": "4c72066120b2fb352c80230d028f9c9ee86f126e5dfd41024b3012bc7187b9b6",
+  "runner": {
+   "isolation": "process",
+   "heapMb": 1024,
+   "timeoutMs": 900000
+  }
+ },
+ "report": {
+  "kind": "kernel",
+  "decomposition": {
+   "version": "decompose/0.1",
+   "title": "Kart Carts",
+   "premise": "Race through vibrant tracks riding shopping carts equipped with quirky power-ups in a lighthearted, fast-paced competition. Navigate wild obstacles and use chaotic abilities to gain the upper hand in this accessible and comedic racing experience.",
+   "tone": "lighthearted, comedic, fast, frantic, casual, accessible",
+   "references": [
+    {
+     "name": "Mario Kart",
+     "kind": "game",
+     "keeps": [
+      "go-kart racing core loop",
+      "item pickups and usage",
+      "kart customization",
+      "track variety",
+      "fast-paced multiplayer racing"
+     ]
+    }
+   ],
+   "mechanics": [
+    {
+     "id": "race_karts",
+     "verb": "race",
+     "description": "Race on colorful tracks using controllable vehicles (shopping carts) with drifting mechanics and speed boosts.",
+     "from": "Mario Kart",
+     "importance": "core"
+    },
+    {
+     "id": "use_power_ups",
+     "verb": "use",
+     "description": "Pick up and use various power-ups to hinder opponents or boost yourself.",
+     "from": "Mario Kart",
+     "importance": "core"
+    },
+    {
+     "id": "drift_around_corners",
+     "verb": "drift",
+     "description": "Drift to maintain speed and build boost meter around curves.",
+     "from": "Mario Kart",
+     "importance": "core"
+    },
+    {
+     "id": "customize_kart",
+     "verb": "customize",
+     "description": "Customize your shopping cart with different colors and accessories for style and minor performance changes.",
+     "from": "Mario Kart",
+     "importance": "supporting"
+    }
+   ],
+   "spaces": [
+    {
+     "role": "race tracks",
+     "kind": "continuous-3d",
+     "description": "Fast, dynamic 3D race tracks with obstacles suited for shopping cart racing."
+    }
+   ],
+   "views": [
+    "3p"
+   ],
+   "acts": 3,
+   "zones": 5,
+   "source": "gpt-4.1-mini-2025-04-14",
+   "ms": 2485
+  },
+  "selection": {
+   "mechanics": [
+    {
+     "id": "race_karts",
+     "verb": "race",
+     "description": "Race on colorful tracks using controllable vehicles (shopping carts) with drifting mechanics and speed boosts.",
+     "from": "Mario Kart",
+     "importance": "core",
+     "primitives": [
+      "gameplay.race",
+      "gameplay.vehicle.car",
+      "engine.space.track",
+      "engine.input.actions"
+     ],
+     "source": "catalogue-model",
+     "score": 1,
+     "candidates": [
+      {
+       "id": "gameplay.race",
+       "score": 1.155
+      },
+      {
+       "id": "gameplay.vehicle.car",
+       "score": 1.155
+      },
+      {
+       "id": "engine.space.track",
+       "score": 0.866
+      }
+     ]
+    },
+    {
+     "id": "use_power_ups",
+     "verb": "use",
+     "description": "Pick up and use various power-ups to hinder opponents or boost yourself.",
+     "from": "Mario Kart",
+     "importance": "core",
+     "primitives": [
+      "gameplay.collectible",
+      "gameplay.powerup",
+      "gameplay.item.use",
+      "engine.input.actions"
+     ],
+     "source": "catalogue-model",
+     "score": 1,
+     "candidates": [
+      {
+       "id": "gameplay.launcher",
+       "score": 1.333
+      },
+      {
+       "id": "engine.portal",
+       "score": 1
+      },
+      {
+       "id": "gameplay.cards",
+       "score": 1
+      }
+     ]
+    },
+    {
+     "id": "drift_around_corners",
+     "verb": "drift",
+     "description": "Drift to maintain speed and build boost meter around curves.",
+     "from": "Mario Kart",
+     "importance": "core",
+     "primitives": [
+      "gameplay.vehicle.car",
+      "engine.space.track",
+      "engine.input.actions"
+     ],
+     "source": "catalogue-model",
+     "score": 1,
+     "candidates": [
+      {
+       "id": "gameplay.vehicle.car",
+       "score": 1.503
+      },
+      {
+       "id": "gameplay.build.structure",
+       "score": 1.061
+      },
+      {
+       "id": "engine.space.grid",
+       "score": 0.972
+      }
+     ]
+    },
+    {
+     "id": "customize_kart",
+     "verb": "customize",
+     "description": "Customize your shopping cart with different colors and accessories for style and minor performance changes.",
+     "from": "Mario Kart",
+     "importance": "supporting",
+     "primitives": [
+      "gameplay.equipment",
+      "gameplay.inventory",
+      "engine.input.actions"
+     ],
+     "source": "catalogue-model",
+     "score": 1,
+     "candidates": [
+      {
+       "id": "engine.space.grid",
+       "score": 0.791
+      },
+      {
+       "id": "engine.assist",
+       "score": 0.474
+      },
+      {
+       "id": "engine.beat",
+       "score": 0.474
+      }
+     ]
+    }
+   ],
+   "spaces": [
+    {
+     "id": "race_tracks",
+     "use": "engine.space.track",
+     "with": {},
+     "role": "race tracks",
+     "caps": [
+      "position",
+      "distance",
+      "overlap",
+      "raycast",
+      "gravity",
+      "dynamics",
+      "bounds"
+     ]
+    }
+   ],
+   "systems": [
+    "engine.input.actions",
+    "gameplay.collectible",
+    "gameplay.equipment",
+    "gameplay.inventory",
+    "gameplay.item.use",
+    "gameplay.powerup",
+    "gameplay.race",
+    "gameplay.vehicle.car",
+    "gameplay.vehicle.core",
+    "plot.storyboard"
+   ],
+   "graphics": [],
+   "gaps": [
+    {
+     "mechanic": "player_agency",
+     "description": "move the player between places in engine.space.track",
+     "importance": "core",
+     "kind": "capability",
+     "why": "no registered primitive gives the player a way to act or travel in a space that the chosen mechanics can use"
+    }
+   ],
+   "provider": "catalogue-model"
+  },
+  "gaps": [
+   {
+    "capability": "move the player between places in engine.space.track",
+    "why": "no registered primitive gives the player a way to act or travel in a space that the chosen mechanics can use",
+    "kind": "capability",
+    "mechanic": "player_agency",
+    "importance": "core"
+   }
+  ],
+  "summary": "Race through vibrant tracks riding shopping carts equipped with quirky power-ups in a lighthearted, fast-paced competition.",
+  "verified": null,
+  "verification": {
+   "ok": true,
+   "source": "preflight",
+   "pending": true,
+   "preflightMs": null
+  },
+  "outline": {
+   "source": "gpt-4.1-mini-2025-04-14",
+   "rounds": [
+    {
+     "kind": "procedural",
+     "ok": true,
+     "errors": 0,
+     "fixes": 2,
+     "ms": 1
+    },
+    {
+     "kind": "model",
+     "ok": false,
+     "errors": 8,
+     "codes": [
+      "input_key_unknown",
+      "validator_crashed"
+     ],
+     "fixes": 21,
+     "ms": 15475
+    },
+    {
+     "kind": "model_repair",
+     "ok": true,
+     "errors": 0,
+     "codes": [],
+     "fixes": 3,
+     "ms": 10251,
+     "staticErrors": 0,
+     "verifyErrors": 0
+    }
+   ],
+   "firstPassOk": false,
+   "fellBack": false,
+   "isolated": false
+  },
+  "firstPlayable": {
+   "ms": 0,
+   "start": {
+    "space": "race_tracks",
+    "at": [
+     0.5,
+     0,
+     0.5
+    ],
+    "zone": "equipped_spire"
+   },
+   "options": 0,
+   "stateHash": "9b697fa4c98d8c1dfde6faea3a3673b7e8aad5d750a55b66a7368df97b03fbe2"
+  },
+  "timings": {
+   "queueMs": 0,
+   "decomposeMs": 2485,
+   "selectMs": 2193,
+   "outlineMs": 26236,
+   "outlineModelMs": 25715,
+   "firstPlayableBuildMs": 0,
+   "requestToFirstPlayableMs": 30927,
+   "jobStartMs": 115,
+   "jobSetupMs": 87
+  }
+ },
+ "doc": {
+  "schema": "gameverse.v2.game/0.2",
+  "id": "kart-carts",
+  "title": "Kart Carts",
+  "logline": "Race through vibrant tracks riding shopping carts equipped with quirky power-ups in a lighthearted, fast-paced competition.",
+  "seed": 1074124244,
+  "views": {
+   "primary": "3p",
+   "alternates": []
+  },
+  "spaces": [
+   {
+    "id": "race_tracks",
+    "use": "engine.space.track",
+    "params": {
+     "lanes": 4,
+     "laneWidth": 2,
+     "length": 200,
+     "loop": false,
+     "gravity": -30,
+     "ceiling": 8,
+     "window": [
+      10,
+      60
+     ],
+     "leader": "player"
+    },
+    "zones": [
+     {
+      "id": "equipped_spire",
+      "name": "Equipped Spire",
+      "description": "Bright neon signs and bouncing bumpers welcome racers to Equipped Spire, the thrilling opening of the race.",
+      "range": [
+       0,
+       40
+      ]
+     },
+     {
+      "id": "mario_gate",
+      "name": "Mario Gate",
+      "description": "Colorful arches and playful obstacles mark the start of serious competition at Mario Gate.",
+      "range": [
+       40,
+       80
+      ]
+     },
+     {
+      "id": "paced_yard",
+      "name": "Paced Yard",
+      "description": "A dizzying stretch of ramps and loops in the bustling Paced Yard.",
+      "range": [
+       80,
+       120
+      ]
+     },
+     {
+      "id": "competition_ruins",
+      "name": "Competition Ruins",
+      "description": "Wrecked carts and shattered crates litter the wild course at Competition Ruins.",
+      "range": [
+       120,
+       160
+      ]
+     },
+     {
+      "id": "paced_grove",
+      "name": "Paced Grove",
+      "description": "A vibrant garden with twisting lanes and last-minute hazards in the Paced Grove finale.",
+      "range": [
+       160,
+       200
+      ]
+     }
+    ],
+    "generators": [],
+    "with": {
+     "lanes": 3,
+     "laneWidth": 1,
+     "length": 0,
+     "loop": false,
+     "gravity": -30,
+     "ceiling": 8,
+     "window": [
+      10,
+      60
+     ],
+     "leader": "player"
+    }
+   }
+  ],
+  "systems": [
+   {
+    "use": "engine.input.actions",
+    "with": {
+     "verbs": [
+      "move",
+      "look",
+      "jump",
+      "use",
+      "attack",
+      "drift"
+     ],
+     "axes": [
+      "move",
+      "look",
+      "steer"
+     ],
+     "bindings": {
+      "3p": {
+       "move": [
+        "arrows"
+       ],
+       "jump": [
+        "pad_a"
+       ],
+       "use": [
+        "pad_x"
+       ],
+       "drift": [
+        "pad_b"
+       ]
+      }
+     },
+     "shareKeys": [],
+     "touch": false,
+     "deadzone": 0.2,
+     "lookSensitivity": 0.0025,
+     "lookRate": 3,
+     "invertY": false
+    }
+   },
+   {
+    "use": "gameplay.collectible",
+    "with": {
+     "magnet": 0,
+     "magnetSpeed": 8,
+     "radius": 0.25,
+     "collectors": [
+      "player"
+     ],
+     "counters": []
+    }
+   },
+   {
+    "use": "gameplay.powerup",
+    "with": {
+     "powerups": [
+      {
+       "id": "boost",
+       "kind": "magnet",
+       "sec": 10,
+       "value": 2,
+       "radius": 4,
+       "overflowPoints": 1000,
+       "stack": "refresh",
+       "pulls": [
+        "pickup",
+        "collectible",
+        "powerup"
+       ],
+       "onStart": [],
+       "onEnd": []
+      }
+     ],
+     "pickupRange": 1,
+     "loseTierOnHit": false
+    }
+   },
+   {
+    "use": "gameplay.item.use",
+    "with": {
+     "cooldown": 0,
+     "globalCooldown": 0,
+     "options": 8
+    }
+   },
+   {
+    "use": "gameplay.equipment",
+    "with": {
+     "slots": [
+      {
+       "id": "cart_body",
+       "accepts": [
+        "body"
+       ],
+       "max": 1,
+       "swap": true
+      },
+      {
+       "id": "wheels",
+       "accepts": [
+        "wheels"
+       ],
+       "max": 1,
+       "swap": true
+      },
+      {
+       "id": "accessory",
+       "accepts": [
+        "accessory"
+       ],
+       "max": 1,
+       "swap": true
+      }
+     ],
+     "durability": false,
+     "breakRemoves": false,
+     "statMods": true,
+     "wear": [],
+     "autoEquip": true
+    }
+   },
+   {
+    "use": "gameplay.inventory",
+    "with": {
+     "slots": 48,
+     "otherSlots": 36,
+     "stackDefault": 10,
+     "start": [
+      {
+       "item": "boost_pad",
+       "count": 1
+      },
+      {
+       "item": "oil_slick",
+       "count": 1
+      }
+     ]
+    }
+   },
+   {
+    "use": "gameplay.race",
+    "with": {
+     "id": "main_race",
+     "laps": 3,
+     "checkpoints": [
+      "equipped_spire",
+      "mario_gate",
+      "paced_yard",
+      "competition_ruins",
+      "paced_grove"
+     ],
+     "racers": [
+      "player",
+      "npc1",
+      "npc2",
+      "npc3"
+     ],
+     "includePlayer": true,
+     "vehicleOnly": false,
+     "autoStart": true,
+     "countdown": 3,
+     "timeLimit": 0,
+     "checkpointBonus": 0,
+     "wrongWaySec": 2,
+     "dnfAfter": 30,
+     "ghost": true,
+     "ghostEvery": 6,
+     "onFinish": [],
+     "onWin": [],
+     "onLose": []
+    }
+   },
+   {
+    "use": "gameplay.vehicle.car",
+    "with": {
+     "preset": "kart",
+     "plane": "auto",
+     "surfaces": {
+      "road": {
+       "grip": 1,
+       "drag": 1,
+       "maxSpeed": 1
+      },
+      "grass": {
+       "grip": 0.5,
+       "drag": 1.5,
+       "maxSpeed": 0.7
+      },
+      "mud": {
+       "grip": 0.3,
+       "drag": 2,
+       "maxSpeed": 0.5
+      }
+     },
+     "stallDepth": 0.6,
+     "restitution": 0.2,
+     "crashEvent": 5,
+     "landingDamage": 5,
+     "maxLean": 30,
+     "railBlocks": [
+      "rail"
+     ],
+     "minDriftSpeed": 10
+    }
+   },
+   {
+    "use": "gameplay.vehicle.core",
+    "with": {
+     "enterRange": 3,
+     "theftDifficulty": 0,
+     "carjack": false,
+     "damage": true,
+     "crashSpeed": 5,
+     "crashDamage": 2,
+     "burnAt": 0.3,
+     "burnSec": 5,
+     "ejectOnDestroy": true,
+     "onDestroyed": [],
+     "exitOffset": 1.5,
+     "fuelUse": 0,
+     "stations": [],
+     "plane": "auto"
+    }
+   },
+   {
+    "use": "plot.storyboard",
+    "with": {
+     "sequentialActs": true
+    }
+   }
+  ],
+  "graphics": [
+   {
+    "use": "graphics.camera.third-person",
+    "with": {
+     "distance": 10,
+     "height": 5,
+     "fov": 75,
+     "lockOnBlend": 0.5,
+     "shoulder": "right",
+     "collide": true,
+     "recenter": 0.1,
+     "pitch": 1.4
+    },
+    "space": "race_tracks"
+   },
+   {
+    "use": "graphics.render.track",
+    "with": {
+     "scenery": "auto",
+     "curvature": 0.5,
+     "hills": 1,
+     "rails": true,
+     "groundColor": "#8EDC00",
+     "speedLines": true
+    },
+    "space": "race_tracks"
+   },
+   {
+    "use": "graphics.ui.hud",
+    "with": {
+     "style": "auto",
+     "auto": true,
+     "meters": [],
+     "counters": [],
+     "score": null,
+     "lives": null,
+     "stars": null,
+     "readouts": [],
+     "prompt": true,
+     "compass": false,
+     "clock": false,
+     "status": false,
+     "bossBar": false,
+     "combo": false,
+     "objective": true,
+     "toasts": true,
+     "zoneTitles": "first",
+     "damageNumbers": false,
+     "crosshair": "none",
+     "comboWindow": 1.2
+    }
+   },
+   {
+    "use": "graphics.anim.clips",
+    "with": {
+     "presets": [
+      "run",
+      "jump",
+      "interact",
+      "victory"
+     ],
+     "clips": [],
+     "triggers": []
+    }
+   }
+  ],
+  "plot": {
+   "premise": "Race through vibrant tracks riding shopping carts equipped with quirky power-ups in a lighthearted, fast-paced competition. Navigate wild obstacles and use chaotic abilities to gain the upper hand in this accessible and comedic racing experience.",
+   "characters": [
+    {
+     "id": "guide",
+     "name": "Guide",
+     "role": "guide",
+     "bio": "A wacky announcer who enthusiastically narrates the race and offers helpful tips."
+    },
+    {
+     "id": "rival_1",
+     "name": "Turbo Toni",
+     "role": "rival racer"
+    },
+    {
+     "id": "rival_2",
+     "name": "Speedy Sue",
+     "role": "rival racer"
+    },
+    {
+     "id": "rival_3",
+     "name": "Flip Finn",
+     "role": "rival racer"
+    }
+   ],
+   "storyboard": {
+    "acts": [
+     {
+      "id": "act_1",
+      "title": "The Starting Line",
+      "beats": [
+       {
+        "id": "welcome",
+        "title": "Welcome to the Race",
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Welcome racers! Grab your carts and get ready. The chaotic race begins now!"
+         }
+        ]
+       },
+       {
+        "id": "reach_mario_gate",
+        "title": "Mario Gate",
+        "when": {
+         "zone": "mario_gate"
+        },
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Mario Gate! Keep your speed steady and watch those bumpers!"
+         }
+        ]
+       },
+       {
+        "id": "reach_paced_yard",
+        "title": "Paced Yard",
+        "when": {
+         "zone": "paced_yard"
+        },
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Paced Yard is fast and furious. Time to drift, racers!"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "act_2",
+      "title": "Heat of the Race",
+      "beats": [
+       {
+        "id": "reach_competition_ruins",
+        "title": "Competition Ruins",
+        "when": {
+         "zone": "competition_ruins"
+        },
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Competition Ruins ahead! Watch your cart and watch your back!"
+         }
+        ]
+       },
+       {
+        "id": "pickup_powerups",
+        "title": "Power-Up Frenzy",
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Pick up wacky power-ups to race ahead or slow down your rivals!"
+         }
+        ]
+       },
+       {
+        "id": "reach_paced_grove",
+        "title": "Paced Grove",
+        "when": {
+         "zone": "paced_grove"
+        },
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Paced Grove is the final stretch. Hold on tight!"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "act_3",
+      "title": "Final Lap",
+      "beats": [
+       {
+        "id": "finale",
+        "title": "Finale",
+        "when": {
+         "zone": "paced_grove"
+        },
+        "do": [
+         {
+          "do": "end_game",
+          "ending": "victory"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "endings": [
+    {
+     "id": "victory",
+     "title": "Victory!",
+     "text": "You've conquered the Kart Carts race with style and speed! Congratulations!",
+     "outcome": "won"
+    }
+   ]
+  },
+  "content": {
+   "items": [
+    {
+     "id": "boost_pad",
+     "name": "Boost Pad",
+     "kind": "tool",
+     "desc": "Gives a quick burst of speed when used."
+    },
+    {
+     "id": "oil_slick",
+     "name": "Oil Slick",
+     "kind": "tool",
+     "desc": "Drops behind your cart to make opponents slip."
+    }
+   ],
+   "archetypes": [
+    {
+     "id": "hero",
+     "kind": "player",
+     "components": {
+      "name": "You"
+     }
+    },
+    {
+     "id": "npc1",
+     "kind": "npc",
+     "components": {
+      "name": "Turbo Toni"
+     }
+    },
+    {
+     "id": "npc2",
+     "kind": "npc",
+     "components": {
+      "name": "Speedy Sue"
+     }
+    },
+    {
+     "id": "npc3",
+     "kind": "npc",
+     "components": {
+      "name": "Flip Finn"
+     }
+    }
+   ]
+  },
+  "player": {
+   "archetype": "hero",
+   "space": "race_tracks",
+   "at": [
+    0.5,
+    0,
+    0
+   ]
+  }
+ }
+}

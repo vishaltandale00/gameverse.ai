@@ -1,0 +1,13 @@
+:root { color-scheme: dark; }
+html, body { margin: 0; height: 100%; background: #0a0910; color: #e8e4f0; font: 14px/1.4 "Avenir Next", system-ui, sans-serif; }
+body { display: flex; flex-direction: column; }
+.lab-bar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #15131e; flex-wrap: wrap; }
+.lab-bar nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.lab-bar button { background: #262236; color: #e8e4f0; border: 1px solid #3a3450; border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; }
+.lab-bar button[aria-pressed="true"] { background: #6a4ad8; border-color: #8a6af8; }
+#hint { color: #9a94b0; font-size: 12px; }
+.lab-view { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.gv-view { position: relative; }
+.gv-story { position: relative; padding: 16px 22px; max-width: 760px; }
+.gv-choices button { margin: 4px 6px 0 0; background: #2a2440; color: #fff; border: 1px solid #4a4068; border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
+.gv-log { max-height: 160px; overflow: auto; padding-left: 18px; color: #c8c2d8; }

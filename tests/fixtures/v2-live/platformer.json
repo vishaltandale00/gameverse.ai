@@ -1,0 +1,1064 @@
+{
+ "gameId": "a-platformer-where-you-climb-mvhc12a2",
+ "version": 2,
+ "stage": "detail:fast_sanctum",
+ "created": "2026-10-20T23:47:44.835Z",
+ "docHash": "a96c5fd9caeffd06870123ba190313386c4fd967e8948a10cfff8bd3642f7b97",
+ "provenance": {
+  "pipeline": "v2-kernel/0.1",
+  "catalogHash": "2eb8cca1ace3a062d612fd275f4b63ac7a6225da5efde26f0ca52ac0a7f625d8",
+  "models": {
+   "spec": "gpt-4.1-mini",
+   "specProvider": "openai",
+   "decisions": "d1"
+  },
+  "seed": 1309811577,
+  "prompt": "A platformer where you climb a tower built from falling Tetris pieces that you stack yourself",
+  "answers": [
+   {
+    "question": "What pace suits the gameplay?",
+    "answer": "Fast and frantic"
+   },
+   {
+    "question": "What difficulty curve fits best?",
+    "answer": "Increasingly challenging"
+   },
+   {
+    "question": "What art style would you prefer?",
+    "answer": "Crisp 16-bit pixel art"
+   }
+  ],
+  "outlineSource": "gpt-4.1-mini-2025-04-14",
+  "decompositionHash": "562ffe23d3546f39d556a19b6211e3c2363e7c00ab069bdda8f7d25ba758e164",
+  "task": "zone:tower_climb:fast_sanctum",
+  "runner": {
+   "isolation": "process",
+   "heapMb": 1024,
+   "timeoutMs": 900000
+  }
+ },
+ "report": {
+  "kind": "kernel",
+  "decomposition": {
+   "version": "decompose/0.1",
+   "title": "Towerfall Tetris",
+   "premise": "Climb an ever-growing tower made from falling Tetris pieces that you control and stack yourself. Navigate fast-paced platforming challenges as the tower becomes increasingly unstable and difficult to climb.",
+   "tone": "fast, frantic, challenging, retro, crisp",
+   "references": [
+    {
+     "name": "Tetris",
+     "kind": "game",
+     "keeps": [
+      "falling block stacking",
+      "piece rotation and placement"
+     ]
+    },
+    {
+     "name": "platformer",
+     "kind": "genre",
+     "keeps": [
+      "running and jumping to ascend platforms"
+     ]
+    }
+   ],
+   "mechanics": [
+    {
+     "id": "falling_block_placement",
+     "verb": "stack",
+     "description": "Control and place falling Tetris pieces to build the tower upwards",
+     "from": "Tetris",
+     "importance": "core"
+    },
+    {
+     "id": "platformer_movement",
+     "verb": "jump and run",
+     "description": "Move the character left and right and jump to climb the tower",
+     "from": "platformer",
+     "importance": "core"
+    },
+    {
+     "id": "increasing_difficulty",
+     "verb": "progress",
+     "description": "Increase challenge as tower grows taller and pieces fall faster",
+     "from": "user preference",
+     "importance": "supporting"
+    }
+   ],
+   "spaces": [
+    {
+     "role": "tower-climb",
+     "kind": "continuous-2d",
+     "description": "A vertically scrolling 2D view of the tower made of Tetris blocks to climb"
+    }
+   ],
+   "views": [
+    "side",
+    "ui"
+   ],
+   "acts": 3,
+   "zones": 5,
+   "source": "gpt-4.1-mini-2025-04-14",
+   "ms": 2194
+  },
+  "selection": {
+   "mechanics": [
+    {
+     "id": "falling_block_placement",
+     "verb": "stack",
+     "description": "Control and place falling Tetris pieces to build the tower upwards",
+     "from": "Tetris",
+     "importance": "core",
+     "primitives": [
+      "gameplay.falling.pieces"
+     ],
+     "source": "catalogue-model",
+     "score": 1,
+     "candidates": [
+      {
+       "id": "gameplay.falling.pieces",
+       "score": 3.833
+      },
+      {
+       "id": "gameplay.build.structure",
+       "score": 1.833
+      },
+      {
+       "id": "gameplay.blocks.place",
+       "score": 1.5
+      }
+     ]
+    },
+    {
+     "id": "platformer_movement",
+     "verb": "jump and run",
+     "description": "Move the character left and right and jump to climb the tower",
+     "from": "platformer",
+     "importance": "core",
+     "primitives": [
+      "engine.space.tilemap",
+      "gameplay.move.platformer",
+      "engine.physics.character"
+     ],
+     "source": "catalogue-model",
+     "score": 1,
+     "candidates": [
+      {
+       "id": "gameplay.move.grid",
+       "score": 4.773
+      },
+      {
+       "id": "gameplay.move.lanes",
+       "score": 4.773
+      },
+      {
+       "id": "gameplay.move.climb",
+       "score": 3.712
+      }
+     ]
+    },
+    {
+     "id": "increasing_difficulty",
+     "verb": "progress",
+     "description": "Increase challenge as tower grows taller and pieces fall faster",
+     "from": "user preference",
+     "importance": "supporting",
+     "primitives": [
+      "engine.assist"
+     ],
+     "source": "catalogue-model",
+     "score": 1,
+     "candidates": [
+      {
+       "id": "gameplay.falling.pieces",
+       "score": 2.25
+      },
+      {
+       "id": "gameplay.checkpoint",
+       "score": 1
+      },
+      {
+       "id": "gameplay.encounter",
+       "score": 1
+      }
+     ]
+    }
+   ],
+   "spaces": [
+    {
+     "id": "tower_climb",
+     "use": "engine.space.tilemap",
+     "with": {},
+     "role": "tower-climb",
+     "caps": [
+      "position",
+      "distance",
+      "overlap",
+      "raycast",
+      "pathfind",
+      "reachable",
+      "editCells",
+      "surface",
+      "dynamics",
+      "bounds",
+      "gravity"
+     ]
+    }
+   ],
+   "systems": [
+    "engine.assist",
+    "engine.input.actions",
+    "engine.physics.character",
+    "gameplay.falling.pieces",
+    "gameplay.inventory",
+    "gameplay.move.platformer",
+    "plot.storyboard"
+   ],
+   "graphics": [],
+   "gaps": [],
+   "provider": "catalogue-model"
+  },
+  "gaps": [],
+  "summary": "Climb an ever-growing tower made from falling Tetris pieces that you control and stack yourself.",
+  "added": {
+   "spaces": [],
+   "zones": [],
+   "systems": [],
+   "graphics": [],
+   "beats": [
+    "fast_sanctum_arrival",
+    "fast_sanctum_enter_fast_sanctum"
+   ],
+   "acts": [],
+   "keys": [
+    "plot.characters",
+    "plot.quests",
+    "plot.dialogue"
+   ]
+  },
+  "verified": true,
+  "verification": {
+   "ok": true,
+   "source": "verify",
+   "completable": false,
+   "exhaustive": true,
+   "ms": 694,
+   "preflightMs": 0.29,
+   "warnings": 2,
+   "endings": [
+    "lost"
+   ],
+   "beatsNeverFired": [
+    "arrival",
+    "enter_fast_sanctum",
+    "fast_sanctum_arrival",
+    "fast_sanctum_enter_fast_sanctum",
+    "enter_difficult_wilds",
+    "enter_becomes_hollow",
+    "enter_difficult_yard",
+    "finale"
+   ],
+   "states": 1,
+   "problems": [
+    {
+     "code": "plot_uncompletable",
+     "path": "plot.endings",
+     "message": "no ending is reachable: no sequence of player options reaches it (exhaustive search)",
+     "severity": "error",
+     "hint": "check gates, key items and beat triggers on the path to an ending",
+     "stage": "plot"
+    },
+    {
+     "code": "beat_unreachable",
+     "path": "plot.storyboard.acts[0].beats[0]",
+     "message": "beat 'arrival' never fires: no sequence of player options reaches it (exhaustive search)",
+     "severity": "error",
+     "hint": "its `when` or `after` can never hold on any explored path",
+     "stage": "plot"
+    },
+    {
+     "code": "beat_unreachable",
+     "path": "plot.storyboard.acts[0].beats[1]",
+     "message": "beat 'enter_fast_sanctum' never fires: no sequence of player options reaches it (exhaustive search)",
+     "severity": "error",
+     "hint": "its `when` or `after` can never hold on any explored path",
+     "stage": "plot"
+    },
+    {
+     "code": "beat_unreachable",
+     "path": "plot.storyboard.acts[1].beats[0]",
+     "message": "beat 'enter_difficult_wilds' never fires: no sequence of player options reaches it (exhaustive search)",
+     "severity": "error",
+     "hint": "its `when` or `after` can never hold on any explored path",
+     "stage": "plot"
+    },
+    {
+     "code": "beat_unreachable",
+     "path": "plot.storyboard.acts[1].beats[1]",
+     "message": "beat 'enter_becomes_hollow' never fires: no sequence of player options reaches it (exhaustive search)",
+     "severity": "error",
+     "hint": "its `when` or `after` can never hold on any explored path",
+     "stage": "plot"
+    }
+   ]
+  },
+  "detail": {
+   "task": "zone:tower_climb:fast_sanctum",
+   "ok": true,
+   "source": "gpt-4.1-mini-2025-04-14",
+   "modelMs": 4708,
+   "ms": 7196,
+   "fixes": 4
+  },
+  "timings": {
+   "queueMs": 0,
+   "decomposeMs": 2194,
+   "selectMs": 2098,
+   "outlineMs": 59960,
+   "outlineModelMs": 55557,
+   "firstPlayableBuildMs": 22,
+   "requestToFirstPlayableMs": 64287,
+   "firstVerifyMs": 688,
+   "sinceRequestMs": 72182,
+   "jobStartMs": 123,
+   "jobSetupMs": 98
+  }
+ },
+ "doc": {
+  "schema": "gameverse.v2.game/0.2",
+  "id": "towerfall-tetris",
+  "title": "Towerfall Tetris",
+  "logline": "Climb an ever-growing tower made from falling Tetris pieces that you control and stack yourself.",
+  "seed": 1309811577,
+  "views": {
+   "primary": "side",
+   "alternates": [
+    "ui"
+   ]
+  },
+  "spaces": [
+   {
+    "id": "tower_climb",
+    "use": "engine.space.tilemap",
+    "zones": [
+     {
+      "id": "becomes_yard",
+      "name": "Becomes Yard",
+      "description": "A sturdy stone section of the tower with familiar stepping ledges and wide platforms.",
+      "rect": [
+       0,
+       0,
+       12,
+       32
+      ]
+     },
+     {
+      "id": "fast_sanctum",
+      "name": "Fast Sanctum",
+      "description": "Narrow, tightly packed platforms test your speed and precision in this swift tower segment.",
+      "rect": [
+       12,
+       0,
+       24,
+       32
+      ]
+     },
+     {
+      "id": "difficult_wilds",
+      "name": "Difficult Wilds",
+      "description": "Chaotic Tetris shapes create precarious footholds in this wild and challenging tower area.",
+      "rect": [
+       24,
+       0,
+       36,
+       32
+      ]
+     },
+     {
+      "id": "becomes_hollow",
+      "name": "Becomes Hollow",
+      "description": "Sections with gaps and one-way ledges where quick thinking and timing are critical.",
+      "rect": [
+       36,
+       0,
+       48,
+       32
+      ]
+     },
+     {
+      "id": "difficult_yard",
+      "name": "Difficult Yard",
+      "description": "The final ascent with complex formations, testing your mastery of stacking and platforming.",
+      "rect": [
+       48,
+       0,
+       64,
+       32
+      ]
+     }
+    ],
+    "generators": [
+     {
+      "use": "engine.generate.tilemap.rooms",
+      "with": {
+       "rooms": [
+        {
+         "id": "becomes_yard",
+         "zone": "becomes_yard",
+         "rect": [
+          0,
+          0,
+          12,
+          32
+         ],
+         "style": "shaft",
+         "features": [],
+         "exits": [
+          {
+           "side": "r",
+           "to": "fast_sanctum"
+          }
+         ],
+         "requiresAbilities": []
+        },
+        {
+         "id": "fast_sanctum",
+         "zone": "fast_sanctum",
+         "rect": [
+          12,
+          0,
+          24,
+          32
+         ],
+         "style": "shaft",
+         "features": [],
+         "exits": [
+          {
+           "side": "l",
+           "to": "becomes_yard"
+          },
+          {
+           "side": "r",
+           "to": "difficult_wilds"
+          }
+         ],
+         "requiresAbilities": []
+        },
+        {
+         "id": "difficult_wilds",
+         "zone": "difficult_wilds",
+         "rect": [
+          24,
+          0,
+          36,
+          32
+         ],
+         "style": "shaft",
+         "features": [],
+         "exits": [
+          {
+           "side": "l",
+           "to": "fast_sanctum"
+          },
+          {
+           "side": "r",
+           "to": "becomes_hollow"
+          }
+         ],
+         "requiresAbilities": []
+        },
+        {
+         "id": "becomes_hollow",
+         "zone": "becomes_hollow",
+         "rect": [
+          36,
+          0,
+          48,
+          32
+         ],
+         "style": "shaft",
+         "features": [],
+         "exits": [
+          {
+           "side": "l",
+           "to": "difficult_wilds"
+          },
+          {
+           "side": "r",
+           "to": "difficult_yard"
+          }
+         ],
+         "requiresAbilities": []
+        },
+        {
+         "id": "difficult_yard",
+         "zone": "difficult_yard",
+         "rect": [
+          48,
+          0,
+          64,
+          32
+         ],
+         "style": "shaft",
+         "features": [],
+         "exits": [
+          {
+           "side": "l",
+           "to": "becomes_hollow"
+          }
+         ],
+         "requiresAbilities": []
+        }
+       ],
+       "requiresAbilities": [],
+       "mode": "side",
+       "styles": {},
+       "palette": {
+        "wall": "stone",
+        "ground": "stone",
+        "platform": "stone",
+        "rung": "ledge"
+       },
+       "themes": {},
+       "exitSize": 3,
+       "attempts": 6,
+       "oneWayPlatforms": false,
+       "spawnFeatures": true,
+       "doorWarp": true
+      }
+     }
+    ],
+    "with": {
+     "tile": 16,
+     "size": [
+      64,
+      32
+     ],
+     "mode": "side",
+     "gravity": -60,
+     "layers": [
+      "bg",
+      "solid",
+      "fg"
+     ],
+     "collisionLayers": [
+      "solid"
+     ],
+     "collision": {},
+     "edges": {
+      "left": "solid",
+      "right": "solid",
+      "bottom": "solid",
+      "top": "solid"
+     }
+    }
+   }
+  ],
+  "systems": [
+   {
+    "use": "engine.assist",
+    "with": {
+     "options": {
+      "invincible": false,
+      "damage_taken": 1,
+      "damage_dealt": 1
+     },
+     "presets": {
+      "normal": {
+       "damage_taken": 1
+      },
+      "hard": {
+       "damage_taken": 1.5
+      },
+      "easy": {
+       "damage_taken": 0.75
+      }
+     },
+     "difficulty": "normal",
+     "locked": [],
+     "ranges": {
+      "damage_taken": [
+       0,
+       4
+      ],
+      "damage_dealt": [
+       0.25,
+       4
+      ],
+      "game_speed": [
+       0.25,
+       1
+      ],
+      "aim_assist": [
+       0,
+       1
+      ],
+      "timing_window": [
+       0.5,
+       3
+      ]
+     },
+     "rules": []
+    }
+   },
+   {
+    "use": "engine.input.actions",
+    "with": {
+     "verbs": [
+      "move",
+      "jump",
+      "place",
+      "rotate_cw",
+      "rotate_ccw",
+      "hold",
+      "soft_drop",
+      "hard_drop"
+     ],
+     "axes": [
+      "move"
+     ],
+     "bindings": {
+      "side": {
+       "move": [
+        "wasd"
+       ],
+       "jump": [
+        "space"
+       ],
+       "place": [
+        "enter",
+        "z"
+       ],
+       "rotate_cw": [
+        "x"
+       ],
+       "rotate_ccw": [
+        "c"
+       ],
+       "hold": [
+        "shift"
+       ],
+       "soft_drop": [
+        "down"
+       ],
+       "hard_drop": [
+        "up"
+       ]
+      }
+     },
+     "shareKeys": [],
+     "touch": false,
+     "deadzone": 0.2,
+     "lookSensitivity": 0.0025,
+     "lookRate": 3,
+     "invertY": false
+    }
+   },
+   {
+    "use": "engine.physics.character",
+    "with": {
+     "radius": 0.35,
+     "height": 1.8,
+     "stepHeight": 0.4,
+     "slopeLimit": 50,
+     "skin": 0.02,
+     "gravityScale": 1,
+     "maxFall": 55,
+     "fallHeight": 4,
+     "snap": true,
+     "player": true
+    },
+    "space": "tower_climb"
+   },
+   {
+    "use": "gameplay.falling.pieces",
+    "with": {
+     "board": {
+      "name": "board",
+      "at": [
+       0,
+       0,
+       0
+      ],
+      "size": [
+       10,
+       20
+      ],
+      "axes": [
+       0,
+       1
+      ],
+      "fall": -1,
+      "layer": ""
+     },
+     "hidden": 4,
+     "sets": [
+      "standard"
+     ],
+     "custom": [],
+     "tokens": {},
+     "pairColors": [
+      "red",
+      "green",
+      "blue",
+      "yellow"
+     ],
+     "link": false,
+     "pairStart": "vertical",
+     "randomizer": "bag",
+     "next": 5,
+     "hold": true,
+     "ghost": true,
+     "steer": "player",
+     "every": 0,
+     "level": 1,
+     "levelEvery": 5,
+     "rowsPerSecond": 0,
+     "softFactor": 20,
+     "das": 10,
+     "arr": 2,
+     "lockDelay": 30,
+     "moveResets": 15,
+     "clearFrames": 22,
+     "clearRows": "shift",
+     "scoring": "guideline",
+     "tspin": true,
+     "settle": false,
+     "land": "cells",
+     "solidArchetypes": [],
+     "passThrough": false,
+     "guard": "none",
+     "garbage": 0,
+     "garbageToken": "garbage",
+     "onTopOut": [
+      {
+       "do": "end_game",
+       "outcome": "lost"
+      }
+     ]
+    },
+    "space": "tower_climb"
+   },
+   {
+    "use": "gameplay.inventory",
+    "with": {
+     "slots": 36,
+     "otherSlots": 36,
+     "stackDefault": 999,
+     "start": []
+    }
+   },
+   {
+    "use": "gameplay.move.platformer",
+    "with": {
+     "preset": "runner",
+     "feel": "snappy",
+     "run": 12,
+     "accel": 120,
+     "decel": 150,
+     "airControl": 0.85,
+     "jump": 22,
+     "jumpCut": 0.5,
+     "gravity": 60,
+     "gravityScale": 1,
+     "fallMax": 45,
+     "fallMultiplier": 1.5,
+     "coyoteMs": 90,
+     "bufferMs": 100,
+     "autoRun": 0,
+     "abilities": {
+      "doubleJump": false,
+      "dash": false,
+      "wallSlide": false,
+      "wallJump": false,
+      "wallClimb": false,
+      "glide": false,
+      "swim": false,
+      "crouch": false,
+      "ledgeGrab": false,
+      "thrust": false
+     },
+     "doubleJumps": 0,
+     "dash": {
+      "sec": 0.2,
+      "iframes": 0.1
+     },
+     "wallSlide": 3.5,
+     "wallJump": {},
+     "wallClimb": {},
+     "glide": {},
+     "swim": {},
+     "crouchSpeed": 0.35,
+     "player": true,
+     "npcs": true,
+     "plane": "x",
+     "macro": {
+      "max": 16,
+      "seconds": 60,
+      "teleport": true
+     }
+    },
+    "space": "tower_climb"
+   },
+   {
+    "use": "plot.storyboard",
+    "with": {
+     "sequentialActs": true
+    }
+   }
+  ],
+  "plot": {
+   "premise": "Climb an ever-growing tower made from falling Tetris pieces that you control and stack yourself. Navigate fast-paced platforming challenges as the tower becomes increasingly unstable and difficult to climb.",
+   "characters": [
+    {
+     "id": "guide",
+     "name": "Guide",
+     "role": "guide",
+     "bio": "A mysterious voice offering advice and encouragement as you ascend the tower."
+    },
+    {
+     "id": "fast_sanctum_guide",
+     "name": "Guide",
+     "role": "guide",
+     "bio": "A mysterious figure who provides tips and encouragement to help you navigate the swift platforms of the Fast Sanctum.",
+     "dialogue": [
+      {
+       "when": {
+        "zone": "fast_sanctum"
+       },
+       "id": "fast_sanctum_guide_tip_1"
+      },
+      {
+       "when": {
+        "zone": "fast_sanctum"
+       },
+       "id": "fast_sanctum_guide_tip_2"
+      }
+     ]
+    }
+   ],
+   "storyboard": {
+    "acts": [
+     {
+      "id": "act_1",
+      "title": "The Beginning Ascent",
+      "beats": [
+       {
+        "id": "arrival",
+        "title": "Introduction",
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Welcome to Towerfall Tetris! Control the falling pieces to climb the tower."
+         }
+        ]
+       },
+       {
+        "id": "enter_fast_sanctum",
+        "title": "Fast Sanctum",
+        "when": {
+         "zone": "fast_sanctum"
+        },
+        "after": [
+         "arrival"
+        ],
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Fast Sanctum. Speed and precision are key here."
+         }
+        ]
+       },
+       {
+        "id": "fast_sanctum_arrival",
+        "when": {
+         "zone": "fast_sanctum"
+        },
+        "do": [],
+        "optional": true
+       },
+       {
+        "id": "fast_sanctum_enter_fast_sanctum",
+        "when": {
+         "zone": "fast_sanctum"
+        },
+        "after": [
+         "fast_sanctum_arrival"
+        ],
+        "do": [],
+        "optional": true
+       }
+      ]
+     },
+     {
+      "id": "act_2",
+      "title": "Rising Challenge",
+      "beats": [
+       {
+        "id": "enter_difficult_wilds",
+        "title": "Difficult Wilds",
+        "when": {
+         "zone": "difficult_wilds"
+        },
+        "after": [
+         "enter_fast_sanctum"
+        ],
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Difficult Wilds. The tower grows unstable."
+         }
+        ]
+       },
+       {
+        "id": "enter_becomes_hollow",
+        "title": "Becomes Hollow",
+        "when": {
+         "zone": "becomes_hollow"
+        },
+        "after": [
+         "enter_difficult_wilds"
+        ],
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Becomes Hollow. Careful with your footing."
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "act_3",
+      "title": "The Final Climb",
+      "beats": [
+       {
+        "id": "enter_difficult_yard",
+        "title": "Difficult Yard",
+        "when": {
+         "zone": "difficult_yard"
+        },
+        "after": [
+         "enter_becomes_hollow"
+        ],
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Difficult Yard. Almost at the top!"
+         }
+        ]
+       },
+       {
+        "id": "finale",
+        "title": "Victory",
+        "when": {
+         "zone": "difficult_yard"
+        },
+        "after": [
+         "enter_difficult_yard"
+        ],
+        "do": [
+         {
+          "do": "end_game",
+          "ending": "victory"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "endings": [
+    {
+     "id": "victory",
+     "title": "Victory",
+     "text": "You've conquered the Towerfall Tetris! The tower stands tall because of your skill.",
+     "outcome": "won"
+    }
+   ],
+   "quests": [
+    {
+     "id": "fast_sanctum_quick_ascent",
+     "title": "Quick Ascent",
+     "desc": "Reach the top of the Fast Sanctum segment as quickly as possible.",
+     "objectives": [
+      {
+       "id": "reach_top",
+       "desc": "Climb to the top platform of Fast Sanctum."
+      }
+     ],
+     "reward": {
+      "item": null,
+      "xp": 100
+     }
+    }
+   ],
+   "dialogue": {
+    "fast_sanctum_guide_tip_1": {
+     "lines": [
+      {
+       "speaker": "fast_sanctum_guide",
+       "text": "Welcome to the Fast Sanctum. Speed and precision are crucial here."
+      },
+      {
+       "speaker": "fast_sanctum_guide",
+       "text": "Watch your timing when jumping between the tight platforms."
+      }
+     ]
+    },
+    "fast_sanctum_guide_tip_2": {
+     "lines": [
+      {
+       "speaker": "fast_sanctum_guide",
+       "text": "Try to control the falling pieces carefully to create stable platforms."
+      },
+      {
+       "speaker": "fast_sanctum_guide",
+       "text": "Keep moving – hesitation here will cost you dearly!"
+      }
+     ]
+    }
+   }
+  },
+  "content": {
+   "archetypes": [
+    {
+     "id": "hero",
+     "components": {
+      "name": "You"
+     }
+    }
+   ],
+   "blocks": [
+    {
+     "id": "stone",
+     "name": "Stone",
+     "solid": true,
+     "color": "gray"
+    },
+    {
+     "id": "ledge",
+     "name": "Ledge",
+     "solid": false,
+     "tags": [
+      "one_way"
+     ],
+     "color": "dark_gray"
+    }
+   ]
+  },
+  "player": {
+   "archetype": "hero",
+   "space": "tower_climb",
+   "at": [
+    2.5,
+    3
+   ]
+  },
+  "graphics": []
+ }
+}

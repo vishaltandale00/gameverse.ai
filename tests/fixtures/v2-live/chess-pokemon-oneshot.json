@@ -1,0 +1,34 @@
+{
+  "source": "local-data/v2/games/chess-but-with-pokemon-mvhr49a7/v1.json report.decomposition (gpt-4.1-mini, one-shot decompose/0.2, 2026-10-21)",
+  "prompt": "chess but with pokemon",
+  "decomposition": {
+    "title": "Pokémon Chess",
+    "premise": "A strategic game combining the classic rules of chess with the unique abilities and personalities of Pokémon creatures. Players command Pokémon-themed chess pieces, each with special moves inspired by their species.",
+    "tone": "strategic, playful, competitive",
+    "references": [
+      { "name": "Chess", "kind": "game", "keeps": ["core loop", "turn-based movement", "checkmate win condition"] },
+      { "name": "Pokémon", "kind": "game", "keeps": ["creature abilities", "character identities", "special moves applied to pieces"] }
+    ],
+    "mechanics": [
+      { "id": "move_chess_pieces", "verb": "move chess pieces", "description": "Move chess pieces according to standard chess rules on the board.", "from": "Chess", "importance": "core" },
+      { "id": "special_pokemon_abilities", "verb": "use special Pokemon abilities", "description": "Each Pokemon chess piece has unique abilities that modify moves or attacks beyond standard chess moves.", "from": "Pokémon", "importance": "core" },
+      { "id": "turn_based_player_moves", "verb": "play turns alternately", "description": "Players alternate turns moving one piece or activating abilities, following turn-based gameplay.", "from": "Chess", "importance": "core" },
+      { "id": "checkmate_win_condition", "verb": "achieve checkmate", "description": "Win by placing the opponent's king piece in checkmate, following chess rules.", "from": "Chess", "importance": "core" }
+    ],
+    "spaces": [{ "role": "board", "kind": "board", "description": "A standard 8x8 chessboard with positions for all chess pieces." }],
+    "views": ["board"],
+    "movement": "none",
+    "acts": 1,
+    "zones": 2,
+    "core": {
+      "loop": "turn_based_player_moves",
+      "interaction": "pieces-turns",
+      "opponent": "ai-rival",
+      "win": "checkmate-win-condition",
+      "lose": "checkmate-win-condition",
+      "theme": "battle of Pokemon chess pieces using chess strategy",
+      "narrative": false,
+      "mashup": [{ "relation": "union", "mechanics": ["move_chess_pieces", "special_pokemon_abilities"], "why": "Chess's turn-based movement integrates with Pokemon abilities to create a hybrid board strategy game." }]
+    }
+  }
+}

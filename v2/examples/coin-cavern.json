@@ -1,0 +1,107 @@
+{
+  "schema": "gameverse.v2.game-spec/0.1",
+  "id": "coin-cavern",
+  "title": "Coin Cavern",
+  "pitch": "Grab every coin in the cavern, stomp the beetles, avoid the spikes.",
+  "seed": 7,
+  "background": "#14202e",
+  "level": {
+    "rows": [
+      "##############################",
+      "#............................#",
+      "#.....C.C..........C.C.......#",
+      "#....######.......######.....#",
+      "#............................#",
+      "#..C.C.....######.......C.C..#",
+      "#.#####..............#######.#",
+      "#............E...............#",
+      "#..P.....C.....C.....E....C..#",
+      "#######..#####^^^#############",
+      "##############################"
+    ],
+    "legend": {
+      "#": "rock",
+      "P": "hero",
+      "C": "coin",
+      "E": "beetle",
+      "^": "spike"
+    }
+  },
+  "entities": {
+    "rock": {
+      "solid": true,
+      "color": "#3b4a5c"
+    },
+    "hero": {
+      "tags": [
+        "player"
+      ],
+      "glyph": "\ud83e\udd8a",
+      "color": "#f28c28",
+      "w": 0.8,
+      "h": 0.9
+    },
+    "coin": {
+      "tags": [
+        "collectible"
+      ],
+      "glyph": "\ud83e\ude99",
+      "color": "#ffd23f",
+      "w": 0.6,
+      "h": 0.6
+    },
+    "beetle": {
+      "tags": [
+        "enemy"
+      ],
+      "glyph": "\ud83e\udeb2",
+      "color": "#7bd389",
+      "w": 0.9,
+      "h": 0.7
+    },
+    "spike": {
+      "tags": [
+        "hazard"
+      ],
+      "glyph": "\u25b2",
+      "color": "#e5e5e5",
+      "w": 1,
+      "h": 0.5
+    }
+  },
+  "modules": [
+    {
+      "use": "platformer",
+      "with": {
+        "runSpeed": 8,
+        "jumpSpeed": 18
+      }
+    },
+    {
+      "use": "collect"
+    },
+    {
+      "use": "patrol",
+      "with": {
+        "speed": 2
+      }
+    },
+    {
+      "use": "hazard"
+    },
+    {
+      "use": "health",
+      "with": {
+        "hp": 3
+      }
+    }
+  ],
+  "win": {
+    "var": "remaining",
+    "lte": 0
+  },
+  "lose": {
+    "var": "hp",
+    "lte": 0
+  }
+}

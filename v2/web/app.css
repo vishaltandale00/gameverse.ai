@@ -1,0 +1,9 @@
+:root { color-scheme: dark; --bg: #0b1016; --fg: #e8eef5; --muted: #8fa0b3; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.4 system-ui, sans-serif; }
+main { max-width: 1000px; margin: 0 auto; padding: 16px; }
+header { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+h1 { margin: 0; font-size: 22px; } h1 span { color: #6fd3a8; }
+#status { color: var(--muted); margin: 0; }
+canvas { width: 100%; aspect-ratio: 16 / 9; display: block; border-radius: 10px; background: #000; outline: none; }
+.help { color: var(--muted); font-size: 13px; }
+pre { background: #121a24; padding: 12px; border-radius: 8px; overflow: auto; font-size: 12px; max-height: 260px; }

@@ -1,0 +1,9 @@
+:root { color-scheme: dark; }
+body { margin: 0; background: #0b0c12; color: #e8e6e0; font: 14px/1.4 system-ui, sans-serif; display: grid; grid-template-columns: 1fr 280px; height: 100vh; }
+#stage { position: relative; margin: 16px; border-radius: 12px; overflow: hidden; background: linear-gradient(160deg, #2a3a2a, #1a2430 60%, #121620); box-shadow: 0 10px 40px #0008; }
+#stage::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(#ffffff10 1px, transparent 1px); background-size: 24px 24px; }
+aside { padding: 16px; overflow: auto; border-left: 1px solid #ffffff18; }
+aside h1 { font-size: 16px; margin: 0 0 8px; } aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: #9aa; margin: 18px 0 6px; }
+aside button, aside select { display: block; width: 100%; margin: 4px 0; padding: 7px 10px; border-radius: 7px; border: 1px solid #ffffff22; background: #1c1f2a; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+aside button:hover { background: #2a2f40; }
+#log { font: 11px/1.4 ui-monospace, monospace; white-space: pre-wrap; color: #9ab; max-height: 220px; overflow: auto; }

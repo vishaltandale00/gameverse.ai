@@ -1,0 +1,66 @@
+// Endings (plot.endings): { id, title, when, epilogue, cutscene?, do?, outcome? }.
+// Each plot tick the endings are tested in document order; the first whose
+// `when` holds fires: ending_reached (with the epilogue), its `do` effects,
+// its cutscene (when plot.cutscene is installed the game ends as the cutscene
+// finishes), then end_game with the ending's outcome.
+import { err, service, isObj, TEXT } from './story-lib.js';
+
+const ID = 'plot.ending';
+const OUTCOMES = ['won', 'lost', 'neutral'];
+const st = rt => rt.store(ID);
+
+export default {
+  id: ID,
+  card: {
+    loop: { verbs: [], progress: ['ending_reached'] },
+    intent: 'One or more endings from plot.endings: the first ending whose condition holds plays its effects and cutscene, shows its epilogue and ends the game with its outcome.',
+    views: ['any'],
+    params: {
+      epilogue: { type: 'boolean', default: true, effect: 'include the epilogue text in ending_reached for the UI' },
+      requireWhen: { type: 'boolean', default: true, effect: 'every ending needs a when predicate (false: endings without one only fire via end_game)' },
+    },
+    provides: { events: ['ending_reached', 'ending_reached:*'] },
+    reads: ['plot.endings'],
+    // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
+    // An entry has only the fields declared here (open: false).
+    data: { 'plot.endings': { type: 'list', min: 1, of: { type: 'object', open: false, fields: {
+      title: TEXT({ effect: 'the ending\'s title a person reads' }), when: { type: 'predicate' }, epilogue: TEXT({ effect: 'what a person reads when the story ends this way' }),
+      cutscene: { type: 'ref', to: 'cutscene' }, do: { type: 'effects' }, outcome: { type: 'string', options: OUTCOMES },
+    } } } },
+    rules: {
+      ending_invalid: { fields: ['plot.endings[].when', 'requireWhen'], message: 'every ending has a when predicate unless requireWhen is false' },
+    },
+    // The configuration under which endings reached only through end_game (no `when`) are valid: a loop's lose wired
+    // by its effects next to a win evaluated here (planner/presets.js wireLoop).
+    untriggered: { param: 'requireWhen', is: false },
+  },
+  logic(logic) {
+    logic.predicate('ending_available', { refs: p => [['ending', p.ending_available]], test: (p, rt) => { const e = (rt.doc.plot?.endings || []).find(x => x.id === p.ending_available); return Boolean(e?.when) && rt.test(e.when); } });
+  },
+  // The shape of plot.endings is declared (card.data); what is left is the rule across a param and a field.
+  validate(config, doc) {
+    const list = doc.plot?.endings;
+    if (!Array.isArray(list) || !config.requireWhen) return [];
+    return list.flatMap((e, i) => (isObj(e) && e.when === undefined ? [err('ending_invalid', `plot.endings[${i}].when`, 'ending needs a when predicate', 'or set requireWhen:false and reach it with end_game')] : []));
+  },
+  install(rt, config) {
+    st(rt); // create the store at install: UI reads (view/list/known) must never write state
+    const finish = e => rt.run([{ do: 'end_game', ending: e.id, outcome: e.outcome || 'won' }]);
+    rt.on('cutscene_end', data => { const s = st(rt); if (s.pending && data.cutscene === s.pendingCutscene) { const e = (rt.doc.plot?.endings || []).find(x => x.id === s.pending); s.pending = null; if (e && rt.state.status === 'playing') finish(e); } });
+    rt.system('plot', rt => {
+      const s = st(rt);
+      if (s.pending) return; // waiting for the ending cutscene
+      for (const e of rt.doc.plot?.endings || []) {
+        if (!e.when || !rt.test(e.when)) continue;
+        s.reached = e.id;
+        rt.emitTyped('ending_reached', e.id, { ending: e.id, title: e.title ?? e.id, outcome: e.outcome || 'won', epilogue: config.epilogue ? (e.epilogue ?? '') : undefined });
+        rt.run(e.do || [], { ending: e.id });
+        if (rt.state.status !== 'playing') return;
+        const cs = service(rt, 'cutscene');
+        if (e.cutscene && cs && cs.play(e.cutscene) !== false) { s.pending = e.id; s.pendingCutscene = e.cutscene; if (cs.playing() !== e.cutscene && !cs.queued(e.cutscene)) { s.pending = null; finish(e); } return; }
+        finish(e);
+        return;
+      }
+    }, ID);
+  },
+};

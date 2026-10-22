@@ -1,0 +1,746 @@
+{
+ "gameId": "pac-man-in-a-haunted-mvhdwip9",
+ "version": 2,
+ "stage": "revision: Bigger world",
+ "created": "2026-10-21T00:50:10.226Z",
+ "docHash": "86961b33ed91db83abe6438675495fad6c2486d4e5bd51bbcc2f1bf9f51c70d4",
+ "provenance": {
+  "pipeline": "v2-kernel/0.1",
+  "catalogHash": "c3ef4e8739f65074fc7503576fae94a012b0f33a0261066402644add6a74a470",
+  "models": {
+   "spec": "gpt-4.1-mini",
+   "specProvider": "openai",
+   "decisions": "d1"
+  },
+  "seed": 795757736,
+  "prompt": "Pac-Man in a haunted library",
+  "answers": [
+   {
+    "question": "What art style should the game use?",
+    "answer": "moody neon pixel art"
+   },
+   {
+    "question": "How challenging should the ghost encounters be?",
+    "answer": "moderate and strategic"
+   },
+   {
+    "question": "What is the game's pacing?",
+    "answer": "steady and explorative"
+   },
+   {
+    "question": "What tone best fits the gameplay?",
+    "answer": "spooky but playful"
+   }
+  ],
+  "outlineSource": "gpt-4.1-mini-2025-04-14",
+  "decompositionHash": "f22464376bc3ec33087f4dca649d8b6aff7e6d32bb92a31bdc0600800d8ab8f9",
+  "outlineHash": "e50cec2db052d29be9089cfddcf89d2975ab7af015a03856a9d7d074b6153fd7",
+  "runner": {
+   "isolation": "process",
+   "heapMb": 1024,
+   "timeoutMs": 900000
+  },
+  "base": 1,
+  "change": "Bigger world",
+  "revisePath": "model"
+ },
+ "report": {
+  "kind": "kernel",
+  "change": "Bigger world",
+  "path": "model",
+  "ops": [
+   {
+    "op": "set",
+    "path": "spaces[maze_environment].with.size",
+    "value": [
+     96,
+     48
+    ]
+   }
+  ],
+  "changes": [
+   "with size (2)",
+   "systems (2)",
+   "when count (3)",
+   "when var (3)"
+  ],
+  "diffLines": [
+   "spaces[maze_environment].with.size[0]: 64 → 96",
+   "spaces[maze_environment].with.size[1]: 32 → 48",
+   "systems: 6 items → 7 items",
+   "systems[6]: undefined → {\"use\":\"plot.storyboard\"}",
+   "plot.storyboard.acts[haunt_encounters].beats[collect_powerups].when.count: {\"var\":\"collected.spectral_orbs\",\"gte\":5 → undefined",
+   "plot.storyboard.acts[haunt_encounters].beats[collect_powerups].when.var: undefined → collected.spectral_orbs",
+   "plot.storyboard.acts[haunt_encounters].beats[collect_powerups].when.gte: undefined → 50",
+   "plot.storyboard.acts[final_challenge].beats[final_orbs].when.count: {\"var\":\"collected.spectral_orbs\",\"gte\":1 → undefined",
+   "plot.storyboard.acts[final_challenge].beats[final_orbs].when.var: undefined → collected.spectral_orbs",
+   "plot.storyboard.acts[final_challenge].beats[final_orbs].when.gte: undefined → 100",
+   "plot.storyboard.acts[final_challenge].beats[end_game].when.count: {\"var\":\"collected.spectral_orbs\",\"gte\":1 → undefined",
+   "plot.storyboard.acts[final_challenge].beats[end_game].when.var: undefined → collected.spectral_orbs",
+   "plot.storyboard.acts[final_challenge].beats[end_game].when.gte: undefined → 100",
+   "plot.endings: added victory"
+  ],
+  "revisionCheck": {
+   "applied": 0.7981867777396212,
+   "specific": 0.9399133498259924,
+   "subjective": false,
+   "notApplied": true,
+   "why": "Nothing changed for that request: this game's engine has no setting for it yet.",
+   "summary": [
+    "with size (2)",
+    "systems (2)",
+    "when count (3)",
+    "when var (3)"
+   ],
+   "diff": 14,
+   "provider": "d1"
+  },
+  "gaps": [
+   {
+    "capability": "Bigger world",
+    "why": "Changed with size (2), systems (2), when count (3), when var (3), but the checker isn't sure that fully does what you asked.",
+    "kind": "partial"
+   }
+  ],
+  "verified": true,
+  "verification": {
+   "ok": true,
+   "source": "verify",
+   "completable": false,
+   "exhaustive": false,
+   "ms": 11876,
+   "preflightMs": 0.48,
+   "warnings": 1,
+   "endings": [],
+   "beatsNeverFired": [
+    "reach_avoiding_spire",
+    "collect_powerups",
+    "enter_haunted_archive",
+    "final_orbs",
+    "end_game"
+   ],
+   "states": 5,
+   "problems": [
+    {
+     "code": "data_unused",
+     "path": "content.statuses",
+     "message": "no primitive reads content.statuses",
+     "severity": "warning",
+     "hint": "add the primitive that uses it, or remove it",
+     "stage": "preflight"
+    },
+    {
+     "code": "plot_unproven",
+     "path": "plot.endings",
+     "message": "no ending is reachable: not reached within the search budget (5 states, stopped by ms)",
+     "severity": "warning",
+     "hint": "check gates, key items and beat triggers on the path to an ending",
+     "stage": "plot"
+    },
+    {
+     "code": "goal_not_reached",
+     "path": "plot.endings",
+     "message": "the playtest did not reach an ending within its budget (7 cells, 3 rounds, stopped by ms)",
+     "severity": "warning",
+     "hint": "budget-limited: not a proof of a softlock",
+     "stage": "playtest"
+    },
+    {
+     "code": "beat_unreachable",
+     "path": "plot.storyboard.acts[1].beats[0]",
+     "message": "beat 'reach_avoiding_spire' never fires: not reached within the search budget (5 states, stopped by ms)",
+     "severity": "info",
+     "hint": "its `when` or `after` can never hold on any explored path",
+     "stage": "plot"
+    },
+    {
+     "code": "beat_unreachable",
+     "path": "plot.storyboard.acts[2].beats[0]",
+     "message": "beat 'enter_haunted_archive' never fires: not reached within the search budget (5 states, stopped by ms)",
+     "severity": "info",
+     "hint": "its `when` or `after` can never hold on any explored path",
+     "stage": "plot"
+    }
+   ]
+  },
+  "hot": "reload",
+  "timings": {
+   "tweakMs": 62,
+   "reviseMs": 1320,
+   "reviseModelMs": 1309,
+   "guardMs": 85,
+   "verifyMs": 22445,
+   "totalMs": 23918,
+   "jobStartMs": 206,
+   "jobSetupMs": 169
+  }
+ },
+ "doc": {
+  "schema": "gameverse.v2.game/0.2",
+  "id": "neon-phantom-library",
+  "title": "Neon Phantom Library",
+  "logline": "Navigate a haunted library maze as a glowing character, collecting spectral orbs while avoiding strategic ghostly librarians using clever routes and power-ups.",
+  "seed": 795757736,
+  "views": {
+   "primary": "td",
+   "alternates": [
+    "ui"
+   ]
+  },
+  "spaces": [
+   {
+    "id": "maze_environment",
+    "use": "engine.space.tilemap",
+    "with": {
+     "tile": 16,
+     "size": [
+      96,
+      48
+     ],
+     "mode": "topdown",
+     "gravity": 0,
+     "layers": [
+      "bg",
+      "solid",
+      "fg"
+     ],
+     "collisionLayers": [
+      "solid"
+     ],
+     "collision": {},
+     "edges": {
+      "left": "solid",
+      "right": "solid",
+      "bottom": "solid",
+      "top": "solid"
+     }
+    },
+    "zones": [
+     {
+      "id": "white_vault",
+      "name": "White Vault",
+      "description": "The misty entry hall filled with glowing bookshelves and flickering neon lights.",
+      "rect": [
+       0,
+       0,
+       12,
+       32
+      ]
+     },
+     {
+      "id": "spooky_yard",
+      "name": "Spooky Yard",
+      "description": "An eerie courtyard surrounded by shadowed statues and glowing spectral runes.",
+      "rect": [
+       12,
+       0,
+       24,
+       32
+      ]
+     },
+     {
+      "id": "avoiding_spire",
+      "name": "Avoiding Spire",
+      "description": "Narrow corridors twisted around an ancient tower where ghostly librarians patrol.",
+      "rect": [
+       24,
+       0,
+       36,
+       32
+      ]
+     },
+     {
+      "id": "spooky_wilds",
+      "name": "Spooky Wilds",
+      "description": "A tangled section of the maze with neon-lit overgrowth and creeping shadows.",
+      "rect": [
+       36,
+       0,
+       48,
+       32
+      ]
+     },
+     {
+      "id": "haunted_archive",
+      "name": "Haunted Archive",
+      "description": "The final chamber filled with ancient tomes guarded by the strongest phantom spirits.",
+      "rect": [
+       48,
+       0,
+       64,
+       32
+      ]
+     }
+    ],
+    "generators": [
+     {
+      "use": "engine.generate.grid.maze",
+      "with": {
+       "size": "classic",
+       "style": "classic",
+       "density": 0.7,
+       "tunnels": 2,
+       "powerPellets": 4,
+       "sizes": {},
+       "origin": [
+        0,
+        0
+       ],
+       "yUp": true,
+       "palette": {
+        "wall": "wall",
+        "houseWall": "house_wall",
+        "door": "house_door"
+       },
+       "pellet": "spectral_orb",
+       "power": "power_glow",
+       "pelletCounter": "spectral_orbs",
+       "powerCounter": "power_glows",
+       "placePlayer": true,
+       "attempts": 4
+      }
+     }
+    ]
+   }
+  ],
+  "systems": [
+   {
+    "use": "gameplay.collectible",
+    "with": {
+     "magnet": 1,
+     "magnetSpeed": 15,
+     "radius": 0.35,
+     "collectors": [
+      "player"
+     ],
+     "counters": [
+      {
+       "id": "spectral_orbs",
+       "var": "collected.spectral_orbs",
+       "total": 100,
+       "value": 1,
+       "points": 0,
+       "includes": [],
+       "onCollect": [],
+       "onComplete": [],
+       "clearsLevel": false,
+       "spawnAtCount": []
+      }
+     ]
+    }
+   },
+   {
+    "use": "gameplay.inventory",
+    "with": {
+     "slots": 20,
+     "otherSlots": 10,
+     "stackDefault": 5,
+     "start": [
+      {
+       "item": "power_glow",
+       "count": 1
+      }
+     ]
+    }
+   },
+   {
+    "use": "gameplay.item.use",
+    "with": {
+     "cooldown": 8,
+     "globalCooldown": 1,
+     "options": 5
+    }
+   },
+   {
+    "use": "gameplay.move.grid",
+    "with": {
+     "mode": "lane",
+     "speed": 7,
+     "corner": 0.4,
+     "walkFrames": 10,
+     "runFrames": 5,
+     "ledgeFrames": 12,
+     "turnFrames": 0,
+     "queue": true,
+     "up": "+y",
+     "wrap": false,
+     "cellSpeed": {},
+     "player": true,
+     "npcs": true,
+     "plane": "xy",
+     "macro": {
+      "max": 16,
+      "seconds": 60,
+      "teleport": true
+     }
+    }
+   },
+   {
+    "use": "gameplay.powerup",
+    "with": {
+     "powerups": [
+      {
+       "id": "ghost_banisher",
+       "kind": "magnet",
+       "sec": 10,
+       "value": 2,
+       "radius": 4,
+       "overflowPoints": 1000,
+       "stack": "refresh",
+       "pulls": [
+        "pickup",
+        "collectible",
+        "powerup"
+       ],
+       "onStart": [],
+       "onEnd": []
+      },
+      {
+       "id": "speed_burst",
+       "kind": "magnet",
+       "sec": 10,
+       "value": 2,
+       "radius": 4,
+       "overflowPoints": 1000,
+       "stack": "refresh",
+       "pulls": [
+        "pickup",
+        "collectible",
+        "powerup"
+       ],
+       "onStart": [],
+       "onEnd": []
+      }
+     ],
+     "pickupRange": 1,
+     "loseTierOnHit": true
+    }
+   },
+   {
+    "use": "gameplay.ability.active",
+    "with": {
+     "abilities": [
+      {
+       "id": "banish_ghosts",
+       "kind": "bomb",
+       "cooldown": 15,
+       "charges": 1,
+       "maxCharges": 5,
+       "rechargeSec": 0,
+       "iframes": 0,
+       "sec": 2,
+       "radius": 0,
+       "damage": 8,
+       "bossFrac": 0.05,
+       "cancelBullets": true,
+       "distance": 3,
+       "risk": 0,
+       "safeRadius": 3,
+       "fx": []
+      },
+      {
+       "id": "speed_boost",
+       "kind": "bomb",
+       "cooldown": 10,
+       "charges": 1,
+       "maxCharges": 5,
+       "rechargeSec": 0,
+       "iframes": 0,
+       "sec": 2,
+       "radius": 0,
+       "damage": 8,
+       "bossFrac": 0.05,
+       "cancelBullets": true,
+       "distance": 3,
+       "risk": 0,
+       "safeRadius": 3,
+       "fx": []
+      }
+     ]
+    }
+   },
+   {
+    "use": "plot.storyboard",
+    "with": {
+     "sequentialActs": true
+    }
+   }
+  ],
+  "plot": {
+   "premise": "In the Neon Phantom Library, a glowing adventurer navigates a sprawling haunted maze filled with spectral orbs to collect. Ghostly librarians patrol intensely, requiring careful and strategic movement. Use temporary power-ups to outwit these spirits in a neon-lit pixel art world that's spooky yet playful and steadily paced.",
+   "characters": [
+    {
+     "id": "guide",
+     "name": "Lumo",
+     "role": "guide",
+     "bio": "A friendly neon spirit who offers advice and encouragement as you explore the haunted library."
+    },
+    {
+     "id": "phantom_librarian_1",
+     "name": "Shadekeeper",
+     "role": "enemy",
+     "archetype": "enemy"
+    },
+    {
+     "id": "phantom_librarian_2",
+     "name": "Wispwarden",
+     "role": "enemy",
+     "archetype": "enemy"
+    }
+   ],
+   "storyboard": {
+    "acts": [
+     {
+      "id": "arrival",
+      "title": "The White Vault",
+      "beats": [
+       {
+        "id": "intro",
+        "title": "Welcome to the Neon Phantom Library",
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "Welcome, brave soul. Collect the spectral orbs and evade the ghostly librarians. Use your wits and power-ups wisely."
+         }
+        ]
+       },
+       {
+        "id": "enter_spooky_yard",
+        "title": "Step into the Spooky Yard",
+        "when": {
+         "zone": "spooky_yard"
+        },
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "You've reached the Spooky Yard. Stay alert; the librarians are close."
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "id": "haunt_encounters",
+      "title": "Avoiding the Spire",
+      "beats": [
+       {
+        "id": "reach_avoiding_spire",
+        "title": "Narrow the Avoiding Spire",
+        "when": {
+         "zone": "avoiding_spire"
+        },
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "The librarians become cunning here. Use your power-ups to turn the tables."
+         }
+        ]
+       },
+       {
+        "id": "collect_powerups",
+        "title": "Harness the Power-ups",
+        "when": {
+         "var": "collected.spectral_orbs",
+         "gte": 50
+        },
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "You've collected many orbs. Grab power-ups to push forward!"
+         }
+        ],
+        "optional": true
+       }
+      ]
+     },
+     {
+      "id": "final_challenge",
+      "title": "The Haunted Archive",
+      "beats": [
+       {
+        "id": "enter_haunted_archive",
+        "title": "Enter the Haunted Archive",
+        "when": {
+         "zone": "haunted_archive"
+        },
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "This is the final challenge. Stay focused and collect the last orbs."
+         }
+        ]
+       },
+       {
+        "id": "final_orbs",
+        "title": "Gather the Final Orbs",
+        "when": {
+         "var": "collected.spectral_orbs",
+         "gte": 100
+        },
+        "do": [
+         {
+          "do": "say",
+          "character": "guide",
+          "text": "All spectral orbs gathered. Prepare for your escape!"
+         }
+        ]
+       },
+       {
+        "id": "end_game",
+        "title": "Victory",
+        "when": {
+         "var": "collected.spectral_orbs",
+         "gte": 100
+        },
+        "do": [
+         {
+          "do": "end_game",
+          "ending": "victory"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "endings": [
+    {
+     "id": "victory",
+     "title": "Victory",
+     "outcome": "won"
+    }
+   ]
+  },
+  "endings": [
+   {
+    "id": "victory",
+    "title": "Victory",
+    "text": "You have successfully navigated the Neon Phantom Library, collecting all spectral orbs and outwitting the ghostly librarians. The library's mysteries brighten with your triumph.",
+    "outcome": "won"
+   }
+  ],
+  "content": {
+   "items": [
+    {
+     "id": "spectral_orb",
+     "name": "Spectral Orb",
+     "kind": "misc",
+     "tags": [
+      "collectible"
+     ]
+    },
+    {
+     "id": "power_glow",
+     "name": "Power Glow",
+     "kind": "potion",
+     "use": {
+      "fx": [],
+      "cooldown": 15,
+      "consume": true
+     }
+    },
+    {
+     "id": "speed_burst",
+     "name": "Speed Burst",
+     "kind": "potion",
+     "use": {
+      "fx": [],
+      "cooldown": 10,
+      "consume": true
+     }
+    }
+   ],
+   "archetypes": [
+    {
+     "id": "hero",
+     "kind": "player",
+     "components": {
+      "name": "You",
+      "health": {
+       "max": 10
+      },
+      "inventory": {
+       "slots": 20
+      }
+     }
+    },
+    {
+     "id": "enemy",
+     "kind": "enemy",
+     "components": {
+      "name": "Phantom Librarian",
+      "health": {
+       "max": 5
+      },
+      "ai": {
+       "behaviors": [
+        "patrol",
+        "chase"
+       ],
+       "faction": "enemy"
+      }
+     }
+    },
+    {
+     "id": "spectral_orb",
+     "kind": "pickup"
+    },
+    {
+     "id": "power_glow",
+     "kind": "pickup"
+    }
+   ],
+   "statuses": [
+    {
+     "id": "ghost_banisher",
+     "duration": 8,
+     "mods": {
+      "immune": {
+       "ghost": 1
+      }
+     }
+    },
+    {
+     "id": "speed_burst",
+     "duration": 5,
+     "mods": {
+      "stat": {
+       "speed": 2
+      }
+     }
+    }
+   ],
+   "blocks": [
+    {
+     "id": "wall",
+     "name": "Wall",
+     "solid": true
+    },
+    {
+     "id": "house_wall",
+     "name": "House wall",
+     "solid": true
+    },
+    {
+     "id": "house_door",
+     "name": "House door",
+     "solid": true
+    }
+   ]
+  },
+  "player": {
+   "archetype": "hero",
+   "space": "maze_environment",
+   "at": [
+    1,
+    1
+   ]
+  },
+  "graphics": []
+ }
+}

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Puzzle kit lab</title>
+  <link rel="stylesheet" href="./lab.css">
+</head>
+<body>
+  <header class="bar">
+    <strong>Puzzle kit lab</strong>
+    <nav class="modes" aria-label="Sample">
+      <button type="button" data-mode="falling">Falling</button>
+      <button type="button" data-mode="chain">Chain</button>
+      <button type="button" data-mode="virus">Virus</button>
+      <button type="button" data-mode="swap">Swap</button>
+      <button type="button" data-mode="slide">Slide</button>
+    </nav>
+    <label><input type="checkbox" id="bot"> Bot plays</label>
+    <label><input type="checkbox" id="reduced"> Reduced motion</label>
+    <button type="button" id="restart">Restart (R)</button>
+    <button type="button" id="verify">Verify</button>
+    <span id="status" class="status"></span>
+  </header>
+  <main class="stage"><canvas id="game" tabindex="0" aria-label="Puzzle game"></canvas></main>
+  <pre id="report" class="report" hidden></pre>
+  <script type="module" src="./lab.js"></script>
+</body>
+</html>

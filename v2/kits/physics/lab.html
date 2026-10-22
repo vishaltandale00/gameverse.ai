@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Physics Kit Lab</title>
+<link rel="stylesheet" href="/v2/kits/physics/lab.css">
+</head>
+<body>
+<header>
+  <strong>Physics toy lab</strong>
+  <span id="levels"></span>
+  <label><input type="checkbox" id="reduced"> reduced motion</label>
+  <label><input type="checkbox" id="bot"> bot plays</label>
+</header>
+<canvas id="game" tabindex="0" aria-label="Physics toy game"></canvas>
+<p id="status">Loading…</p>
+<p class="keys">Arrows/WASD move · Space/Z = a · X/K = b · R restart · P pause · 1-4 jump to a level · ?level=2&bot=1</p>
+<script type="module" src="/v2/kits/physics/lab.js"></script>
+</body>
+</html>

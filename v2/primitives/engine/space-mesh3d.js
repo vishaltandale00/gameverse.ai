@@ -1,0 +1,514 @@
+// Continuous 3D world: heightfield terrain + placed colliders (boxes and
+// cylinders) + an on-demand navigation grid. For open worlds, cities, racing
+// and 3D action. World x ∈ [0, size[0]], z ∈ [0, size[1]], y up, metres.
+// The heightfield comes from the space's WorldModel `height` field (terrain
+// generators, flattened by roads/cities/lakes) sampled every `heightRes`
+// metres in lazily built tiles. Generated objects are deterministic from the
+// seed; state stores only the seed and a runtime object overlay
+// (added/removed), so snapshots stay small.
+//
+// `at` is the centre of the body box (api.anchor 'center'). An entity `at`
+// with two numbers [x, z] stands on the ground there. Path waypoints are body
+// centres; reachable keys are floored world coordinates of nav-cell centres
+// on the ground ("x,y,z"), the same keys cellOf returns. Bodies collide with
+// objects as upright cylinders (radius = half the larger of width/depth).
+// Object `rot` is a yaw in radians with the three.js rotation.y convention:
+// an object's local +z axis faces world (sin rot, cos rot).
+import { nearestRoad } from './worlds3d-lib-roads.js';
+import { worldModel, zoneHas, zoneCenter, astar, sharedService, entityOps, v3, atOf, moveOpts } from './worlds3d-lib-world.js';
+import { zonesData } from './runtime-lib.js';
+
+/** The zone fields both 3D spaces read (worlds3d-lib-world zoneHas / zoneCenter / zoneYRange, a zone's spawn). */
+export const ZONES3D = zonesData('bounds', 'center', 'r', 'polygon', 'rect', 'spawn', 'tags');
+/** A rule example: the sampler's host (ball-sport's pitch, kept) beside a 3D world whose zones are these. */
+const PITCH = { id: 'pitch', use: 'engine.space.arena2d', with: { size: [40, 24], solids: [[0, 7.5, 1.5, 8], [0, 16, 1.5, 16.5], [38.5, 7.5, 40, 8], [38.5, 16, 40, 16.5]] }, zones: [{ id: 'home_goal', name: 'Home goal', rect: [0, 8, 1, 16] }, { id: 'away_goal', name: 'Away goal', rect: [39, 8, 40, 16] }] };
+const worldWith = (...zones) => ({ doc: { spaces: [PITCH, { id: 'sampled_1', use: 'engine.space.mesh3d', zones }] } });
+
+const TILE = 64; // height samples per tile edge
+const OBJ_CELL = 32; // object spatial hash cell (m)
+const H8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+
+/** Footprint radius of an object for broad phase. */
+const objRadius = o => (o.shape === 'cylinder' ? o.r ?? 0.5 : o.shape === 'box' ? Math.hypot(o.size[0], o.size[2]) / 2 : 0);
+const objHeight = o => (o.shape === 'cylinder' ? o.h ?? 1 : o.shape === 'box' ? o.size[1] : 0);
+
+/** Push a circle (x, z, r) out of an object footprint; returns [nx, nz, depth] or null. */
+function circlePush(o, x, z, r) {
+  if (o.shape === 'cylinder') {
+    const dx = x - o.at[0], dz = z - o.at[2], d = Math.hypot(dx, dz), R = (o.r ?? 0.5) + r;
+    if (d >= R) return null;
+    return d > 1e-9 ? [dx / d, dz / d, R - d] : [1, 0, R];
+  }
+  const c = Math.cos(o.rot || 0), s = Math.sin(o.rot || 0), dx = x - o.at[0], dz = z - o.at[2];
+  const lx = dx * c - dz * s, lz = dx * s + dz * c, hw = o.size[0] / 2, hd = o.size[2] / 2;
+  const qx = Math.max(-hw, Math.min(hw, lx)), qz = Math.max(-hd, Math.min(hd, lz));
+  let nx, nz, depth;
+  if (qx === lx && qz === lz) { // centre inside: leave along the shallowest side
+    const px = hw - Math.abs(lx), pz = hd - Math.abs(lz);
+    if (px < pz) { nx = Math.sign(lx) || 1; nz = 0; depth = px + r; } else { nx = 0; nz = Math.sign(lz) || 1; depth = pz + r; }
+  } else {
+    const ex = lx - qx, ez = lz - qz, d = Math.hypot(ex, ez); if (d >= r) return null;
+    nx = ex / d; nz = ez / d; depth = r - d;
+  }
+  const ci = Math.cos(-(o.rot || 0)), si = Math.sin(-(o.rot || 0));
+  return [nx * ci - nz * si, nx * si + nz * ci, depth];
+}
+/** Ray vs object; returns {t, normal} or null. o = origin, u = unit direction. */
+function rayObject(obj, o, u, maxT) {
+  const h = objHeight(obj), y0 = obj.at[1], y1 = y0 + h;
+  if (obj.shape === 'cylinder') {
+    const R = obj.r ?? 0.5, ox = o[0] - obj.at[0], oz = o[2] - obj.at[2];
+    let best = null;
+    const a = u[0] * u[0] + u[2] * u[2];
+    if (a > 1e-12) {
+      const b = 2 * (ox * u[0] + oz * u[2]), c = ox * ox + oz * oz - R * R, disc = b * b - 4 * a * c;
+      if (disc >= 0) { const t = (-b - Math.sqrt(disc)) / (2 * a), y = o[1] + u[1] * t; if (t >= 0 && t <= maxT && y >= y0 && y <= y1) best = { t, normal: [(ox + u[0] * t) / R, 0, (oz + u[2] * t) / R] }; }
+    }
+    if (Math.abs(u[1]) > 1e-12) for (const [cy, ny] of [[y1, 1], [y0, -1]]) {
+      const t = (cy - o[1]) / u[1]; if (t < 0 || t > maxT || (best && t >= best.t)) continue;
+      const px = ox + u[0] * t, pz = oz + u[2] * t; if (px * px + pz * pz <= R * R) best = { t, normal: [0, ny, 0] };
+    }
+    return best;
+  }
+  const c = Math.cos(obj.rot || 0), s = Math.sin(obj.rot || 0);
+  const lo = [(o[0] - obj.at[0]) * c - (o[2] - obj.at[2]) * s, o[1] - y0, (o[0] - obj.at[0]) * s + (o[2] - obj.at[2]) * c];
+  const lu = [u[0] * c - u[2] * s, u[1], u[0] * s + u[2] * c];
+  const min = [-obj.size[0] / 2, 0, -obj.size[2] / 2], max = [obj.size[0] / 2, obj.size[1], obj.size[2] / 2];
+  let t0 = 0, t1 = maxT, axis = -1;
+  for (let i = 0; i < 3; i++) {
+    if (Math.abs(lu[i]) < 1e-12) { if (lo[i] < min[i] || lo[i] > max[i]) return null; continue; }
+    let ta = (min[i] - lo[i]) / lu[i], tb = (max[i] - lo[i]) / lu[i]; if (ta > tb) [ta, tb] = [tb, ta];
+    if (ta > t0) { t0 = ta; axis = i; } t1 = Math.min(t1, tb); if (t0 > t1) return null;
+  }
+  const ln = [0, 0, 0]; if (axis >= 0) ln[axis] = -Math.sign(lu[axis]);
+  const ci = Math.cos(-(obj.rot || 0)), si = Math.sin(-(obj.rot || 0));
+  return { t: t0, normal: [ln[0] * ci - ln[2] * si, ln[1], ln[0] * si + ln[2] * ci] };
+}
+
+export default {
+  id: 'engine.space.mesh3d',
+  card: {
+    intent: 'Continuous 3D world: heightfield terrain plus placed box/cylinder colliders and props, with ground/slope/water queries, terrain+collider raycasts, collide-and-slide bodies and grid navigation. For open worlds, cities, racing and 3D action.',
+    views: ['1p', '3p', 'iso', 'td'],
+    // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
+    // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
+    frame: { up: 1, handed: 'right' },
+    needs: { content: ['terrain', 'road-network'], alternatives: [['rooms']] },
+    params: {
+      size: { type: 'list', of: { type: 'number', min: 64, max: 16384 }, min: 2, max: 2, default: [2048, 2048], unit: 'm', scale: 'world', effect: 'world extent [x, z]; x and z run from 0 to size' },
+      heightRes: { type: 'number', min: 0.5, max: 8, default: 2, unit: 'm', effect: 'heightfield sample spacing' },
+      gravity: { type: 'number', min: -100, max: 0, default: -9.8, unit: 'm/s²', effect: 'gravity vector y' },
+      navCell: { type: 'number', min: 0.25, max: 4, default: 1, unit: 'm', effect: 'finest navigation grid cell (long paths coarsen automatically)' },
+      streamRadius: { type: 'number', min: 100, max: 4000, default: 600, unit: 'm', effect: 'radius around the player that renderers and streaming keep loaded' },
+      baseHeight: { type: 'number', min: -1000, max: 10000, default: 0, unit: 'm', effect: 'ground height when no terrain generator is present' },
+      body: { type: 'list', of: { type: 'number', min: 0.05, max: 64 }, min: 3, max: 3, default: [0.6, 1.8, 0.6], unit: 'm', effect: 'default body size [w, h, d]' },
+      stepHeight: { type: 'number', min: 0, max: 4, default: 0.4, unit: 'm', effect: 'ledge height bodies and paths step onto without jumping (body.step overrides)' },
+      slopeLimit: { type: 'number', min: 0, max: 89, default: 45, unit: 'deg', effect: 'steepest walkable terrain for slide and navigation' },
+      wade: { type: 'number', min: 0, max: 10, default: 0.9, unit: 'm', effect: 'deepest water navigation walks through without the swim ability' },
+      objectTile: { type: 'number', min: 16, max: 2048, default: 128, unit: 'm', effect: 'tile size for lazily generated objects (scatter)' },
+      cacheTiles: { type: 'integer', min: 8, max: 65536, default: 512, effect: 'height and object tiles kept in memory' },
+      pathNodes: { type: 'integer', min: 100, max: 1000000, default: 20000, effect: 'A* node budget per path query' },
+      reachNodes: { type: 'integer', min: 100, max: 4000000, default: 65536, effect: 'reachable() budget; its grid coarsens so the whole world fits' },
+    },
+    provides: {
+      capabilities: ['position', 'distance', 'overlap', 'raycast', 'pathfind', 'reachable', 'gravity', 'surface', 'bounds', 'placement', 'heightfield', 'procedural'],
+      capabilityMethods: { placement: ['objects', 'addObject', 'removeObject', 'objectsIn'], heightfield: ['heightSample', 'heightTile', 'cellOf'], procedural: ['model', 'standAt'] },
+      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'generated', 'object_added', 'object_removed'],
+      services: ['surface'],
+    },
+    reads: [],
+    data: ZONES3D,
+    rules: {
+      zone_shape_missing: { fields: ['zones[].bounds', 'zones[].center', 'zones[].polygon', 'zones[].rect'], message: 'a world zone has a shape: bounds, center with r, polygon or rect', example: worldWith({ id: 'nowhere' }) },
+      zone_shape_invalid: { fields: ['zones[].center', 'zones[].r'], message: 'a zone with a center has r > 0', example: worldWith({ id: 'dot', center: [1, 1] }) },
+    },
+  },
+  validate(config, doc, ctx, inst) {
+    const errors = [];
+    (doc.spaces || []).forEach((s, i) => {
+      if (s.use !== 'engine.space.mesh3d' || (inst?.id && s.id !== inst.id)) return;
+      (s.zones || []).forEach((z, j) => {
+        if (!z.bounds && !z.center && !z.polygon && !z.rect) errors.push({ code: 'zone_shape_missing', path: `spaces[${i}].zones[${j}]`, message: `zone '${z.id}' needs bounds, center+r, polygon or rect` });
+        if (z.center && !(z.r > 0)) errors.push({ code: 'zone_shape_invalid', path: `spaces[${i}].zones[${j}].r`, message: `zone '${z.id}' with a center needs r > 0` });
+      });
+    });
+    return errors;
+  },
+  install(rt, config, instance) {
+    const sid = instance.id, [W, D] = config.size, R = config.heightRes, NX = Math.ceil(W / R), NZ = Math.ceil(D / R);
+    const model = worldModel(rt, sid, 'mesh3d', { extent: [0, 0, W, D], seaLevel: 0, cell: R });
+    const st = () => rt.state.spaces[sid];
+    rt.defineSpace(sid, null);
+    st().seed ??= Math.floor(rt.random() * 4294967296) >>> 0 || 1;
+    st().members ??= {}; st().added ??= {}; st().removed ??= {}; st().nextObject ??= 1;
+    const ops = entityOps({ rt, sid, model, defaultBody: config.body, st }), { bodySize, boxOf, entities, zones, track, feet, fromFeet } = ops;
+
+    // ----- heightfield -----
+    let version = -1;
+    const tiles = new Map(), objTiles = new Map();
+    const sync = () => { model.ensure(); if (model.version !== version) { tiles.clear(); objTiles.clear(); version = model.version; } };
+    const rawHeight = (x, z) => model.at('height', x, z, config.baseHeight);
+    function tile(tx, tz) {
+      const k = tx * 65536 + tz; let t = tiles.get(k);
+      if (t) return t;
+      t = new Float32Array((TILE + 1) * (TILE + 1));
+      for (let j = 0; j <= TILE; j++) for (let i = 0; i <= TILE; i++) t[i + (TILE + 1) * j] = rawHeight(Math.min(NX, tx * TILE + i) * R, Math.min(NZ, tz * TILE + j) * R);
+      if (tiles.size >= config.cacheTiles) { let n = Math.ceil(config.cacheTiles / 4); for (const key of tiles.keys()) { tiles.delete(key); if (--n <= 0) break; } }
+      tiles.set(k, t); return t;
+    }
+    function heightSample(ix, iz) {
+      ix = Math.max(0, Math.min(NX, ix)); iz = Math.max(0, Math.min(NZ, iz));
+      if (!model.built) return rawHeight(ix * R, iz * R); // during generation: no caching while modifiers are added
+      sync();
+      const tx = Math.min(Math.floor(ix / TILE), Math.floor((NX - 1) / TILE)), tz = Math.min(Math.floor(iz / TILE), Math.floor((NZ - 1) / TILE));
+      return tile(tx, tz)[(ix - tx * TILE) + (TILE + 1) * (iz - tz * TILE)];
+    }
+    const terrainY = (x, z) => {
+      if (model.building) return rawHeight(Math.max(0, Math.min(W, x)), Math.max(0, Math.min(D, z)));
+      sync();
+      const fx = Math.max(0, Math.min(W, x)) / R, fz = Math.max(0, Math.min(D, z)) / R, ix = Math.min(NX - 1, Math.floor(fx)), iz = Math.min(NZ - 1, Math.floor(fz)), u = fx - ix, v = fz - iz;
+      const a = heightSample(ix, iz), b = heightSample(ix + 1, iz), c = heightSample(ix, iz + 1), d = heightSample(ix + 1, iz + 1);
+      return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+    };
+    const normalAt = (x, z) => { const e = R, hx = terrainY(x + e, z) - terrainY(x - e, z), hz = terrainY(x, z + e) - terrainY(x, z - e), n = [-hx / (2 * e), 1, -hz / (2 * e)], l = Math.hypot(...n); return n.map(v => v / l + 0); }; // + 0 turns -0 into 0
+    const waterLevelAt = (x, z) => model.at('water', x, z, null);
+    const groundAt = (x, z) => {
+      const biome = model.ensure().at('biome', x, z, null);
+      const material = model.at('material', x, z, null) ?? (biome && model.info.biomeDefs?.[biome]?.surface) ?? null;
+      return { y: terrainY(x, z), normal: normalAt(x, z), material, biome };
+    };
+    const slopeAt = (x, z) => +(Math.acos(Math.min(1, normalAt(x, z)[1])) * 180 / Math.PI).toFixed(3);
+    const waterDepthAt = (x, z) => { const w = waterLevelAt(x, z); return w == null ? 0 : Math.max(0, w - terrainY(x, z)); };
+
+    // ----- objects -----
+    const eagerIndex = () => {
+      sync();
+      if (model.objectIndex) return model.objectIndex;
+      const grid = new Map();
+      for (const o of model.objects) addToGrid(grid, o);
+      return (model.objectIndex = grid);
+    };
+    const addToGrid = (grid, o) => {
+      const r = objRadius(o);
+      for (let gx = Math.floor((o.at[0] - r) / OBJ_CELL); gx <= Math.floor((o.at[0] + r) / OBJ_CELL); gx++) for (let gz = Math.floor((o.at[2] - r) / OBJ_CELL); gz <= Math.floor((o.at[2] + r) / OBJ_CELL); gz++) {
+        const k = gx * 65536 + gz; if (!grid.has(k)) grid.set(k, []); grid.get(k).push(o);
+      }
+    };
+    function objTile(tx, tz) {
+      const k = tx * 65536 + tz; let t = objTiles.get(k);
+      if (t) return t;
+      const box = [tx * config.objectTile, tz * config.objectTile, (tx + 1) * config.objectTile, (tz + 1) * config.objectTile];
+      const list = model.objectLayers.flatMap(layer => layer.objects(box, { groundAt, slopeAt, waterDepthAt, model }) || []);
+      const grid = new Map(); for (const o of list) addToGrid(grid, o);
+      t = { list, grid };
+      if (objTiles.size >= config.cacheTiles) { let n = Math.ceil(config.cacheTiles / 4); for (const key of objTiles.keys()) { objTiles.delete(key); if (--n <= 0) break; } }
+      objTiles.set(k, t); return t;
+    }
+    /** Objects whose footprint may touch the rectangle [x0, z0, x1, z1] (eager, lazy tiles and runtime additions, minus removals). */
+    function objectsIn(x0, z0, x1, z1, { lazy = true, collidersOnly = false } = {}) {
+      const grid = eagerIndex(), out = new Set(), removed = st().removed;
+      for (let gx = Math.floor(x0 / OBJ_CELL); gx <= Math.floor(x1 / OBJ_CELL); gx++) for (let gz = Math.floor(z0 / OBJ_CELL); gz <= Math.floor(z1 / OBJ_CELL); gz++) for (const o of grid.get(gx * 65536 + gz) || []) out.add(o);
+      if (lazy && model.objectLayers.length && (!collidersOnly || model.objectLayers.some(l => l.colliders !== false))) {
+        const T = config.objectTile;
+        for (let tx = Math.floor(Math.max(0, x0) / T); tx <= Math.floor(Math.min(W, x1) / T); tx++) for (let tz = Math.floor(Math.max(0, z0) / T); tz <= Math.floor(Math.min(D, z1) / T); tz++) {
+          const t = objTile(tx, tz);
+          for (let gx = Math.floor(x0 / OBJ_CELL); gx <= Math.floor(x1 / OBJ_CELL); gx++) for (let gz = Math.floor(z0 / OBJ_CELL); gz <= Math.floor(z1 / OBJ_CELL); gz++) for (const o of t.grid.get(gx * 65536 + gz) || []) out.add(o);
+        }
+      }
+      for (const o of Object.values(st().added)) { const r = objRadius(o); if (o.at[0] + r >= x0 && o.at[0] - r <= x1 && o.at[2] + r >= z0 && o.at[2] - r <= z1) out.add(o); }
+      return [...out].filter(o => !removed[o.id]);
+    }
+    const colliders = (x0, z0, x1, z1) => objectsIn(x0, z0, x1, z1, { collidersOnly: true }).filter(o => o.shape === 'box' || o.shape === 'cylinder');
+
+    // ----- bodies -----
+    const radiusOf = e => { const s = bodySize(e); return Math.max(s[0], s[2]) / 2; };
+    const stepOf = e => e.components?.body?.step ?? config.stepHeight;
+    /** Highest support under a circle at (x, z) with feet at y: terrain or collider tops within step reach. */
+    function supportAt(x, z, r, y, reach) {
+      let best = terrainY(x, z);
+      for (const o of colliders(x - r, z - r, x + r, z + r)) {
+        const top = o.at[1] + objHeight(o);
+        if (top <= y + reach + 1e-6 && top > best && circlePush(o, x, z, r * 0.999)) best = top;
+      }
+      return best;
+    }
+    const tooSteep = (x, z) => slopeAt(x, z) > config.slopeLimit;
+
+    // ----- navigation grid -----
+    /** opts: {abilities, envelope: {stepHeight, slopeMax, swim, climb, fly...}, who, radius, height, cell, maxNodes, avoid}. */
+    const navOpts = (o = {}) => {
+      const m = moveOpts(rt, o), b = m.body || config.body;
+      return { swim: m.names.has('swim'), climb: m.names.has('climb'), fly: m.names.has('fly'), r: o.radius ?? Math.max(b[0], b[2]) / 2, h: o.height ?? b[1], step: o.step ?? m.env.stepHeight ?? config.stepHeight, slope: o.slopeMax ?? m.env.slopeMax ?? config.slopeLimit, maxNodes: o.maxNodes ?? config.pathNodes, avoid: o.avoid, cell: o.cell };
+    };
+    /** reachable() cell: fine enough for the world to fit the node budget (whole-map flood fills for the verifier). */
+    const reachCell = () => Math.max(config.navCell, Math.sqrt((W * D) / config.reachNodes));
+    const navKey = (ix, iz, cs) => { const x = (ix + 0.5) * cs, z = (iz + 0.5) * cs; return `${Math.floor(x)},${Math.floor(terrainY(x, z))},${Math.floor(z)}`; };
+    /** A point (centre or [x, z]) or a zone id as a ground point. */
+    const target = at => { if (typeof at === 'string' && !at.includes(',')) { const z = zones().find(q => q.id === at); return z ? anchor(z) : null; } const p = atOf(at); return p.length === 2 ? [p[0], terrainY(p[0], p[1]), p[1]] : v3(p); };
+    function walkableFn(p, cs) {
+      const memo = new Map();
+      // Coarse cells sample the height field directly: building full-resolution tiles for a whole-world flood costs far more.
+      const coarse = cs > Math.max(4, 4 * config.navCell), off = cs * 0.3;
+      const groundY = coarse ? (x, z) => rawHeight(Math.max(0, Math.min(W, x)), Math.max(0, Math.min(D, z))) : terrainY;
+      const slope = coarse ? (x, z, g) => { const e = 2 * R, gx = groundY(x + e, z) - g, gz = groundY(x, z + e) - g; return (Math.atan(Math.hypot(gx, gz) / e) * 180) / Math.PI; } : (x, z) => slopeAt(x, z);
+      const point = (x, z) => {
+        if (!(x >= 0 && z >= 0 && x <= W && z <= D)) return false;
+        if (p.fly) return true;
+        let g = groundY(x, z);
+        const wl = waterLevelAt(x, z);
+        if (!p.swim && wl != null && wl - g > config.wade) {
+          // Deep water is walkable only on a deck (bridge, pier, raft) at or above the surface.
+          const deck = colliders(x - p.r, z - p.r, x + p.r, z + p.r).filter(o => circlePush(o, x, z, 0.01)).reduce((m, o) => Math.max(m, o.at[1] + objHeight(o)), -Infinity);
+          if (!(deck >= wl - 0.3)) return false;
+          g = deck;
+        } else if (!p.climb && slope(x, z, g) > p.slope) return false;
+        for (const o of colliders(x - p.r, z - p.r, x + p.r, z + p.r)) if (o.at[1] + objHeight(o) > g + p.step && o.at[1] < g + config.body[1] && circlePush(o, x, z, p.r)) return false;
+        return !p.avoid?.([x, g, z]);
+      };
+      // Coarse cells (much larger than a body) are walkable when any of five samples is, or a road (bridges included) crosses them.
+      const net = model.data.roads, onRoad = (x, z) => Boolean(!p.avoid && net?.edges.length && nearestRoad(net, x, z, cs * 0.75)); // 0.75 cs: a diagonal road stays 4-connected
+      return (ix, iz) => {
+        const k = ix * 1048576 + iz; let v = memo.get(k);
+        if (v !== undefined) return v;
+        const x = (ix + 0.5) * cs, z = (iz + 0.5) * cs;
+        v = point(x, z) || (coarse && (point(x - off, z - off) || point(x + off, z - off) || point(x - off, z + off) || point(x + off, z + off) || onRoad(x, z)));
+        memo.set(k, v); return v;
+      };
+    }
+    /** Nearest walkable cell to c within a few rings (bodies stand next to, not inside, obstacles). */
+    const snapCell = (ok, c, rings = 3) => { for (let r = 0; r <= rings; r++) for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) if (Math.max(Math.abs(dx), Math.abs(dz)) === r && ok(c[0] + dx, c[1] + dz)) return [c[0] + dx, c[1] + dz]; return null; };
+    const navCellFor = (p, a, b) => p.cell ?? Math.max(config.navCell, Math.hypot(b[0] - a[0], b[2] - a[2]) / 160);
+    function path(from, to, o) {
+      const p = navOpts(o), a = target(from), b = target(to); if (!a || !b) return null;
+      const cs = navCellFor(p, a, b), ok = walkableFn(p, cs);
+      const s = snapCell(ok, [Math.floor(a[0] / cs), Math.floor(a[2] / cs)]), g = snapCell(ok, [Math.floor(b[0] / cs), Math.floor(b[2] / cs)]);
+      if (!g || !s) return null;
+      const r = astar({
+        start: s, isGoal: c => c[0] === g[0] && c[1] === g[1], key: c => `${c[0]},${c[1]}`, maxNodes: p.maxNodes,
+        h: c => Math.hypot(c[0] - g[0], c[1] - g[1]) * cs,
+        neighbors(c, push) {
+          for (const [dx, dz] of H8) {
+            const n = [c[0] + dx, c[1] + dz]; if (!ok(...n) || (dx && dz && (!ok(c[0] + dx, c[1]) || !ok(c[0], c[1] + dz)))) continue;
+            const rise = Math.abs(terrainY((n[0] + 0.5) * cs, (n[1] + 0.5) * cs) - terrainY((c[0] + 0.5) * cs, (c[1] + 0.5) * cs));
+            push(n, Math.hypot(dx, dz) * cs + rise * 0.5);
+          }
+        },
+      });
+      if (!r.path) return null;
+      const pts = r.path.map(c => [(c[0] + 0.5) * cs, 0, (c[1] + 0.5) * cs]);
+      pts[0] = [a[0], 0, a[2]]; pts[pts.length - 1] = [b[0], 0, b[2]];
+      const out = pts.filter((q, i) => i === 0 || i === pts.length - 1 || (pts[i - 1][0] - q[0]) * (pts[i + 1][2] - q[2]) - (pts[i - 1][2] - q[2]) * (pts[i + 1][0] - q[0]) !== 0);
+      return out.map(q => [q[0], +(terrainY(q[0], q[2]) + p.h / 2).toFixed(9), q[2]]);
+    }
+    // A flood fill is a connected component: any start inside a component computed for the same
+    // walking options and the same world (terrain version, runtime objects, zones) gets the same set.
+    // Movement option listing calls reachable() every step, so without this a 256 m map costs ~200 ms
+    // per call. Cleared when the world changes; never cached with an `avoid` callback.
+    const reachMemo = { world: null, list: [] };
+    function reachable(from, rtOrOpts, o) {
+      const opts = rtOrOpts && !rtOrOpts.state ? rtOrOpts : o || {};
+      const p = navOpts({ maxNodes: config.reachNodes, ...opts }), a = target(from), cs = p.cell ?? reachCell(), ok = walkableFn(p, cs);
+      if (!a) { const none = new Set(); none.cell = cs; none.truncated = false; return none; }
+      const start = [Math.floor(a[0] / cs), Math.floor(a[2] / cs)];
+      const world = p.avoid ? null : `${sync(), model.version}|${JSON.stringify(st().added)}|${Object.keys(st().removed).join()}|${JSON.stringify(zones())}`;
+      const optKey = world && JSON.stringify({ ...p, avoid: undefined, cs });
+      if (world) {
+        if (reachMemo.world !== world) { reachMemo.world = world; reachMemo.list = []; }
+        const hit = reachMemo.list.find(m => m.optKey === optKey && m.cells.has(start[0] * 1048576 + start[1]));
+        if (hit) return hit.out;
+      }
+      const out = new Set();
+      const s = snapCell(ok, start, 1);
+      out.cell = cs; out.truncated = false;
+      if (!s) return out;
+      const seen = new Set([`${s[0]},${s[1]}`]), queue = [s];
+      for (let i = 0; i < queue.length; i++) {
+        // Truncated only when a new cell is found past the budget: a fill that exactly fits (reachCell sizes
+        // the grid to reachNodes cells, so a fully open map does) is complete.
+        const c = queue[i];
+        for (const [dx, dz] of H8.slice(0, 4)) { const n = [c[0] + dx, c[1] + dz], k = `${n[0]},${n[1]}`; if (!seen.has(k) && ok(...n)) { if (seen.size >= p.maxNodes) { out.truncated = true; break; } seen.add(k); queue.push(n); } }
+        if (out.truncated) break;
+      }
+      for (const c of queue) out.add(navKey(c[0], c[1], cs));
+      const zs = zones();
+      for (const c of queue) { const x = (c[0] + 0.5) * cs, z = (c[1] + 0.5) * cs; for (const zn of zs) if (!out.has(zn.id) && zoneHas(zn, x, undefined, z)) out.add(zn.id); }
+      // Only complete components are reusable (a truncated fill depends on where it started).
+      if (world && !out.truncated) { reachMemo.list.push({ optKey, cells: new Set(queue.map(c => c[0] * 1048576 + c[1])), out }); if (reachMemo.list.length > 8) reachMemo.list.shift(); }
+      return out;
+    }
+
+    // ----- raycast -----
+    function raycast(from, dir, maxDist = 500, mask = {}) {
+      const m = typeof mask === 'string' ? { terrain: mask !== 'entities', objects: mask !== 'entities', entities: mask !== 'cells' && mask !== 'terrain' } : mask;
+      const o = v3(from), d = v3(dir), l = Math.hypot(...d) || 1, u = d.map(v => v / l);
+      let best = { hit: 'none', at: null, normal: null, dist: maxDist };
+      if (m.terrain !== false) {
+        const step = R * 0.5; let prev = 0, prevAbove = o[1] - terrainY(o[0], o[2]);
+        if (prevAbove < 0) best = { hit: 'terrain', at: o, normal: normalAt(o[0], o[2]), dist: 0 };
+        else for (let t = step; t <= maxDist + step; t += step) {
+          const tt = Math.min(t, maxDist), x = o[0] + u[0] * tt, y = o[1] + u[1] * tt, z = o[2] + u[2] * tt, above = y - terrainY(x, z);
+          if (above <= 0) {
+            let lo = prev, hi = tt;
+            for (let k = 0; k < 16; k++) { const mid = (lo + hi) / 2; if (o[1] + u[1] * mid - terrainY(o[0] + u[0] * mid, o[2] + u[2] * mid) > 0) lo = mid; else hi = mid; }
+            const at = o.map((v, i) => v + u[i] * hi);
+            best = { hit: 'terrain', at, normal: normalAt(at[0], at[2]), dist: hi, material: groundAt(at[0], at[2]).material };
+            break;
+          }
+          prev = tt; prevAbove = above; if (tt >= maxDist) break;
+        }
+      }
+      if (m.objects !== false) {
+        const reach = best.dist, ex = [o[0], o[2], o[0] + u[0] * reach, o[2] + u[2] * reach];
+        for (const obj of colliders(Math.min(ex[0], ex[2]), Math.min(ex[1], ex[3]), Math.max(ex[0], ex[2]), Math.max(ex[1], ex[3]))) {
+          const h = rayObject(obj, o, u, best.dist);
+          if (h && h.t < best.dist) best = { hit: 'object', id: obj.id, at: o.map((v, i) => v + u[i] * h.t), normal: h.normal, dist: h.t, kind: obj.kind };
+        }
+      }
+      if (m.entities !== false) { const e = ops.rayEntities(o, u, best.dist, { ignore: m.ignore, filter: m.filter }); if (e) best = e; }
+      return best;
+    }
+
+    // ----- positions -----
+    /** [x, z] -> ground point (or, for an entity, its standing centre); 3 numbers pass through. */
+    const norm = (at, e) => { const p = atOf(at); return p.length === 2 ? (e ? fromFeet(e, [p[0], terrainY(p[0], p[1]), p[1]]) : [p[0], terrainY(p[0], p[1]), p[1]]) : v3(p); };
+    const anchor = zone => {
+      const a = zone.spawn || zone.at;
+      if (a) return a.length === 2 ? [a[0], terrainY(a[0], a[1]), a[1]] : v3(a); // feet
+      const c = zoneCenter(zone); if (!c) return null;
+      const p = navOpts({}), ok = walkableFn(p, Math.max(config.navCell, 2));
+      for (let r = 0; r <= 32; r++) for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+        const cs = Math.max(config.navCell, 2), ix = Math.floor(c[0] / cs) + dx, iz = Math.floor(c[1] / cs) + dz, x = (ix + 0.5) * cs, z = (iz + 0.5) * cs;
+        if (ok(ix, iz) && zoneHas(zone, x, undefined, z)) { const y = supportAt(x, z, config.body[0] / 2, terrainY(x, z), config.stepHeight); if (!zone.bounds?.min || zoneHas(zone, x, y, z)) return [x, y, z]; }
+      }
+      return [c[0], terrainY(c[0], c[1]), c[1]];
+    };
+
+    const api = {
+      kind: 'mesh3d', anchor: 'center', config, size: [W, D], heightRes: R,
+      model: () => model.ensure(),
+      /** World box; the height range is estimated once per build from a 65 x 65 sample of the field (cheap to call every step). */
+      bounds() {
+        sync();
+        if (!model.cache.bounds) { let lo = Infinity, hi = -Infinity; for (let j = 0; j <= 64; j++) for (let i = 0; i <= 64; i++) { const h = rawHeight((i / 64) * W, (j / 64) * D); lo = Math.min(lo, h); hi = Math.max(hi, h); } model.cache.bounds = { lo, hi }; }
+        const { lo, hi } = model.cache.bounds; return { min: [0, lo, 0], max: [W, hi, D] };
+      },
+      // position
+      place(e, rt) {
+        ops.body(e);
+        if (e.at == null) { const start = zones().find(z => (z.tags || []).includes('start')) || zones()[0]; e.at = fromFeet(e, (start && anchor(start)) || [W / 2, terrainY(W / 2, D / 2), D / 2]); }
+        e.at = norm(e.at, e);
+        const f = feet(e), g = terrainY(f[0], f[2]); if (f[1] < g) e.at = fromFeet(e, [f[0], g, f[2]]); // spawned under ground: stand on it
+        e.zone = null; track(e, rt);
+      },
+      remove: e => ops.untrack(e),
+      pos: e => e.at,
+      setPos(e, at, rt) { e.at = norm(at, e); track(e, rt); },
+      entitiesAt: ops.entitiesAt, inZone: ops.inZone, zoneAt: ops.zoneAt,
+      teleport(e, { zone, at }, rt) { const z = zone && zones().find(x => x.id === zone); const to = at ?? (z && fromFeet(e, anchor(z))); if (to) { if (e.components?.body) e.components.body.vel = [0, 0, 0]; api.setPos(e, to, rt); } },
+      nearest: (e, target) => ops.nearest(e, target),
+      distance: (a, b, metric = 'euclid') => ops.distance(norm(a), norm(b), metric, path),
+      cellOf(eOrAt) { const p = Array.isArray(eOrAt) || typeof eOrAt === 'string' ? target(eOrAt) : feet(eOrAt), cs = reachCell(); return navKey(Math.floor(p[0] / cs), Math.floor(p[2] / cs), cs); },
+      standAt(f, e = { components: {} }) { return fromFeet(e, f.length === 2 ? [f[0], terrainY(f[0], f[1]), f[1]] : v3(f)); },
+      inBounds(at, margin = 0) { const p = v3(atOf(at)); return p[0] >= -margin && p[0] <= W + margin && p[2] >= -margin && p[2] <= D + margin; },
+      overlap: (shape, filter) => ops.overlap(shape, filter),
+      contacts(e) {
+        const p = feet(e), r = radiusOf(e), h = bodySize(e)[1], out = [];
+        for (const o of colliders(p[0] - r - 0.05, p[2] - r - 0.05, p[0] + r + 0.05, p[2] + r + 0.05)) {
+          if (o.at[1] > p[1] + h || o.at[1] + objHeight(o) < p[1]) continue;
+          const push = circlePush(o, p[0], p[2], r + 0.05); if (push) out.push({ id: o.id, object: true, normal: [push[0], 0, push[1]] });
+        }
+        if (p[1] - terrainY(p[0], p[2]) < 0.05) out.push({ terrain: true, normal: normalAt(p[0], p[2]) });
+        for (const o of entities()) if (o !== e) { const a = boxOf(e), b = boxOf(o); if (a.min.every((m, i) => m <= b.max[i] + 0.02 && a.max[i] >= b.min[i] - 0.02)) { const d = v3(o.at).map((v, i) => v - p[i]), l = Math.hypot(d[0], d[2]) || 1; out.push({ id: o.id, normal: [-d[0] / l, 0, -d[2] / l] }); } }
+        return out;
+      },
+      raycast, path, reachable,
+      /** canReach(a, b, rt?, opts?): b is a position or a zone id. */
+      canReach(a, b, c, d) { const opts = c && c.state ? d || {} : c || {}; if (typeof b === 'string' && !b.includes(',')) return reachable(a, opts).has(b); return path(a, b, opts) !== null; },
+      // gravity
+      gravityAt: () => [0, config.gravity, 0],
+      /**
+       * Collide-and-slide: horizontal motion is resolved against collider
+       * footprints (pushing out along the contact normal, so bodies slide along
+       * walls) and against terrain steeper than slopeLimit; vertical motion
+       * lands on terrain or collider tops and stops under collider bottoms.
+       * Ledges up to body.step (default stepHeight) are stepped onto.
+       */
+      slide(e, delta, rt) {
+        const d = v3(delta), p = feet(e), r = radiusOf(e), h = bodySize(e)[1], step = stepOf(e);
+        const n = Math.min(64, Math.max(1, Math.ceil(Math.max(Math.hypot(d[0], d[2]) / Math.max(0.05, r * 0.5), Math.abs(d[1]) / 0.5))));
+        const blocked = { x: false, y: false, z: false }; let normal = null;
+        let grounded = p[1] - supportAt(p[0], p[2], r, p[1], step) < 0.05;
+        for (let k = 0; k < n; k++) {
+          let qx = p[0] + d[0] / n, qz = p[2] + d[2] / n;
+          // terrain too steep to climb
+          if ((d[0] || d[2]) && tooSteep(qx, qz) && terrainY(qx, qz) > p[1] + step) {
+            const nn = normalAt(qx, qz); normal = nn;
+            if (Math.abs(nn[0]) > 1e-6) blocked.x = true; if (Math.abs(nn[2]) > 1e-6) blocked.z = true;
+            // slide along the slope contour
+            const l = Math.hypot(nn[0], nn[2]) || 1, tx = -nn[2] / l, tz = nn[0] / l, along = (d[0] / n) * tx + (d[2] / n) * tz;
+            qx = p[0] + tx * along; qz = p[2] + tz * along;
+            if (tooSteep(qx, qz) && terrainY(qx, qz) > p[1] + step) { qx = p[0]; qz = p[2]; }
+          }
+          // colliders
+          for (let it = 0; it < 4; it++) {
+            let pushed = false;
+            for (const o of colliders(qx - r, qz - r, qx + r, qz + r)) {
+              const top = o.at[1] + objHeight(o);
+              if (o.at[1] >= p[1] + h || top <= p[1] + 1e-6) continue; // no vertical overlap
+              if (top - p[1] <= step + 1e-6 && grounded) continue; // step onto it below
+              const push = circlePush(o, qx, qz, r); if (!push) continue;
+              qx += push[0] * (push[2] + 1e-4); qz += push[1] * (push[2] + 1e-4); pushed = true;
+              normal = [push[0], 0, push[1]]; if (Math.abs(push[0]) > 0.3) blocked.x = true; if (Math.abs(push[1]) > 0.3) blocked.z = true;
+            }
+            if (!pushed) break;
+          }
+          p[0] = Math.max(0, Math.min(W, qx)); p[2] = Math.max(0, Math.min(D, qz));
+          // vertical
+          let ny = p[1] + d[1] / n;
+          const floor = supportAt(p[0], p[2], r, Math.max(p[1], ny), grounded ? step : 0);
+          if (ny < floor) { if (d[1] < 0 || floor - p[1] > step) blocked.y = d[1] < 0 || blocked.y; ny = floor; if (d[1] <= 0) { normal ??= [0, 1, 0]; } d[1] = Math.min(0, d[1]); }
+          if (d[1] > 0) for (const o of colliders(p[0] - r, p[2] - r, p[0] + r, p[2] + r)) if (o.at[1] >= p[1] + h - 1e-6 && ny + h > o.at[1] && circlePush(o, p[0], p[2], r * 0.999)) { ny = o.at[1] - h; blocked.y = true; normal = [0, -1, 0]; d[1] = 0; }
+          p[1] = ny;
+          grounded = p[1] - supportAt(p[0], p[2], r, p[1], step) < 0.05;
+        }
+        const before = feet(e), moved = p.some((v, i) => Math.abs(v - before[i]) > 1e-12);
+        e.at = fromFeet(e, p).map(v => +v.toFixed(9)); track(e, rt);
+        if (e.components?.body) e.components.body.grounded = grounded;
+        return { moved, blocked, grounded, normal };
+      },
+      grounded(e) { const p = feet(e), r = radiusOf(e); return p[1] - supportAt(p[0], p[2], r, p[1], 0.05) < 0.05; },
+      // surface
+      groundAt, slopeAt, waterDepthAt, waterLevelAt,
+      // heightfield (renderers)
+      heightSample,
+      heightTile(tx, tz) { const heights = new Float32Array((TILE + 1) * (TILE + 1)); for (let j = 0; j <= TILE; j++) for (let i = 0; i <= TILE; i++) heights[i + (TILE + 1) * j] = heightSample(tx * TILE + i, tz * TILE + j); return { origin: [tx * TILE * R, tz * TILE * R], res: R, n: [TILE + 1, TILE + 1], heights }; },
+      // placement
+      objects(region) {
+        if (!region) { sync(); const removed = st().removed; return [...model.objects, ...Object.values(st().added)].filter(o => !removed[o.id]); }
+        return objectsIn(region.min[0], region.min[1], region.max[0], region.max[1]);
+      },
+      objectsIn: (x0, z0, x1, z1) => objectsIn(x0, z0, x1, z1),
+      /** Add a runtime object (kept in state); returns its id. */
+      addObject(obj, rt) {
+        const s = st(), id = obj.id || `obj${s.nextObject++}`;
+        const o = { shape: 'box', size: [1, 1, 1], rot: 0, scale: 1, ...structuredClone(obj), id };
+        if (o.at.length === 2) o.at = norm(o.at);
+        s.added[id] = o; delete s.removed[id]; rt.emit('object_added', { id, space: sid, kind: o.kind ?? null }); return id;
+      },
+      removeObject(id, rt) {
+        const s = st(); if (s.removed[id]) return false;
+        if (s.added[id]) delete s.added[id]; else s.removed[id] = true;
+        rt.emit('object_removed', { id, space: sid }); return true;
+      },
+      supportAt: (x, z, y) => supportAt(x, z, 0.01, y ?? Infinity, Infinity),
+    };
+    rt.defineSpace(sid, api);
+    sharedService(rt, 'surface', sid, { call: (x, z) => groundAt(x, z), groundAt, slopeAt, waterDepthAt }, ['groundAt', 'slopeAt', 'waterDepthAt']);
+    model.surfaceY = (x, z) => rawHeight(x, z);
+    model.onBuilt = m => { st().generated = { problems: m.problems.slice(0, 50), info: { objects: m.objects.length, ...m.info.summary } }; rt.emit('generated', { space: sid, problems: m.problems.length }); };
+  },
+  extend(rt, config, added, instance) {
+    if (added.zones.some(z => z.space === instance.id)) rt.caches[`worlds3d:model:${instance.id}`]?.reset();
+  },
+};

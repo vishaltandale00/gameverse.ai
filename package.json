@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/*.test.js",
+    "test": "npm run typecheck && node --test tests/*.test.js",
     "verify:geometry": "node scripts/verify-geometry.mjs",
     "source:setup": "node scripts/sources.mjs setup",
     "game:build": "node scripts/sources.mjs build",
@@ -19,15 +19,19 @@
     "infra:check": "wrangler deploy --config wrangler.staging.jsonc --dry-run --outdir .wrangler/staging-build",
     "infra:secrets": "node scripts/hosting-secrets.mjs",
     "test:hosting": "node --test tests/hosting/*.test.js",
-    "infra:smoke": "node scripts/hosting-smoke.mjs"
+    "infra:smoke": "node scripts/hosting-smoke.mjs",
+    "typecheck": "node v2/tools/typecheck.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
     "@wasm-gaming/mgba-wasm": "0.1.1",
     "libphonenumber-js": "1.13.15",
     "three": "0.186.0",
     "ws": "8.22.0"
   },
   "devDependencies": {
+    "@types/node": "22.20.4",
+    "typescript": "7.0.2",
     "wrangler": "4.151.1"
   }
 }
