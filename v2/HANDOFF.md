@@ -47,7 +47,7 @@ Ambiguous concepts ("Sonic …": a game or a character) stop with a question (`n
   danger-field bot planning inside `rt.read`; feature checks play each idle comparison once; snapshots copied whole
   (slice, spread) then members replaced (a member-by-member copy made every later physics step slower). The last
   live numbers (maze-chase 132 s, falling-blocks 103 s) were at load ~170 and predate this; 4181 has not been
-  restarted on it. Remaining gate cost is spread over per-step entity scans in game systems (collectible,
+  restarted on it (superseded by the live run below). Remaining gate cost is spread over per-step entity scans in game systems (collectible,
   obstaclesIn, hazard) and the plot solver (tactics ~2 s); the falling-blocks bot never wins and always plays its
   10000-step budget.
 - Known failing on v2-presets: none in the focused set (596/596 on cleanup-int at merge). Launcher `feature_inert`
@@ -62,7 +62,7 @@ incomplete.
 | Order | Branch | Work | State at handoff |
 |---|---|---|---|
 | done | `gate-speed`, `cleanup` + `placement` (`cleanup-int`) | merged into v2-presets; worktrees and branches removed | |
-| 3 | `sides-controls` | declared side membership for wins that read opponents; every offered option issuable through a bound control (`option_uncontrolled` an error) | WIP committed (9409969b), v2-presets merged in (a1e3a14b). 641/644 focused pass; template gate verdicts unchanged (platformer, race, shmup lose their `option_uncontrolled` warnings; rts and tactics play differs). **Open:** tests/v2-p-pipeline-generators.test.js fails 3 tests on `option_uncontrolled`, now an error: `gameplay.move` (move-lib-core.js) offers `travel to <zone>` macro options whose `travel` verb no key or UI issues (track and other spaces), and the example `platformer.json` offers `run right` on a move axis its bindings do not bind. Needs a decision on how travel macros reach a person (a UI that issues `travel` and the options offered only when one is mounted, or realized as the held move axis), then the class fixed with a catalogue conformance test. |
+| done | `sides-controls` | declared side membership for wins that read opponents; every offered option issuable through a bound control (`option_uncontrolled` an error); travel options only where a card declares travel; `input_axis_key` | merged (b989eb16); 822/822 focused tests |
 | 4 | `polish` | no ids shown to a person (option `text` everywhere, declared names for sides, teams, stages, counters); 3D models and UI icons from declarations; `scenery` a declared closed-set param chosen through tune (cosmetic, proven by one frame per value); farming stage blocks only above on spaces with an up axis | 3 commits, last WIP. 368 focused tests pass. **Open:** tests/v2-templates.test.js gate fails `feature_inert` for falling-blocks (seeds 1–2) and launcher (1–3): cause unknown, may come from this branch. Also edited `templates.js` (union tune paths). |
 | 5 | `tune-rules` | templates declare playable tune ranges proven at bounds; `card.rules` for validate codes; vocabulary codes declared with `logic.*(kind, { codes: [{ code, fields, example }] })`; `effect_invalid` a kernel code; rule examples `{ doc }` (each named top-level section replaces the card's minimal document's); `kernel/sections.js`; sampler conformance; no warnings phase (`DECLARATIONS_ENFORCED` on, not an off switch); themed text forms for every card-declared display field | 99 commits (the largest branch); check its last commit message for what is incomplete. Merge last: it touches forms, cards and every template's `tune:` (keep `polish`'s scenery entries). |
 
@@ -80,9 +80,20 @@ incomplete.
 
 1. **Gate speed**: done for the gate on its own (above: slowest 5.4 s idle, verdicts identical). Live
    `requestToFirstPlayableMs` (under 15 s for template ideas, ARCHITECTURE §1.6) not yet measured: item 3.
-2. **Merge the branches** in the table's order: `sides-controls` (open item above), then `polish`, then `tune-rules`.
-3. **Live confirmation:** every template's example idea (`IDEAS` in tests/v2-template-path.test.js) on 4181, seeds
-   1–3, on a quiet machine: report calls, rounds, pickMs, contentMs, gateMs, requestToFirstPlayableMs.
+2. **Merge the branches** in the table's order: `polish`, then `tune-rules`.
+3. **Live confirmation, done 2026-10-22** (4181 on 0847ed4d, every template's `IDEAS` idea, seeds 1–3, one job at a
+   time, load 2.0–3.2): 53/57 published. requestToFirstPlayableMs max 10.9 s, median 3.4 s; 3 calls / 2 rounds except
+   platformer seed 1 (6/4) and creature-battle seed 2 (5/3); pick 1.2–3.1 s, content 0.9–3.3 s. Gate: maze-chase
+   3.8–5.3 s (first playable 7.4–9.2 s), platformer 2.6–3.9 s, board 2.7–3.3 s, tactics 1.9–2.8 s, dungeon 1.0–2.7 s,
+   falling-blocks 2.2–2.4 s, every other template ≤ 1.3 s. The 4 failures are two open classes, not gate speed:
+   - **The pick reads a theme as a mechanic the extension cannot build** (the build fails naming it, as designed):
+     tactics 1 "swim" / "manage oxygen supply" (sunken city), launcher 1 "slide on ice" (penguins), falling-blocks 3
+     "arrange books"; the gap layer failed each (`plot_regressed`, `bad_ops`, `card_invalid`).
+   - **An extension pick that cannot work in the world reaches the gate**: fighting 1 added `gameplay.combat.target`
+     for "use kitchen utensils as weapons"; with one opponent `cycle` does nothing, and the gate fails
+     `feature_inert`. The extension step does not run the feature check on what it adds, so the bad pick fails the
+     build instead of being dropped and re-asked.
+   Script: run each idea through `POST /api/v2/games {prompt, seed}` and read `latest.report.timings`.
 4. Open classes: human-rate replay fails for ball-sport, falling-blocks, runner, slide-merge, match-board, story (bot
    artifacts or genuinely superhuman: decide per template); the 3D object layer still sorts generator objects by
    words (noted in code on `polish`); the playtest explorer's archive cost; whatever the branches above leave open.
