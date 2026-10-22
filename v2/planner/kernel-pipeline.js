@@ -135,16 +135,16 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     let t = performance.now();
     // A job answering the pick's question carries that pick (kept by the job that asked): it is held to the pick's
     // checks like a model answer, and never asked again.
-    /** @type {{ pick: import('./templates.js').Pick, stepPath: string[], calls: number, unnamed: Array<{ name: string, says: string, why: string }> }} */
+    /** @type {{ pick: import('./templates.js').Pick, stepPath: string[], calls: number, unnamed: Array<{ name: string, says: string, why: string }>, unreadable: Array<{ name: string, kind: string, why: string }> }} */
     let picked;
     if (job.pick !== undefined) {
       const pick = narrowPick(job.pick), checked = checkPick(pick, { templates, registry, prompt });
       if (checked.problems.length) throw fail('pick_resume_invalid', 'pick', checked.problems.map(p => ({ code: p.code, path: p.field, message: p.message })));
-      picked = { pick, stepPath: checked.stepPath, calls: 0, unnamed: [] };
+      picked = { pick, stepPath: checked.stepPath, calls: 0, unnamed: [], unreadable: [] };
     } else picked = await askPick({ writer, escalate, attempts: cfg.modelAttempts, prompt, templates, registry, calls, clock });
     timings.pickMs = ms(t);
     clock.codeMs = 0; // composeMs counts the code after the pick: composition, content applied and checked
-    checkpoint('templatePick', { pick: picked.pick, stepPath: picked.stepPath, calls, unnamed: picked.unnamed });
+    checkpoint('templatePick', { pick: picked.pick, stepPath: picked.stepPath, calls, unnamed: picked.unnamed, unreadable: picked.unreadable });
     // Never guess between readings: a concept the idea can mean two ways is the player's choice.
     const read = chooseReading(picked.pick, job.answers || [], { templates, registry });
     if (read.unanswered.length) {
@@ -266,7 +266,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const modelCalls = calls.length, modelRounds = picked.calls + extensionCalls + contentRounds;
     const doc = gate.doc;
     await ctx.store.updateMeta(job.gameId, { title: doc.title, kind: 'kernel' });
-    const report = { kind: 'kernel', path: 'template', templates: used, joins: composed.joins, pick, unnamedMechanics: picked.unnamed, themes: composed.themes, mechanics: ext.coverage, extensionCalls, stepPath: stepUse, content: content.forms, calls, modelCalls, modelRounds,
+    const report = { kind: 'kernel', path: 'template', templates: used, joins: composed.joins, pick, unnamedMechanics: picked.unnamed, invalidReadings: picked.unreadable, themes: composed.themes, mechanics: ext.coverage, extensionCalls, stepPath: stepUse, content: content.forms, calls, modelCalls, modelRounds,
       summary: doc.logline || pick.premise, gaps: [], verified: true, verification: summarizeVerify(v), features: v.features ?? null, playtest: v.playtest, quality,
       firstPlayable: { ms: fp.ms, start: fp.start, options: fp.options, stateHash: fp.stateHash }, timings: { ...timings } };
     const provenance = { pipeline: KERNEL_PIPELINE_VERSION, templatePath: TEMPLATE_PATH_VERSION, catalogHash: catalogHash(registry), models: { spec: writer.model || null, specProvider: writer.provider || null, code: escalate?.model || null },

@@ -351,6 +351,23 @@ test('a mechanic the idea does not name (a theme\'s suggestion) is removed by co
   assert.equal(w.calls.filter(r => r.schema.name === 'pick_templates').length, 1, 'no re-ask for it');
 });
 
+test('a reading no rule admits (the primary read as a character with no other game to play) is removed by code before the check and reported; a valid one is still asked', async () => {
+  // The live pick for "can I have a Mario game but with sonic as the character" listed the primary itself as a character.
+  const MARIO = { title: 'Sonic in Mario', premise: 'Sonic runs Mario\'s levels.', primary: { name: 'Mario game', kind: 'game', template: 'platformer' }, games: [], themes: [{ name: 'sonic', kind: 'character' }],
+    readings: [{ name: 'Mario game', kind: 'character', template: 'none', relation: 'none' }], mechanics: [] };
+  const inner = sonicWriter();
+  const w = { ...inner, calls: [], async complete(req) { w.calls.push(req); return req.schema.name === 'pick_templates' ? { text: JSON.stringify(MARIO), ms: 1, model: 'fake' } : inner.complete(req); } };
+  const m = memoryCtx();
+  await createKernelPipeline({ catalogue: async () => cat, writers: { spec: w } })({ gameId: 'g', prompt: 'can I have a Mario game but with sonic as the character', kind: 'create', seed: 7 }, m.ctx);
+  const report = m.versions[0].report;
+  assert.deepEqual(report.invalidReadings.map(x => [x.name, x.kind, x.why.split(':')[0]]), [['Mario game', 'character', 'pick_reading_no_primary']]);
+  assert.deepEqual(report.pick.readings, []);
+  assert.equal(w.calls.filter(r => r.schema.name === 'pick_templates').length, 1, 'no re-ask for it');
+  // A valid other reading is still the player's question (the Sonic idea above asks which game).
+  const valid = await createKernelPipeline({ catalogue: async () => cat, writers: { spec: sonicWriter() } })({ gameId: 'g', prompt: IDEA, kind: 'create', seed: 7 }, memoryCtx().ctx).then(() => null, e => e);
+  assert.equal(valid?.code, 'needs_answer');
+});
+
 test('extension rules are declared', () => { assert.deepEqual(Object.keys(EXTEND_RULES), ['extension_missing', 'extension_unengaged', 'extension_unusable', 'extension_params']); });
 
 const timings = {};

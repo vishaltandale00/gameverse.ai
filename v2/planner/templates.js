@@ -308,6 +308,22 @@ export function namedMechanics(pick, prompt) {
 }
 
 /**
+ * The pick's readings split by their rules (checkPick's problems at readings[i]): `kept`, the other readings the
+ * player can be asked about; `removed`, each reading no rule admits (the primary read as a theme with no other game to
+ * play, a template or relation its kind does not take...), with why. An inadmissible reading is no other meaning of
+ * the idea (it cannot be built), so code removes it before the check, never guessing between meanings: a valid
+ * reading is still the player's question. The removed ones go into the build's report.
+ * @param {Pick} pick @param {{ templates: readonly Template[], registry: RegistryLike }} ctx
+ * @returns {{ kept: PickReading[], removed: Array<{ name: string, kind: string, why: string }> }}
+ */
+export function validReadings(pick, ctx) {
+  const problems = checkPick(pick, ctx).problems, bad = new Map();
+  for (const p of problems) { const i = /^readings\[(\d+)\]/.exec(p.field)?.[1]; if (i !== undefined && !bad.has(Number(i))) bad.set(Number(i), p); }
+  return { kept: pick.readings.filter((_, i) => !bad.has(i)),
+    removed: pick.readings.flatMap((r, i) => { const p = bad.get(i); return p ? [{ name: r.name, kind: r.kind, why: `${p.code}: ${p.message}`.slice(0, 240) }] : []; }) };
+}
+
+/**
  * The pick's code checks (PICK_RULES). Problems carry stable codes and the form field they name. A game or genre
  * with template 'none' is not a problem: it goes to the step path (`stepPath`: those concepts' names). With the idea
  * (`prompt`: the pick as asked, or resumed), its mechanics are held to its words (mechanicProblems).
@@ -498,15 +514,21 @@ export async function askForm({ writer, escalate, attempts, calls, system, user,
 /**
  * The pick, asked and checked; a pick still failing is a 422 'template_pick_failed' with its problems.
  * @param {{ writer: Writer, escalate: Writer | null, attempts: number, prompt: string, templates: readonly Template[], registry: RegistryLike, calls: TemplateCall[], clock: Clock }} args
- * @returns {Promise<{ pick: Pick, stepPath: string[], calls: number, unnamed: Array<{ name: string, says: string, why: string }> }>}
+ * @returns {Promise<{ pick: Pick, stepPath: string[], calls: number, unnamed: Array<{ name: string, says: string, why: string }>, unreadable: Array<{ name: string, kind: string, why: string }> }>}
  */
 export async function askPick({ writer, escalate, attempts, prompt, templates, registry, calls, clock }) {
   /** The answer's entries that are no mechanic the idea names (namedMechanics), removed by code before the check. @type {Array<{ name: string, says: string, why: string }>} */
   let unnamed = [];
-  const narrow = (/** @type {unknown} */ v) => { const pick = narrowPick(v), named = namedMechanics(pick, prompt); unnamed = named.removed; return { ...pick, mechanics: named.kept }; };
+  /** The answer's readings no rule admits (validReadings), removed by code before the check. @type {Array<{ name: string, kind: string, why: string }>} */
+  let unreadable = [];
+  const narrow = (/** @type {unknown} */ v) => {
+    const pick = narrowPick(v), named = namedMechanics(pick, prompt), withNamed = { ...pick, mechanics: named.kept }, read = validReadings(withNamed, { templates, registry });
+    unnamed = named.removed; unreadable = read.removed;
+    return { ...withNamed, readings: read.kept };
+  };
   const r = await askForm({ writer, escalate, attempts, calls, clock, system: pickSystem(templates, registry), user: `Idea: ${prompt}`, schema: pickForm(templates, registry), narrow,
     check: pick => checkPick(pick, { templates, registry, prompt }).problems, code: 'template_pick_failed', what: 'The template pick' });
-  return { pick: r.value, stepPath: checkPick(r.value, { templates, registry }).stepPath, calls: r.calls, unnamed };
+  return { pick: r.value, stepPath: checkPick(r.value, { templates, registry }).stepPath, calls: r.calls, unnamed, unreadable };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
