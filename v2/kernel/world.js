@@ -44,12 +44,18 @@ export function buildLogic(registry, Logic) {
  */
 export function cloneState(v) {
   if (typeof v !== 'object' || v === null) return v;
-  if (Array.isArray(v)) { const n = v.length, out = new Array(n); for (let i = 0; i < n; i++) out[i] = cloneState(v[i]); return out; }
+  // Copies are made whole (slice, spread) and then their members replaced, so they get the original's element kind and
+  // a shape sized for their properties: a copy built member by member is slower in every later step's math.
+  if (Array.isArray(v)) {
+    const out = v.slice();
+    for (let i = 0; i < out.length; i++) { const x = out[i]; if (typeof x === 'object' && x !== null) out[i] = cloneState(x); }
+    return out;
+  }
   const proto = Object.getPrototypeOf(v);
   if (proto !== Object.prototype && proto !== null) return structuredClone(v);
   /** @type {Record<string, unknown>} */
-  const out = {};
-  for (const k of Object.keys(v)) out[k] = cloneState(/** @type {Record<string, unknown>} */ (v)[k]);
+  const out = { .../** @type {Record<string, unknown>} */ (v) };
+  for (const k in out) { const x = out[k]; if (typeof x === 'object' && x !== null) out[k] = cloneState(x); }
   return out;
 }
 
