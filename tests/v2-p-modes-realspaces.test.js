@@ -30,7 +30,8 @@ test('cards on engine.space.none: a roguelike battle with intents in slot zones'
   const d = base([{ id: 'table', use: 'engine.space.none', zones: [{ id: 'hand' }, { id: 'arena' }] }],
     [{ use: 'gameplay.combat.health' }, { use: 'gameplay.turns', with: { actions: [], overwatch: false, movePerAp: 0, sides: [{ id: 'player', control: 'player', members: ['player'] }, { id: 'enemy', control: 'external' }] } }, { use: 'gameplay.cards', with: { deck: ['strike', 'strike', 'strike', 'strike', 'strike'] } }],
     [{ id: 'hero', components: { health: { max: 20 } } }, { id: 'slime', components: { health: { max: 12 }, turns: { side: 'enemy' }, cards: { intents: [{ kind: 'attack', value: 3 }] } } }], { archetype: 'hero', at: 'hand' });
-  d.content.cards = [{ id: 'strike', name: 'Strike', cost: 1, type: 'attack', effects: [{ do: 'card_damage', amount: 6 }] }];
+  d.content.cards = [{ id: 'strike', name: 'Strike', cost: 1, type: 'attack', effects: [{ do: 'card_damage', amount: 6 }] }, { id: 'defend', name: 'Defend', cost: 1, type: 'skill', target: 'self', effects: [{ do: 'card_block', amount: 5 }] },
+    { id: 'bash', name: 'Bash', cost: 2, type: 'attack', effects: [{ do: 'card_damage', amount: 9 }] }, { id: 'focus', name: 'Focus', cost: 0, type: 'skill', target: 'self', effects: [{ do: 'draw_cards', count: 1 }] }];
   const { rt } = compile(d, { primitives: P });
   rt.spawn('slime', { id: 's1', at: 'arena' }); rt.step();
   for (const c of rt.service('cards').view().hand.slice(0, 2)) rt.step({ actions: { play_card: { uid: c.uid, target: 's1' } } });

@@ -44,7 +44,8 @@ const DOCS = {
     [{ use: 'gameplay.combat.health' }, { use: 'gameplay.turns', with: { actions: [], overwatch: false, movePerAp: 0, sides: [{ id: 'player', control: 'player', members: ['player'] }, { id: 'enemy', control: 'external', members: ['slime'] }], onVictory: won, onDefeat: lost } },
       { use: 'gameplay.cards', with: { deck: ['strike', 'strike', 'strike', 'defend', 'defend'] } }, { use: 'plot.character' }],
     { archetypes: [{ id: 'hero', components: { health: { max: 20 } } }, { id: 'slime', components: { health: { max: 24 }, cards: { intents: [{ kind: 'attack', value: 5 }, { kind: 'attack', value: 8 }] } } }],
-      cards: [{ id: 'strike', name: 'Strike', cost: 1, type: 'attack', effects: [{ do: 'card_damage', amount: 6 }] }, { id: 'defend', name: 'Defend', cost: 1, type: 'skill', target: 'self', effects: [{ do: 'card_block', amount: 5 }] }] },
+      cards: [{ id: 'strike', name: 'Strike', cost: 1, type: 'attack', effects: [{ do: 'card_damage', amount: 6 }] }, { id: 'defend', name: 'Defend', cost: 1, type: 'skill', target: 'self', effects: [{ do: 'card_block', amount: 5 }] },
+        { id: 'bash', name: 'Bash', cost: 2, type: 'attack', effects: [{ do: 'card_damage', amount: 9 }] }, { id: 'focus', name: 'Focus', cost: 0, type: 'skill', target: 'self', effects: [{ do: 'draw_cards', count: 1 }] }] },
     { plot: { characters: [{ id: 's1', name: 'Slime', archetype: 'slime', home: 'arena' }] }, player: { archetype: 'hero', at: 'hand' } }),
   rts: () => {
     const marine = { health: { max: 6 }, rts: { speed: 4, sight: 8, attack: { range: 3, cooldown: 0.5, effects: [{ do: 'damage', who: 'target', amount: 2 }] } } };

@@ -124,10 +124,11 @@ test('combat: the player gets health and a basic attack that hurts an enemy', ()
 
 test('config and join contracts fill only what the document left empty', () => {
   const species = [{ id: 'sprout', name: 'Sprout', types: ['normal'], base: { hp: 45, atk: 49, def: 49, spa: 65, spd: 65, spe: 45 }, catchRate: 45, expYield: 64, growth: 'medium', learnset: [] }];
-  const party = engageDocument(doc0([{ use: 'gameplay.creature.party' }], { content: { species, moves: [], types: { normal: {} } } }), registry, logic);
+  const moves = [{ id: 'tackle', name: 'Tackle', type: 'normal', category: 'physical', power: 40, accuracy: 100, pp: 35 }];
+  const party = engageDocument(doc0([{ use: 'gameplay.creature.party' }], { content: { species, moves, types: { normal: {} } } }), registry, logic);
   assert.ok(party.ok, JSON.stringify(party.errors));
   assert.deepEqual(party.doc.systems.find(s => s.use === 'gameplay.creature.party').with.start, [{ species: 'sprout', level: 5 }]);
-  const kept = engageDocument(doc0([{ use: 'gameplay.creature.party', with: { start: [{ species: 'sprout', level: 9 }] } }], { content: { species, moves: [], types: { normal: {} } } }), registry, logic);
+  const kept = engageDocument(doc0([{ use: 'gameplay.creature.party', with: { start: [{ species: 'sprout', level: 9 }] } }], { content: { species, moves, types: { normal: {} } } }), registry, logic);
   assert.equal(kept.doc.systems[0].with.start[0].level, 9);
   // Nothing to fill from: left alone and reported.
   const none = engageDocument(doc0([{ use: 'gameplay.combat.projectile' }]), registry, logic);

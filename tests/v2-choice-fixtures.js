@@ -22,6 +22,8 @@ const TURNS = { sides: [{ id: 'player', control: 'player', members: ['player'] }
 const CARDS = [
   { id: 'strike', name: 'Strike', cost: 1, type: 'attack', target: 'enemy', effects: [{ do: 'card_damage', amount: 6, who: 'target' }] },
   { id: 'raider', name: 'Raider', cost: 1, type: 'minion', target: 'none', power: 3, health: 1, keywords: ['charge'], effects: [] },
+  { id: 'defend', name: 'Defend', cost: 1, type: 'skill', target: 'self', effects: [{ do: 'card_block', amount: 5 }] },
+  { id: 'bash', name: 'Bash', cost: 2, type: 'attack', target: 'enemy', effects: [{ do: 'card_damage', amount: 9, who: 'target' }] },
 ];
 
 export const FIXTURES = {
