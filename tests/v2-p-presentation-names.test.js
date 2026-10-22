@@ -1,7 +1,7 @@
 // What a person sees never depends on the themed names the content forms write (ARCHITECTURE §1.2, §5: the model
 // only names a template's entries; ids are code's). Over every template, mounted as the host mounts it
-// (v2/web/host-doc.js) in a fake browser: renaming every entry of every named section (planner/templates.js
-// namedSections) leaves what the renderers draw call for call identical, even when the new names are other entries'
+// (v2/web/host-doc.js) in a fake browser: renaming every entry's declared name (planner/templates.js textSections: the
+// display text the content forms theme) leaves what the renderers draw call for call identical, even when the new names are other entries'
 // ids (so no word list over names can hide); and the themed names, never the ids behind them, are what the
 // presentation primitives show. Also the card declarations the renderers read instead of words (card.presents).
 import test from 'node:test';
@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { TEMPLATES } from '../v2/templates/registry.js';
 import { catalogue, PRIMITIVES } from '../v2/primitives/index.js';
 import { hostDocument } from '../v2/web/host-doc.js';
-import { namedSections } from '../v2/planner/templates.js';
+import { textSections } from '../v2/planner/templates.js';
 import { ROLES } from '../v2/primitives/graphics/flat-art.js';
 import { PROPS } from '../v2/art/props.js';
 import { PRESETS } from '../v2/primitives/graphics/flat-vector.js';
@@ -32,10 +32,15 @@ const TEXT = new Set(['fillText', 'strokeText', 'measureText']);
 /** The draw list: every canvas call with its arguments (text arguments left out: names may be drawn as text). */
 const drawList = m => contexts(m.container).flatMap(c => c.calls.map(([k, ...a]) => (TEXT.has(k) ? k : `${k}(${a.map(x => (typeof x === 'number' ? Math.round(x * 100) / 100 : x && typeof x === 'object' ? (x._src || x.constructor?.name || 'obj') : String(x))).join(',')})`)));
 const play = doc => { const m = mount(hostDocument(doc, registry), { primitives: PRIMITIVES, seed: 1 }); m.key('Enter'); m.frame(FRAMES); return m; };
-const renamed = (doc, nameOf) => { const d = structuredClone(doc); let k = 0; for (const s of namedSections(d)) for (const e of s.entries) e.name = nameOf(e, k++); return d; };
+/** The entries of a document whose name is display text the content forms theme: [{ id, entry }] (the entry object in the document). */
+const namedEntries = doc => textSections(doc, registry).flatMap(s => {
+  const v = s.at.split(/\.|\[(\d+)\]/).filter(Boolean).reduce((o, key) => o?.[key], doc);
+  return s.entries.filter(e => e.slots.some(t => t.path.length === 1 && t.path[0] === 'name')).map(e => ({ id: e.id, entry: Array.isArray(v) ? v.find(x => x?.id === e.id) : v[e.id] }));
+});
+const renamed = (doc, nameOf) => { const d = structuredClone(doc); let k = 0; for (const { id, entry } of namedEntries(d)) entry.name = nameOf({ id, name: entry.name }, k++); return d; };
 
 // Names that would steer any word list: the ids of every named entry of every template.
-const POOL = [...new Set(TEMPLATES.flatMap(t => namedSections(t.doc).flatMap(s => s.entries.map(e => e.id))))].sort();
+const POOL = [...new Set(TEMPLATES.flatMap(t => namedEntries(t.doc).map(e => e.id)))].sort();
 
 for (const t of TEMPLATES) {
   test(`${t.id}: renaming every named entry, even to other entries' ids, leaves the draw list identical`, () => {
@@ -48,7 +53,7 @@ for (const t of TEMPLATES) {
 
   test(`${t.id}: the presentation shows the themed names, never the ids behind them`, () => {
     // (An all-digit id, a 2048 tile's, cannot be told from the numbers the HUD shows: it is left out.)
-    const named = namedSections(t.doc).flatMap(s => s.entries.filter(e => typeof e.name === 'string' && e.name && !/^\d+$/.test(e.id)));
+    const named = namedEntries(t.doc).map(({ id, entry }) => ({ id, name: entry.name })).filter(e => typeof e.name === 'string' && e.name && !/^\d+$/.test(e.id));
     const m = play(renamed(t.doc, (e, k) => `Zq${k.toString(36)}x`));
     // What this layer shows: the renderers' canvases and the HUD, battle, cards and scene-card DOM.
     const shown = [];

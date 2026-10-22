@@ -8,7 +8,7 @@
 // 2. Nothing any UI or renderer shows a person (every text in the overlay, every text drawn on a canvas: choices, battle,
 //    cards, HUD banners and toasts, minimap, map, journal, scene cards) is an id the document gives an entry (content
 //    entries, zones, stages, sides, cards, entities spawned from them), over every template mounted in a fake browser
-//    with every themed name renamed so that no name can contain an id, along a walk through its options as a person
+//    with every themed text (the display text the cards declare) rewritten so that none can contain an id, along a walk through its options as a person
 //    picks them.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -20,7 +20,7 @@ import { uiControls, unclaimedChoices } from '../v2/primitives/engine/runtime-li
 import { applyOption } from '../v2/verify/drive.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
 import { hostDocument } from '../v2/web/host-doc.js';
-import { namedSections } from '../v2/planner/templates.js';
+import { textSections } from '../v2/planner/templates.js';
 import { mount } from './v2-p-ui-dom.js';
 
 const { registry, logic } = await liveCatalogue();
@@ -96,7 +96,14 @@ function shownText(m) {
 for (const t of TEMPLATES) test(`${t.id}: nothing on screen is an id the document gives an entry`, () => {
   const doc = structuredClone(t.doc);
   let k = 0;
-  for (const s of namedSections(doc)) for (const e of s.entries) e.name = `Zq${(k++).toString(36)}x`;
+  // Every display text the cards declare on the document's entries (the text the content forms theme) is rewritten.
+  for (const s of textSections(doc, registry)) {
+    const v = s.at.split(/\.|\[(\d+)\]/).filter(Boolean).reduce((o, key) => o?.[key], doc);
+    for (const e of s.entries) {
+      const entry = Array.isArray(v) ? v.find(x => x?.id === e.id) : v?.[e.id];
+      for (const t of e.slots) { const parent = t.path.slice(0, -1).reduce((o, key) => o[key], entry); parent[t.path[t.path.length - 1]] = `Zq${(k++).toString(36)}x`; }
+    }
+  }
   doc.title = 'Zqtitlex';
   // An all-digit id (a 2048 tile's) cannot be told from the numbers the HUD shows; a block's declared label is display text.
   const labels = new Set((doc.content?.blocks || []).map(b => b.label).filter(l => l != null).map(String));
