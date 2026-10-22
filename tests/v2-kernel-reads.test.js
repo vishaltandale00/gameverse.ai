@@ -63,3 +63,19 @@ test('documents: each world owns a copy of its document', () => {
   a.doc.systems[0].with.changed = true;
   assert.equal(b.doc.systems[0].with.changed, undefined, 'and so is a document hot-loaded into it');
 });
+
+test('derived: built once per read and key, dropped when the read ends and by a step or restore; null outside a read', () => {
+  const rt = world();
+  let builds = 0;
+  const build = () => ({ n: ++builds });
+  assert.equal(rt.derived('k', build), null, 'outside a read the state may change between lookups: nothing is kept');
+  assert.equal(builds, 0);
+  const [a, b, nested] = rt.read(() => [rt.derived('k', build), rt.derived('k', build), rt.read(() => rt.derived('k', build))]);
+  assert.equal(builds, 1, 'one build serves the whole read, nested reads included');
+  assert.equal(a, b); assert.equal(a, nested);
+  rt.read(() => rt.derived('k', build));
+  assert.equal(builds, 2, 'a new read builds again');
+  const snap = rt.snapshot();
+  rt.read(() => { rt.derived('k', build); rt.step({}); rt.derived('k', build); rt.restore(snap); rt.derived('k', build); });
+  assert.equal(builds, 5, 'a step or a restore inside a read changes the state: what was derived is dropped');
+});

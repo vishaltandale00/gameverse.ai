@@ -113,19 +113,23 @@ export default {
         if (yieldToEncounter(ctx, rt, ['navigate'])) continue; // an encounter holds this loop: play the one the player is in
         const p = rt.player(); if (!p) break;
         const api = rt.space(p.space), here = cellIn(api, posOf(rt));
-        const hs = threats(rt), sources = [];
-        for (const t of hs) { const c = cellIn(api, t.at); sources.push({ at: c, who: t }); const v = t.components.body?.vel; if (Array.isArray(c) && Array.isArray(v)) { const n = c.map((x, i) => x + Math.sign(v[i] || 0)); if (stepsFrom(api, t, c, rt).some(m => keyOf(m) === keyOf(n))) sources.push({ at: n, who: t }); } }
-        const hd = dangerField(api, sources, rt);
-        const prey = new Set(Object.values(rt.state.entities).filter(e => e.space === p.space && e.components.ai && isVulnerable(rt, e)).map(e => keyOf(cellIn(api, e.at))));
-        const food = new Set(collectibles(rt).map(e => keyOf(cellIn(api, e.at))));
-        const isFood = (c, k) => food.has(k) || (goals.length > 0 && goals.includes(api.zoneAt?.(c, rt)));
-        let next = prey.size ? (why = 'hunt', safeSearch(api, p, rt, here, hd, (c, k) => prey.has(k), { limit: 14, margin })) : null;
-        if (!next) { why = 'eat'; next = safeSearch(api, p, rt, here, hd, isFood, { margin }); }
-        if (!next) { why = 'eat!'; next = safeSearch(api, p, rt, here, hd, isFood, { limit: 20, danger: 0, margin: 0 }); }
-        // Escape to the cell with the biggest lead, closer to the targets among equally safe ones (a lead beyond
-        // SAFE_LEAD is safe enough), so a hunter circling the last targets is waited out at their edge, not far away.
-        if (!next) { why = 'escape'; const fd = distanceTo(api, p, rt, here, isFood); next = safeSearch(api, p, rt, here, hd, () => false, { limit: 30, danger: 0, margin: 0, score: (k, d) => Math.min(hd(k), SAFE_LEAD) - d * 0.5 - fd(k) * 0.25 }); }
-        if (!next) { why = 'flee'; next = stepsFrom(api, p, here, rt).sort((x, y) => hd(keyOf(y)) - hd(keyOf(x)))[0] || null; }
+        // Planning reads the world (rt.read): nothing changes while the bot plans, so the space indexes what it searches once.
+        const next = rt.read(() => {
+          const hs = threats(rt), sources = [];
+          for (const t of hs) { const c = cellIn(api, t.at); sources.push({ at: c, who: t }); const v = t.components.body?.vel; if (Array.isArray(c) && Array.isArray(v)) { const n = c.map((x, i) => x + Math.sign(v[i] || 0)); if (stepsFrom(api, t, c, rt).some(m => keyOf(m) === keyOf(n))) sources.push({ at: n, who: t }); } }
+          const hd = dangerField(api, sources, rt);
+          const prey = new Set(Object.values(rt.state.entities).filter(e => e.space === p.space && e.components.ai && isVulnerable(rt, e)).map(e => keyOf(cellIn(api, e.at))));
+          const food = new Set(collectibles(rt).map(e => keyOf(cellIn(api, e.at))));
+          const isFood = (c, k) => food.has(k) || (goals.length > 0 && goals.includes(api.zoneAt?.(c, rt)));
+          let next = prey.size ? (why = 'hunt', safeSearch(api, p, rt, here, hd, (c, k) => prey.has(k), { limit: 14, margin })) : null;
+          if (!next) { why = 'eat'; next = safeSearch(api, p, rt, here, hd, isFood, { margin }); }
+          if (!next) { why = 'eat!'; next = safeSearch(api, p, rt, here, hd, isFood, { limit: 20, danger: 0, margin: 0 }); }
+          // Escape to the cell with the biggest lead, closer to the targets among equally safe ones (a lead beyond
+          // SAFE_LEAD is safe enough), so a hunter circling the last targets is waited out at their edge, not far away.
+          if (!next) { why = 'escape'; const fd = distanceTo(api, p, rt, here, isFood); next = safeSearch(api, p, rt, here, hd, () => false, { limit: 30, danger: 0, margin: 0, score: (k, d) => Math.min(hd(k), SAFE_LEAD) - d * 0.5 - fd(k) * 0.25 }); }
+          if (!next) { why = 'flee'; next = stepsFrom(api, p, here, rt).sort((x, y) => hd(keyOf(y)) - hd(keyOf(x)))[0] || null; }
+          return next;
+        });
         counts[why] = (counts[why] || 0) + 1;
         if (next) stepTo(rt, next); else hold(rt, {}, 1);
         for (const e of rt.state.events) if (e.name.startsWith('defeated') && e.subject !== 'player' && e.who !== 'player') hunted++;

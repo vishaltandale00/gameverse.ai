@@ -93,9 +93,13 @@ export function createWorld(source, registry, logic, { seed, headless = true, vi
   // A read (listing options, a host drawing a frame, a UI handling a key) never changes state: while one runs, a store
   // nobody created yet reads as a fresh empty object instead of being created. Lazily initialised state is then made
   // by the steps alone, at the same moment in every host, however often presentation and bots read.
-  /** @template T @param {() => T} fn @returns {T} */
+  // Data derived from the state during one read (rt.derived): the state cannot change while a read runs, so an index
+  // built once serves every lookup in it. Dropped when the outermost read ends and by every step, restore and extend.
+  /** @type {Map<string, unknown> | null} */
+  let derived = null;
   // Randomness a read draws is given back (the rng is restored), so a read never shifts what the steps draw.
-  const read = fn => { const rng = state.rng; reading++; try { return fn(); } finally { reading--; state.rng = rng; } };
+  /** @template T @param {() => T} fn @returns {T} */
+  const read = fn => { const rng = state.rng; if (!reading) derived = null; reading++; try { return fn(); } finally { reading--; state.rng = rng; if (!reading) derived = null; } };
   const listing = read;
 
   /** @type {Runtime} */
@@ -153,6 +157,17 @@ export function createWorld(source, registry, logic, { seed, headless = true, vi
     optionsExcept(skip) { return listing(() => optionProviders.filter(fn => fn !== skip).flatMap(fn => fn(rt) || [])); },
     /** Run fn as a read: stores it touches are not created (presentation, bots and tests reading the world). */
     read,
+    /**
+     * Inside a read: build(), once per read and key (an index over the state that every lookup of the read shares).
+     * Outside a read the state may change between any two lookups: null, and the caller computes directly.
+     * @template T @param {string} key @param {() => T} build @returns {T | null}
+     */
+    derived(key, build) {
+      if (!reading) return null;
+      derived ??= new Map();
+      if (!derived.has(key)) derived.set(key, build());
+      return /** @type {T} */ (derived.get(key));
+    },
     availableOptions() {
       const all = listing(() => optionProviders.flatMap(fn => fn(rt) || [])), m = state.modal;
       return m ? all.filter(o => o.modal === m.owner || Object.keys(o.actions || {}).some(a => m.actions.includes(a))) : all;
@@ -232,6 +247,7 @@ export function createWorld(source, registry, logic, { seed, headless = true, vi
      * changes); those that keep derived caches implement extend(rt, cfg, added).
      */
     extend(source, added) {
+      derived = null;
       const normalizedDoc = structuredClone(source); // this world's own copy, as at creation
       const before = { systems: (rt.doc.systems || []).length, graphics: (rt.doc.graphics || []).length, spaces: new Set((rt.doc.spaces || []).map(s => s.id)),
         generators: new Map((rt.doc.spaces || []).map(s => [s.id, (s.generators || []).length])) };
@@ -250,6 +266,7 @@ export function createWorld(source, registry, logic, { seed, headless = true, vi
     },
     snapshot: () => /** @type {State} */ (cloneState(state)),
     restore(snapshot) {
+      derived = null;
       for (const k of Object.keys(state)) delete /** @type {Record<string, any>} */ (state)[k];
       Object.assign(state, cloneState(snapshot));
       for (const fn of restorers) fn(rt);
@@ -258,7 +275,7 @@ export function createWorld(source, registry, logic, { seed, headless = true, vi
 
   // A step drives the world even when a read runs it (a provider probing what inputs do, then restoring).
   const stepOnce = rt.step;
-  rt.step = input => { const outer = reading; reading = 0; try { return stepOnce(input); } finally { reading = outer; } };
+  rt.step = input => { const outer = reading; reading = 0; derived = null; try { return stepOnce(input); } finally { reading = outer; derived = null; } };
 
   /** @param {Instance} instance @param {string} key */
   const install = (instance, key) => {
