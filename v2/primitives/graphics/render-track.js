@@ -13,11 +13,11 @@ import { ensureJuice } from './flat-juice.js';
 import { hubOf, bindSpace, ORDER, checkBinding, bindingRules } from './flat-stage.js';
 import { drawEntity, lookOf, STATES, FLAT_MODEL_FIELDS } from './flat-models.js';
 import { sceneryImage, themeFor } from './flat-art.js';
-import { TAU, mix, clamp, lerp, rgba, hash, seedOf, roundRect, col } from './flat-util.js';
+import { TAU, mix, clamp, lerp, rgba, hash, seedOf, roundRect, col, label } from './flat-util.js';
 import { modelsData, MODEL_COMPONENT, color } from './model-lib.js';
+import { zonesShown } from './flat-zones.js';
 
 const FAR = 95, SEG = 2.5, BACK = 5.2;
-const OBSTACLE = /obstacle|barrier|wall|train|car|truck|block|gate|crate|hurdle|fence|cone/;
 const VEHICLE_COLORS = ['#d83a2a', '#2a7ad8', '#2aa84a', '#e8b020', '#9a3ad8', '#e86a20'];
 
 /** Track projection: pure, for tests. opts: { w, h, zc, camX, camH, curve, hill } → proj(X, Y, Z) → [sx, sy, k] | null. */
@@ -51,11 +51,17 @@ export function curves(seed, { curvature = 1, hills = 1, period = 0 } = {}) {
 }
 const mod = (a, n) => ((a % n) + n) % n;
 
+/** The roadside dressing (this renderer's `scenery` values) of every scenery theme a space can declare. */
+export const ROADSIDE = Object.freeze({ meadow: 'forest', forest: 'forest', jungle: 'forest', desert: 'desert', snow: 'snow', cave: 'none', volcano: 'desert', city: 'city', castle: 'city', space: 'space', ocean: 'none', haunted: 'forest', factory: 'city', sky: 'none', candy: 'forest' });
+
 export default {
   id: 'graphics.render.track',
   card: {
     intent: 'Pseudo-3D rail/lane track renderer for track spaces: bending, rolling track with lanes, sleepers and rails, fogged roadside scenery by theme, 3D obstacle boxes, billboarded runners and pickups, chase camera and speed lines.',
     views: ['3p', 'side'],
+    // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
+    // the document's loops show (card.loop.shows).
+    draws: ['entities', 'zones'],
     // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
     // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
     projection: { '3p': { kind: 'chase', forward: '+x', right: '+y', up: '+z' }, side: { kind: 'chase', forward: '+x', right: '+y', up: '+z' } },
@@ -85,7 +91,10 @@ export default {
     // cam.lap: whole laps added to the leader's progress so the camera runs on across the start line (looped tracks).
     const cam = { x: null, h: null, last: null, lap: 0 };
     let view = null;
-    const themeName = () => (config.scenery !== 'auto' ? config.scenery : (() => { const t = themeFor(rt.doc); return ['city', 'factory'].includes(t) ? 'city' : ['forest', 'jungle', 'meadow'].includes(t) ? 'forest' : ['desert'].includes(t) ? 'desert' : ['space'].includes(t) ? 'space' : ['snow'].includes(t) ? 'snow' : 'city'; })());
+    // The roadside dressing each declared scenery theme (the track space's `scenery`, engine/spaces2d-scenery.js) is
+    // drawn with; a track that declares none is dressed with nothing. config.scenery other than 'auto' overrides it.
+    const sky = () => themeFor(rt.doc, space);
+    const themeName = () => (config.scenery !== 'auto' ? config.scenery : ROADSIDE[sky()] || 'none');
     S.renderer = {
       camera() {},
       transform(F, shake) {
@@ -137,11 +146,11 @@ export default {
     function draw(F) {
       const api = apiOf(); if (!api || !view) return;
       const g = F.ctx, v = view, LW = v.LW, M = v.mid, lanes = api.config.lanes, HW = LW * (M + 0.5);
-      const scen = themeName(), night = scen === 'space' || /night|neon/.test(`${rt.doc.title} ${rt.doc.logline}`.toLowerCase());
+      const scen = themeName(), night = scen === 'space'; // the declared scenery, never words in the title or logline
       const haze = scen === 'space' ? '#1a1440' : night ? '#2a3058' : scen === 'desert' ? '#f0d0a0' : scen === 'snow' ? '#e8f0f8' : '#c8dcf0';
       const ground = config.groundColor ? col(config.groundColor) : { city: '#6a6a70', forest: '#4a8a3a', desert: '#d8a860', space: '#2a2440', snow: '#e8eef6', none: '#5a5a60' }[scen] || '#5a7a4a';
       // Sky: painted scenery slid by the heading, or a gradient.
-      const img = sceneryImage({ theme: scen === 'none' ? 'meadow' : scen === 'forest' ? 'forest' : scen, time: night ? 'night' : 'day' }, F.style === 'pixel', rt.doc.id);
+      const painted = sky(), img = painted && sceneryImage({ theme: painted, time: night ? 'night' : 'day' }, F.style === 'pixel', rt.doc.id);
       const hz = v.proj(0, 0, v.zc + FAR)?.[1] ?? v.horizon;
       if (img) { const ih = hz + F.h * 0.12, iw = ih * 1.5, off = ((-v.heading * 900 + v.zc * 0.4) % iw + iw) % iw; for (let x = -off; x < F.w; x += iw) g.drawImage(img.img, x, hz + F.h * 0.06 - ih, iw, ih); }
       else if (g.createLinearGradient) { const gr = g.createLinearGradient(0, 0, 0, hz); gr.addColorStop(0, night ? '#0a0c24' : '#4a8ae0'); gr.addColorStop(1, haze); g.fillStyle = gr; g.fillRect(0, 0, F.w, hz + 2); }
@@ -174,14 +183,24 @@ export default {
           else for (let k = 0; k < 3; k++) { const zz = Z + k * 4, xx = x0 + sgn * k * 1.4; items.push({ z: zz, draw: () => prop(g, v, scen, xx, zz, haze, hash(n * 5 + k)) }); }
         }
       }
+      // The zones the loops name (race checkpoints: graphics/presentation.js) as gates across the track with their names;
+      // the first a loop names (the start/finish line) chequered.
+      let gi = 0;
+      for (const id of zonesShown(rt.doc, rt.registry)) {
+        const zone = api.zones?.get?.(id), first = gi++ === 0;
+        if (!zone?.range) continue;
+        const z = v.along(zone.range[0]);
+        if (z - v.zc > FAR || z < v.zc + 0.6) continue;
+        items.push({ z, draw: () => gate(g, v, HW, z, zone.name || id, first, haze, F.t) });
+      }
       for (const it of F.entities) {
         const e = it.e, size = e.components?.body?.size || [1, 0.8, 1], L = lookOf(H, e, 'track');
         const z = v.along(it.pos[0]), X = (it.pos[1] - M) * LW, base = Math.max(0, (it.pos[2] ?? size[2] / 2) - size[2] / 2);
         if (z - v.zc > FAR || z + size[0] / 2 < v.zc + 0.6) continue;
-        const text = `${e.archetype} ${(rt.archetype(e.archetype)?.tags || []).join(' ')}`.toLowerCase();
         // Vehicles (karts, cars, carts) are bodies on the road: a vehicle box in their own colour, the driver drawn on top.
-        if (L.role === 'vehicle') items.push({ z: z + size[0] / 2, draw: () => obstacle(g, v, e, X, base, z, size, haze, text, F.t, VEHICLE_COLORS[seedOf(e.id) % VEHICLE_COLORS.length]) });
-        else if ((L.role === 'hazard' || L.role === 'prop') && OBSTACLE.test(text) || (L.role === 'hazard' && size[2] >= 0.6)) items.push({ z: z + size[0] / 2, draw: () => obstacle(g, v, e, X, base, z, size, haze, text, F.t) });
+        if (L.role === 'vehicle') items.push({ z: z + size[0] / 2, draw: () => obstacle(g, v, e, X, base, z, size, haze, F.t, VEHICLE_COLORS[seedOf(e.id) % VEHICLE_COLORS.length]) });
+        // Obstacles are what the body declares solid (KERNEL_API body.solid: others' slide treats it as an obstacle) and tall hazards.
+        else if (e.components?.body?.solid === true || (L.role === 'hazard' && size[2] >= 0.6)) items.push({ z: z + size[0] / 2, draw: () => obstacle(g, v, e, X, base, z, size, haze, F.t) });
         else items.push({ z, draw: () => { const q = v.proj(X, base, z); if (!q) return; const hpx = Math.max(4, size[2] * q[2]); drawEntity(F, it, { x: q[0], y: q[1], w: Math.max(4, size[1] * LW * q[2] * 0.9), h: hpx, view: 'track', unit: q[2], alpha: clamp((FAR * 0.9 - (z - v.zc)) / 10, 0, 1) }); } });
       }
       items.sort((a, b) => b.z - a.z);
@@ -224,10 +243,22 @@ export default {
       else if (scen === 'space') { const h = (3 + r * 3) * k; g.strokeStyle = fog('#7a80c0', haze, dz); g.lineWidth = Math.max(1, k * 0.1); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(a[0], a[1] - h); g.stroke(); g.fillStyle = rgba('#7af0ff', 0.6 + 0.4 * Math.sin(Z)); g.beginPath(); g.arc(a[0], a[1] - h, Math.max(1, k * 0.15), 0, TAU); g.fill(); }
       else { const s = (0.4 + r * 0.8) * k; g.fillStyle = fog('#8a8a90', haze, dz); g.beginPath(); g.ellipse(a[0], a[1] - s * 0.4, s, s * 0.6, 0, 0, TAU); g.fill(); }
     }
-    function obstacle(g, v, e, X, base, z, size, haze, text, t, paint = null) {
+    function gate(g, v, HW, z, name, first, haze, t) {
+      const dz = z - v.zc, W = HW + 0.6;
+      // The line across the road: chequered at the start/finish, a bright band elsewhere.
+      if (first) for (let k = 0; k < 10; k++) for (const row of [0, 1]) quad(g, v.proj(-W + (2 * W * k) / 10, 0.04, z + row * 0.5), v.proj(-W + (2 * W * (k + 1)) / 10, 0.04, z + row * 0.5), v.proj(-W + (2 * W * (k + 1)) / 10, 0.04, z + row * 0.5 + 0.5), v.proj(-W + (2 * W * k) / 10, 0.04, z + row * 0.5 + 0.5), fog((k + row) % 2 ? '#111111' : '#f5f5f5', haze, dz));
+      else quad(g, v.proj(-W, 0.04, z), v.proj(W, 0.04, z), v.proj(W, 0.04, z + 0.4), v.proj(-W, 0.04, z + 0.4), fog('#ffd23f', haze, dz));
+      const post = { front: '#d8dde6', side: '#9aa3b0', top: '#ffffff' }, banner = first ? { front: '#e8402a', side: '#a02a1a', top: '#ff7a5a' } : { front: '#3a7bd5', side: '#2a5aa0', top: '#6aa0f0' };
+      for (const s of [-1, 1]) box(g, v, s * W - 0.15, s * W + 0.15, 0, 3.4, z, z + 0.3, post, haze);
+      box(g, v, -W, W, 2.7, 3.4, z, z + 0.2, banner, haze);
+      const q = v.proj(0, 3.05, z);
+      if (q && dz < 60) label(g, name, q[0], q[1], { size: clamp(q[2] * 0.55, 8, 26), alpha: clamp((FAR * 0.7 - dz) / 12, 0, 1) });
+    }
+    function obstacle(g, v, e, X, base, z, size, haze, t, paint = null) {
       const L = v.LW, w = size[1] * L * 0.5, dz = z - v.zc, front = z - size[0] / 2, back = z + size[0] / 2;
-      if (paint || /train|car|truck/.test(text)) {
-        const c = paint || (/train/.test(text) ? '#3a6a8a' : '#d83a2a'), colors = { front: mix(c, '#ffffff', 0.08), side: mix(c, '#000000', 0.25), top: mix(c, '#ffffff', 0.25) };
+      // A vehicle, or a body as long as a carriage (4 units or more along the track): a box with windows and lamps.
+      if (paint || size[0] >= 4) {
+        const c = paint || '#3a6a8a', colors = { front: mix(c, '#ffffff', 0.08), side: mix(c, '#000000', 0.25), top: mix(c, '#ffffff', 0.25) };
         box(g, v, X - w, X + w, base, base + size[2], front, back, colors, haze, (a, b, cc, d, dzz) => {
           const P = (u, ww) => [lerp(lerp(a[0], b[0], u), lerp(d[0], cc[0], u), ww), lerp(lerp(a[1], b[1], u), lerp(d[1], cc[1], u), ww)];
           const poly = (pts, fill) => { g.fillStyle = fill; g.beginPath(); pts.forEach(([x, y], k) => (k ? g.lineTo(x, y) : g.moveTo(x, y))); g.fill(); };

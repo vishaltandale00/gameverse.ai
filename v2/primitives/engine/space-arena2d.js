@@ -9,6 +9,7 @@
 // (projectiles, debris) are integrated by the space.
 import { zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, clamp, mod, rectHas, rectArea, rectCenter, rectDist, rectsOverlap, boxAround, rayRect, shapeHitsRect, edgesParam, checkEdges, EDGES_RULES, wrapDelta, BOUNDS_CAPS, zoneEditor, obstacleOf, obstaclesIn } from './spaces2d-lib.js';
 import { zonesData } from './runtime-lib.js';
+import { SCENERY_PARAM } from './spaces2d-scenery.js';
 
 const EPS = 1e-6;
 const STICK = 0.5; // a rider stays on the entity it stands on if that entity rose at most this far since its last slide
@@ -25,6 +26,7 @@ export default {
     frame: config => (config.gravity ? { up: 1, handed: 'right' } : { up: null, handed: 'right' }),
     needs: { content: ['structures'] },
     params: {
+      scenery: SCENERY_PARAM,
       size: { type: 'list', of: { type: 'number', min: 1, max: 1e6 }, min: 2, max: 2, default: [16, 9], unit: 'u', scale: 'world', effect: 'arena width and height from the origin' },
       gravity: { type: 'number', default: 0, unit: 'u/s²', effect: 'vertical gravity for ballistic bodies and gravityAt (negative pulls down; 0 for top-down)' },
       edges: edgesParam('solid'),

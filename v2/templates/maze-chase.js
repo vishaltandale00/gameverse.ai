@@ -10,7 +10,7 @@ export default {
   concept: 'Maze chase: eat every pellet in a maze while hunters chase you; power pellets turn the hunters into prey.',
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'maze-chase', title: 'Maze Chase', seed: 3, views: { primary: 'td' },
-    spaces: [{ id: 'maze', use: 'engine.space.grid', with: { size: [28, 31], wrap: 'x', rules: { house_door: { pass: ['hunter'] } } },
+    spaces: [{ id: 'maze', use: 'engine.space.grid', with: { scenery: 'haunted', size: [28, 31], wrap: 'x', rules: { house_door: { pass: ['hunter'] } } },
       generators: [{ use: 'engine.generate.grid.maze', with: { size: 'classic', style: 'classic', density: 0.6, palette: { wall: 'wall', houseWall: 'house_wall', door: 'house_door' }, pellet: 'pellet', power: 'power_pellet' } }] }],
     systems: [
       { use: 'gameplay.move.grid', with: { mode: 'lane' } },
@@ -18,8 +18,8 @@ export default {
       { use: 'gameplay.ai.brain', with: { tick: 0.05, modeSchedule: { table: [[7, 20, 7, 20, 5, 20, 5, -1]] } } },
       { use: 'gameplay.death', with: { lives: 3, respawn: 'start', respawnSec: 1, invulnSec: 2, gameOver: lost } },
       { use: 'gameplay.collectible', with: { counters: [
-        { id: 'pellets', includes: ['power_pellets'], points: 10, clearsLevel: true, onComplete: won },
-        { id: 'power_pellets', points: 50, onCollect: HUNTERS.map(([archetype]) => ({ do: 'apply_status', status: 'frightened', archetype })) },
+        { id: 'pellets', name: 'Pellets', includes: ['power_pellets'], points: 10, clearsLevel: true, onComplete: won },
+        { id: 'power_pellets', name: 'Power pellets', points: 50, onCollect: HUNTERS.map(([archetype]) => ({ do: 'apply_status', status: 'frightened', archetype })) },
       ] } },
       { use: 'engine.spawner', with: { intervalSec: 0, rules: HUNTERS.map(([archetype, , at], i) => ({ id: `hunter_${i + 1}`, archetype, at, unique: true, activation: 'always', respawnSec: 0 })) } },
     ],
@@ -32,9 +32,9 @@ export default {
           components: { body: { layer: 'hunter' }, health: { max: 1, respawn: { mode: 'spawn', sec: 3 } }, touch: { damage: 1 }, ai: { brain: [{ do: 'target-tile', personality, scatter }], speed: 7 } } })),
       ],
       statuses: [{ id: 'frightened', name: 'Frightened', duration: 6, mods: { 'stat.fright': 1 } }],
-      blocks: [{ id: 'wall', name: 'Wall', solid: true }, { id: 'house_wall', name: 'House wall', solid: true }, { id: 'house_door', name: 'House door', solid: true }],
+      blocks: [{ id: 'wall', name: 'Wall', solid: true, tile: 'brick', color: '#3a5cff' }, { id: 'house_wall', name: 'House wall', solid: true, tile: 'brick', color: '#3a5cff' }, { id: 'house_door', name: 'House door', solid: true, tile: 'wood', color: '#ff9ad8' }],
     },
     player: { archetype: 'hero' },
   },
-  tune: [{ path: 'engine.generate.grid.maze.density', min: 0.4, max: 0.6 }, { path: 'gameplay.death.lives', min: 3, max: 9 }],
+  tune: ['engine.space.grid.scenery', { path: 'engine.generate.grid.maze.density', min: 0.4, max: 0.6 }, { path: 'gameplay.death.lives', min: 3, max: 9 }],
 };

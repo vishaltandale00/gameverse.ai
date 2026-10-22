@@ -10,7 +10,7 @@ export default {
   concept: 'Farming: till soil, plant seeds, water the crops every day and harvest them as they ripen; harvest enough crops to win.',
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'farm', title: 'Farm', seed: 5, views: { primary: 'td' },
-    spaces: [{ id: 'field', use: 'engine.space.grid', with: { size: [12, 10] },
+    spaces: [{ id: 'field', use: 'engine.space.grid', with: { scenery: 'meadow', size: [12, 10] },
       generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', ground: 'grass', terrain: [{ block: 'rock', weight: 1, blocks: true }], density: 0.15, symmetry: 'none', teams: 1, deployDepth: 2 } }] }],
     systems: [
       { use: 'gameplay.move.grid', with: { mode: 'step' } },
@@ -26,11 +26,11 @@ export default {
         { id: 'carrot_seed', name: 'Carrot seeds', kind: 'material' },
         { id: 'carrot', name: 'Carrot', kind: 'food' },
       ],
-      blocks: [{ id: 'grass', name: 'Grass', solid: false }, { id: 'rock', name: 'Rock', solid: true }, { id: 'farmland', name: 'Farmland', solid: false }],
+      blocks: [{ id: 'grass', name: 'Grass', solid: false, tile: 'grass', color: '#5f9e48' }, { id: 'rock', name: 'Rock', solid: true, tile: 'rock', color: '#8a8478' }, { id: 'farmland', name: 'Farmland', solid: false, tile: 'soil', color: '#7a5434' }],
       archetypes: [{ id: 'farmer', name: 'Farmer', components: {} }],
     },
     plot: { endings: [{ id: 'victory', title: 'Victory', epilogue: 'The harvest is in.', outcome: 'won', when: { count: 'harvested', gte: 8 } }] },
     player: { archetype: 'farmer', at: [1, 0] },
   },
-  tune: [{ path: 'gameplay.farming.daySec', min: 3, max: 20 }, 'engine.generate.grid.board.density'],
+  tune: ['engine.space.grid.scenery', { path: 'gameplay.farming.daySec', min: 3, max: 20 }, 'engine.generate.grid.board.density'],
 };

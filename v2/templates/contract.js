@@ -11,13 +11,21 @@
 //   preflight    the document preflights against the catalogue's card-derived schemas
 //   composition  the static composition check (card declarations only) finds no failure
 //   loop         the loop check finds no problem
+//   presentation the document a person plays (the host's renderers added) draws everything its loops need a person to
+//                see (card.loop.shows against the renderers' card.draws: graphics/presentation.js); every look its
+//                instances' cards declare (a param with `cosmetic: true`, such as a space's scenery) is set and tuned,
+//                and each value the form allows for it preflights and plays its first frame exactly as the template's
+//                own value does (a look is proven by drawing, never by a bot run: the simulation does not read it)
 //   gate         the publish gate (verifyDocument with the playtest agents' budget) finds it viable
 //   controls     the document a person plays (the host's input and UI added) gives a control for every verb its loops
 //                declare, and each direction pressed through the controls moves the player the way the view shows it
 //   features     every primitive the document mixes in exists, is controllable and works when its controls are pressed
 //                from states the gate's play reached (verify/features.js; the table is in the evidence)
 //   bots         every bot the document's loops name (card.mode.bot) is the one the gate plays, wins with status 'won'
-//                on every world seed in SEEDS through the real controls, and replays to the same runs
+//                on every world seed in SEEDS through the real controls, and replays to the same runs; and, played
+//                again with a person's hands (HUMAN_INPUT's edge rate, verify/human.js), how it ends goes into the
+//                evidence (evidence.bots[].human, world seed SEEDS[0]): which templates only a hand faster than a
+//                person's can win
 //   bounds       every value the frame_tune form allows keeps the game playable: at each bound of each tune entry (the
 //                min and max of a number, each value of a boolean or a closed set; the other params at the template's
 //                values) the document preflights and every named bot wins on every world seed in SEEDS
@@ -36,16 +44,32 @@ import { strategies, select, modeBots } from '../verify/strategies/index.js';
 import { documentUncontrolled } from '../verify/controls.js';
 import { directionProblems, DIRECTION_CODES } from '../verify/directions.js';
 import { FEATURE_CODES } from '../verify/features.js';
+import { humanRate } from '../verify/human.js';
+import { presentationProblems, PRESENTATION_CODES } from '../primitives/graphics/presentation.js';
 
 export const CONTRACT_VERSION = 'template-contract/0.1';
+/** The look checks' codes (lookProblems). */
+export const LOOK_CODES = Object.freeze(['look_undeclared', 'look_untuned', 'look_value_invalid', 'look_not_cosmetic']);
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
 /** The world seeds every named bot must win on (and replay). */
 export const SEEDS = Object.freeze([1, 2, 3]);
-/** The publish gate's budgets, as the template suite runs it. */
-export const GATE = Object.freeze({ budgetMs: 800, playtestMs: 1500 });
-/** A named bot's wall budget, and the run options particular bots take (their own params, by strategy id). */
-export const BOT_BUDGET_MS = 60000;
+/** The publish gate as the template suite runs it: the playability checks, on the gate's own budgets (verify GATE_BUDGET). */
+export const GATE = Object.freeze({ playable: true });
+/**
+ * A named bot's budget per world seed, in simulated frames (lookahead included: verify/util.js budget.meter), never wall
+ * time, so the bots stage gives the same runs on a loaded machine or across a laptop's sleep; and the run options
+ * particular bots take (their own params, by strategy id).
+ */
+export const BOT_STEPS = Infinity;
 export const BOT_OPTS = Object.freeze({ 'danger-field': Object.freeze({ maxFrames: 15000 }), dodge: Object.freeze({ seconds: 60, every: 8 }) });
+/**
+ * The fastest a person changes their input: what they hold (the move axis, the keys down) changes at most this many
+ * times a second, and a press is down for at least that long. 10 per second (a change every 100 ms, 6 frames at 60 Hz)
+ * is the edge of human speed: a single finger taps about 5-7 times a second sustained and near 10 in short bursts, and
+ * a visual reaction takes over 150 ms, so a line that needs faster changes is one only a bot plays. Used by the bots
+ * stage's human-rate replay (verify/human.js).
+ */
+export const HUMAN_INPUT = Object.freeze({ changesPerSecond: 10 });
 /** Param types a tune path may name: a single value the frame_tune form can ask for. */
 export const SCALAR_TYPES = Object.freeze(['number', 'integer', 'boolean', 'string']);
 /** A template id: a lowercase slug (a promoted template's file name and an enum value of the pick form). */
@@ -60,8 +84,9 @@ export const CODES = Object.freeze({
   preflight: Object.freeze(['preflight_failed']),
   composition: Object.freeze(['composition_failed']),
   loop: Object.freeze(['loop_problem']),
+  presentation: Object.freeze([...Object.values(PRESENTATION_CODES), ...LOOK_CODES]),
   gate: Object.freeze(['gate_not_viable']),
-  controls: Object.freeze(['controls_missing', ...DIRECTION_CODES]),
+  controls: Object.freeze(['controls_missing', 'option_uncontrolled', ...DIRECTION_CODES]),
   features: Object.freeze([...new Set(Object.values(FEATURE_CODES).flat())]),
   bots: Object.freeze(['bot_unnamed', 'bot_selection_mismatch', 'bot_failed', 'bot_not_won', 'replay_mismatch']),
   bounds: Object.freeze(['bound_invalid', 'bound_bot_failed', 'bound_not_won']),
@@ -138,6 +163,38 @@ export function tuneProblems(t, registry) {
 }
 
 /**
+ * The look checks: every param a card of the document's instances declares `cosmetic: true` (what a person sees, which
+ * the simulation never reads: a space's scenery) has a value on the instance (look_undeclared: no default stands in
+ * for the choice) and is in the template's tune (look_untuned: the idea chooses it, through the frame_tune form). Each
+ * value its closed set allows preflights as the document a person plays (look_value_invalid), and its first frame
+ * leaves the same state as the template's own value (look_not_cosmetic). One frame per value: a look is shown, not played.
+ */
+export function lookProblems(t, registry, logic) {
+  const out = [], tuned = new Set(t.tune);
+  const firstFrame = doc => { const h = hostPreflight(doc, registry, logic); if (!h.ok) return { errors: h.errors }; const rt = controlledMaker(h.doc, registry, logic)(SEEDS[0]); rt.step({}); return { state: rt.snapshot() }; };
+  let base = null;
+  for (const { inst, path } of instancesWithPaths(t.doc)) {
+    const params = registry.get(inst.use)?.card?.params || {};
+    for (const [param, spec] of Object.entries(params)) {
+      if (!spec?.cosmetic) continue;
+      const at = `${path}.with.${param}`, tunePath = `${inst.use}.${param}`;
+      if (inst.with?.[param] === undefined) { out.push(problem('look_undeclared', `${inst.use} declares the look '${param}' (one of ${(spec.options || []).join(', ')}); the template sets it for its own concept`, { path: at })); continue; }
+      if (!tuned.has(tunePath)) { out.push(problem('look_untuned', `the look '${tunePath}' is not in tune: the idea's theme chooses it`, { path: at })); continue; }
+      base ??= firstFrame(t.doc);
+      for (const value of spec.options || []) {
+        if (value === inst.with[param]) continue;
+        const d = structuredClone(t.doc), target = instancesWithPaths(d).find(x => x.path === path).inst;
+        target.with = { ...target.with, [param]: value };
+        const r = firstFrame(d);
+        if (r.errors) out.push(problem('look_value_invalid', `${tunePath} = ${JSON.stringify(value)} does not preflight: ${r.errors.slice(0, 2).map(e => `${e.code} ${e.path}`).join('; ')}`, { path: at, cause: r.errors[0]?.code ?? null }));
+        else if (!isDeepStrictEqual(r.state, base.state)) out.push(problem('look_not_cosmetic', `${tunePath} = ${JSON.stringify(value)} changes the first frame's state: the simulation reads a param its card declares cosmetic`, { path: at }));
+      }
+    }
+  }
+  return out;
+}
+
+/**
  * The context the gate's bots play a preflighted host document in (the document a person plays: v2/web/host-doc.js),
  * through the controls a person has (v2/verify/controls.js).
  */
@@ -160,13 +217,15 @@ function botProblems(checked, registry, logic, evidence) {
   const chosen = select(ctx).chosen.map(c => c.s.id);
   if (!isDeepStrictEqual(chosen, named)) out.push(problem('bot_selection_mismatch', `the gate plays ${chosen.join(', ') || 'no bot'}; the loops name ${named.join(', ')}`));
   for (const id of named) {
-    const bot = strategies.get(id), opts = { budgetMs: BOT_BUDGET_MS, seeds: [...SEEDS], ...BOT_OPTS[id] };
+    const bot = strategies.get(id), opts = { maxSteps: BOT_STEPS, seeds: [...SEEDS], ...BOT_OPTS[id] };
     const t0 = performance.now();
     let a, b;
     // A bot that asks for a verb no control issues, or that throws, fails here with what it needed.
-    try { a = bot.run(ctx, opts); b = bot.run(ctx, opts); } catch (error) { out.push(problem('bot_failed', `${id}: ${String(error?.message || error).slice(0, 400)}`, { bot: id, ...(error?.code ? { cause: error.code } : {}) })); continue; }
+    let human = null;
+    try { a = bot.run(ctx, opts); b = bot.run(ctx, opts); human = runsOf(bot.run({ ...ctx, make: humanRate(ctx.make, HUMAN_INPUT.changesPerSecond) }, { ...opts, seeds: [SEEDS[0]] })); } catch (error) { out.push(problem('bot_failed', `${id}: ${String(error?.message || error).slice(0, 400)}`, { bot: id, ...(error?.code ? { cause: error.code } : {}) })); continue; }
     const runs = runsOf(a);
-    evidence.bots.push({ id, runs: runs.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), ms: Math.round(performance.now() - t0) });
+    // How the bot's play ends with a person's hands: evidence (which templates need a faster hand), not a block.
+    evidence.bots.push({ id, runs: runs.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), human: human.map(r => ({ seed: r.seed ?? null, status: r.status ?? null, frames: r.frames ?? null })), humanRate: HUMAN_INPUT.changesPerSecond, ms: Math.round(performance.now() - t0) });
     if (a.ok !== true) out.push(problem('bot_failed', `${id}: ${JSON.stringify(a.problems).slice(0, 400)}`, { bot: id }));
     for (const seed of SEEDS) {
       const r = runs.find(x => x.seed === seed);
@@ -227,6 +286,8 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
   const problems = [];
   const t = /** @type {any} */ (template);
   let checked = null, bare = null, gateFeatures = null;
+  /** @type {any[]} */
+  let gateOptions = [];
   const run = {
     format: () => formatProblems(t),
     tune: () => tuneProblems(t, registry),
@@ -240,10 +301,12 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
     },
     composition: () => checkComposition(bare.doc, registry, { logic }).failures.map(f => problem('composition_failed', `${f.check}: ${f.message}`, { cause: f.check })),
     loop: () => loopProblems(bare.doc, registry, { logic }).map(p => problem('loop_problem', p.message, { path: p.path, cause: p.code })),
+    presentation: () => [...presentationProblems(checked.doc, registry).map(p => problem(p.code, p.message, { path: p.path, use: p.use, ...(p.space ? { space: p.space } : {}), missing: p.missing })), ...lookProblems(t, registry, logic)],
     gate: async () => {
       const v = await verifyDocument(structuredClone(t.doc), registry, logic, { ...GATE });
       evidence.gate = { viable: Boolean(v.viable), viability: v.viability ?? null, ms: v.ms ?? null };
       gateFeatures = v.features ?? null;
+      gateOptions = (v.problems || []).filter(p => p.code === 'option_uncontrolled');
       return v.viable ? [] : [problem('gate_not_viable', `${v.viability} ${JSON.stringify((v.problems || []).filter(p => p.severity === 'error')).slice(0, 600)}`, { cause: v.viability ?? null })];
     },
     // The document a person plays gives a control for every verb its loops declare (in each interaction they are played
@@ -253,7 +316,9 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
       const out = documentUncontrolled(host, registry).map(m => problem('controls_missing', `${m.use}: no control a person has issues '${m.kind}'${m.interaction ? ` in ${m.interaction}` : ''}`, { verb: m.verb, use: m.use }));
       const d = directionProblems(host, registry, playContext(checked, registry, logic).make, SEEDS[0]);
       evidence.directions = d.evidence;
-      return [...out, ...d.problems.map(p => problem(p.code, p.message))];
+      // Every option the game offers is one a person can take (the gate's explorer: playtest option_uncontrolled).
+      const options = gateOptions.map(p => problem('option_uncontrolled', p.message, { missing: p.missing ?? null }));
+      return [...out, ...options, ...d.problems.map(p => problem(p.code, p.message))];
     },
     // Every primitive the document mixes in exists, is controllable and works (verify/features.js, run by the gate).
     features: () => {

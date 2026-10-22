@@ -5,7 +5,7 @@
 // from a resource pool or an internal tank that refills on the ground.
 import {
   round6, mv, bodyOf, state, spaceApi, frameOf, intent, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, pool, canSpend,
-  hasAbility, verbs, ensureShared, steerPlane, integrate, setFacing, settle, installOverlay, COMMON_PARAMS, MACRO_PARAMS, len, travelAlong, MOVE_COMPONENTS,
+  hasAbility, verbs, ensureShared, steerPlane, integrate, setFacing, settle, installOverlay, COMMON_PARAMS, len, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.fly';
@@ -40,7 +40,7 @@ export default {
       fuelRegen: num(0, 100, 1, '×/s', 'internal tank refill rate on the ground (fraction of the tank per second)'),
       landOnGround: { type: 'boolean', default: true, effect: 'touching ground while descending ends a toggled flight' },
       ability: { type: 'string', default: '', effect: 'ability required to fly (via unlock_ability grants); empty = always' },
-      ...COMMON_PARAMS, ...MACRO_PARAMS,
+      ...COMMON_PARAMS,
     },
     provides: { events: ['evaded', 'fly_start', 'fly_end', 'fuel_empty', 'landed', 'arrived', 'arrived:*', 'move_failed'], actions: ['fly', 'ascend', 'descend', 'jump', 'sprint'] },
     requires: { capabilities: ['position'] },
@@ -53,7 +53,7 @@ export default {
   travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   install(rt, c, instance) {
     verbs(rt, ['fly', 'ascend', 'descend', 'jump', 'sprint']);
-    ensureShared(rt, { speed: c.speed, ...c.macro });
+    ensureShared(rt, { speed: c.speed });
     const tank = e => (c.fuelPool ? pool(rt, e, c.fuelPool) : c.fuel > 0 ? pool(rt, e, 'fly_fuel', { max: c.fuel, regen: c.fuel * c.fuelRegen }) : null);
     const fly = (e, api, fr, s) => {
       const b = bodyOf(e), dt = rt.dt, it = intent(rt, e, api, fr, { free3d: true, jumpIsUp: true, crouchIsDown: true }), ctl = it.ctl;

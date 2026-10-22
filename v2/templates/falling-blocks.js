@@ -12,7 +12,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'falling-blocks', title: 'Falling Blocks', seed: 7,
     views: { primary: 'board' },
-    spaces: [{ id: 'well', use: 'engine.space.grid', with: { size: [10, 24] } }],
+    spaces: [{ id: 'well', use: 'engine.space.grid', with: { scenery: 'sky', size: [10, 24] } }],
     systems: [
       { use: FALLING, with: { board: { name: 'well', at: [0, 0], size: [10, 24], axes: [0, 1], fall: -1 }, hidden: 4, next: 5, hold: true, ghost: true, randomizer: 'bag', levelEvery: 10,
         tokens: Object.fromEntries(PIECES.map(([k]) => [k, `piece_${k.toLowerCase()}`])), garbageToken: 'rubble' } },
@@ -29,5 +29,5 @@ export default {
       blocks: [...PIECES.map(([k, name]) => ({ id: `piece_${k.toLowerCase()}`, name, solid: true })), { id: 'rubble', name: 'Rubble', solid: true }],
     },
   },
-  tune: [`${FALLING}.next`, `${FALLING}.hold`, `${FALLING}.randomizer`],
+  tune: ['engine.space.grid.scenery', `${FALLING}.next`, `${FALLING}.hold`, `${FALLING}.randomizer`],
 };

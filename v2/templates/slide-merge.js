@@ -8,15 +8,15 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'slide-merge', title: 'Slide and Merge', seed: 4,
     views: { primary: 'board' },
-    spaces: [{ id: 'tray', use: 'engine.space.grid', with: { size: [4, 4] } }],
+    spaces: [{ id: 'tray', use: 'engine.space.grid', with: { scenery: 'sky', size: [4, 4] } }],
     systems: [
       { use: 'gameplay.slide.merge', with: { board: { name: 'tray', at: [0, 0], size: [4, 4], axes: [0, 1], fall: -1 }, start: 2, spawnFour: 0.1, target: 256,
         onTarget: [{ do: 'end_game', outcome: 'won' }], onStuck: [{ do: 'end_game', outcome: 'lost' }] } },
     ],
     content: {
       archetypes: [],
-      blocks: [2, 4, 8, 16, 32, 64, 128, 256].map(v => ({ id: String(v), name: `Tile ${v}`, solid: true })),
+      blocks: [2, 4, 8, 16, 32, 64, 128, 256].map(v => ({ id: String(v), name: `Tile ${v}`, solid: true, label: String(v) })), // its number is drawn on the tile (card.loop.shows labels)
     },
   },
-  tune: ['gameplay.slide.merge.spawnFour', { path: 'gameplay.slide.merge.slideFrames', max: 15 }],
+  tune: ['engine.space.grid.scenery', 'gameplay.slide.merge.spawnFour', { path: 'gameplay.slide.merge.slideFrames', max: 15 }],
 };

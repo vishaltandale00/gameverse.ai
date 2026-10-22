@@ -19,6 +19,12 @@
 //                    `by` (what changes it: { actions: player verbs that do, directly or through the effects the document
 //                    gives them; effects; events its code runs on; movement: the player's body touching or passing });
 //                    every loop end declares it, checked against the code (tests/v2-p-loop-reads.test.js);
+//             shown  what a person watches for this end when it is not the read itself (a measurement var, an event
+//                    every participant emits): { var, max?, label? } | { count } | { bar: 'boss' } | a list; max a number,
+//                    a var or { param } of the instance; `applies: { param, gt|gte|lt|lte|eq }` limits it to instances
+//                    whose param compares so; `each: { param, where? }` repeats it per entry of a list param with `$id`
+//                    the entry's id (data only: cards are cloned; graphics/ui-defaults.js hudGoals);
+//             once   the end happens at the first occurrence of what it reads (a finish, a top-out): no quantity to watch;
 //   lose?:    the same, for defeat;
 //   outcome?: how this loop's result maps onto the participants of an encounter that runs it as an inner loop
 //             (engine.adapt.nested): { sides: ['player', 'opponent'?], results: { <result>: { param, player, opponent? } } }
@@ -36,11 +42,12 @@
 // preferred spaces, a bot that proves it): cardLoop() merges the two, card.loop winning field by field.
 import { isObj, isList, isStr, list, objects, prop } from '../kernel/guards.js';
 import { checkFields } from '../kernel/params.js';
+import { sideDecl, playerSides } from '../kernel/sides.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /** What changes the state a loop end reads. @typedef {{ actions?: string[], effects?: string[], events?: string[], movement?: boolean }} ReadsBy */
 /** @typedef {{ component?: string, of?: string, event?: string, var?: string, from?: string, by?: ReadsBy }} EndReads */
-/** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, applies?: { param: string, field?: string, is?: unknown, given?: boolean }, reads?: EndReads }} LoopEnd */
+/** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, shown?: unknown, once?: boolean, applies?: { param: string, field?: string, is?: unknown, given?: boolean }, reads?: EndReads }} LoopEnd */
 /** A side's fate when an inner loop ends one way. @typedef {'keeps' | 'defeated'} Fate */
 /** @typedef {{ param: string, player: Fate, opponent?: Fate }} OutcomeResult */
 /** @typedef {{ sides: string[], results: Record<string, OutcomeResult> }} LoopOutcome */
@@ -60,6 +67,34 @@ import { checkFields } from '../kernel/params.js';
 /** A loop instance of a document. @typedef {{ use: string, index: number, path: string, loop: Loop, card: Record<string, any>, config: Record<string, unknown>, inst: Record<string, unknown> }} LoopInstance */
 
 export const LOOP_VERSION = 'loop/0.1';
+
+/**
+ * The state a loop end reads: its declared `reads`, else the count or var its `when` template tests.
+ * @param {LoopEnd | null | undefined} end @returns {EndReads | null}
+ */
+export function readsOf(end) {
+  if (!end) return null;
+  const r = /** @type {unknown} */ (/** @type {Record<string, unknown>} */ (end).reads);
+  if (isObj(r)) {
+    /** @type {EndReads} */
+    const out = {};
+    for (const k of /** @type {const} */ (['component', 'of', 'event', 'var', 'from'])) if (isStr(r[k])) out[k] = String(r[k]);
+    if (isObj(r.by)) {
+      const by = r.by;
+      /** @type {ReadsBy} */
+      const b = {};
+      for (const k of /** @type {const} */ (['actions', 'effects', 'events'])) if (Array.isArray(by[k])) b[k] = by[k].filter(isStr).map(String);
+      if (by.movement === true) b.movement = true;
+      out.by = b;
+    }
+    return out.component || out.event || out.var ? out : null;
+  }
+  const w = end.when;
+  if (isObj(w) && isStr(w.count)) return { event: w.count };
+  if (isObj(w) && isStr(w.var)) return { var: w.var };
+  return null;
+}
+
 
 /** @param {unknown} d @returns {d is LoopEnd} */
 const ends = d => isObj(d) && (typeof d.param === 'string' || typeof d.end === 'string' || isObj(d.when) || typeof d.ending === 'string');
@@ -385,4 +420,37 @@ export function unwired(doc, l, end, outcome, registry) {
   if (isStr(end.ending) && [...endings.values()].some(e => (e.outcome ?? 'won') === outcome)) return null;
   const how = [isStr(end.param) && `an end_game effect in ${l.loop.via ? `${l.loop.via} ` : ''}with.${end.param}`, isStr(end.end) && `with.${end.end} = true`, isObj(end.when) && 'a plot ending with its `when` and the evaluator', isStr(end.ending) && 'a plot ending'].filter(Boolean).join(' or ');
   return `nothing wires it to a ${outcome} ending (${how || 'no wiring declared'})`;
+}
+
+/**
+ * The subjects a typed event counts for the player's side (reads.of 'player'): the player, and every side the player is
+ * on among the sides the loop's own instance declares (card.sides, or its card.mode.via host's: kernel/sides.js
+ * playerSides), so a rival's lap or the other team's goal is not the player's progress.
+ * @param {unknown} doc @param {RegistryLike} registry @param {LoopInstance} owner @returns {string[]}
+ */
+export function playerSubjects(doc, registry, owner) {
+  const own = sideDecl(owner.card) ? owner.use : isStr(owner.loop.via) ? owner.loop.via : owner.use;
+  return ['player', ...playerSides(doc, registry, own).filter(id => id !== 'player')];
+}
+
+/**
+ * The quantity the core loop's win reads: card.loop.win.reads of the loop that owns the game's win (loop-check.js
+ * winOwner: `core` orders the loops as the planner does, else the win the document wires), with the comparison and target of the won plot ending that
+ * tests it, when one does. An event read `of: 'player'` counts the player's side only: `subjects` (playerSubjects) name
+ * the typed events (`event:<subject>`) that are its. null when no loop declares a game-ending win with reads.
+ * @param {unknown} doc @param {RegistryLike} registry @param {Iterable<string> | null} [core] @returns {{ use: string, event?: string, var?: string, component?: string, of?: string, subjects?: string[], cmp?: string, target?: number } | null}
+ */
+export function winQuantity(doc, registry, core = null) {
+  const owner = winOwner(doc, registry, loopInstances(doc, registry), core);
+  const reads = owner ? readsOf(owner.loop.win) : null;
+  if (!owner || !reads) return null;
+  /** @type {{ use: string, event?: string, var?: string, component?: string, of?: string, subjects?: string[], cmp?: string, target?: number }} */
+  const out = reads.component ? { use: owner.use, component: reads.component, of: reads.of || 'opponents' } : reads.event ? { use: owner.use, event: reads.event, ...(reads.of === 'player' ? { of: 'player', subjects: playerSubjects(doc, registry, owner) } : {}) } : { use: owner.use, var: /** @type {string} */ (reads.var) };
+  for (const e of objects(prop(prop(doc, 'plot'), 'endings'))) {
+    const w = e.when;
+    if ((e.outcome ?? 'won') !== 'won' || !isObj(w) || !((out.event && w.count === out.event) || (out.var && w.var === out.var))) continue;
+    const cmp = ['gte', 'gt', 'lte', 'lt', 'eq'].find(k => typeof w[k] === 'number');
+    if (cmp) return { ...out, cmp, target: Number(w[cmp]) };
+  }
+  return out;
 }

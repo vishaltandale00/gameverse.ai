@@ -16,7 +16,7 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['launch', 'paddle_left', 'paddle_right'], progress: ['paddle_hit', 'cell_broken'], lose: { param: 'onNoLives', reads: { var: 'paddle.balls', by: { actions: ['launch', 'paddle_left', 'paddle_right'] } } } },
+    loop: { shows: ['entities'], verbs: ['launch', 'paddle_left', 'paddle_right'], progress: ['paddle_hit', 'cell_broken'], lose: { param: 'onNoLives', reads: { var: 'paddle.balls', by: { actions: ['launch', 'paddle_left', 'paddle_right'] } } } },
     intent: 'Breakout paddle: angle-from-hit bounces, serve and catch, multiball, ramping ball speed, lost balls; works in physics spaces or moves its own balls through any 2D space (breaking cells they hit).',
     views: ['side', 'td'],
     params: {

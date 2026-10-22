@@ -20,7 +20,8 @@ standing in for decisions, no word lists over the idea, no per-game cases; nothi
 A rule enforced in code but not declared is a defect; a missing declaration fails the checks, it is never assumed.
 Controls: a verb whose action takes a value declares it in `card.actionSpace` (enum, axis, or `choice` with `of`, its provider `from: 'options'` or `selects`, and the events it `emits`); a refusal event goes in `card.denials`; a loop
 whose verbs depend on the instance declares `card.loop.verbsOf(config, doc)`; a space declares `card.frame`; a renderer
-or camera declares `card.projection` per view; a UI primitive declares `card.interactions` and `card.controls`.
+or camera declares `card.projection` per view and a renderer `card.draws`; a loop with a win or lose declares `card.loop.shows`; a card
+owning a component declares what an entity carrying it reads as on screen in `card.presents` (never inferred from names); a UI primitive declares `card.interactions` and `card.controls`.
 
 **Codes and examples.** Every code a `validate` emits is declared in `card.rules` (`{ code: { fields, message,
 example? } }`); every code a vocabulary kind's `check` emits beyond the kernel's is declared with its registration
@@ -100,9 +101,10 @@ live (a new check is added there, with its code), run over every discovered temp
 | preflight | the document preflights | `preflight_failed` (cause: the preflight code) |
 | composition | the static composition check, judging the host document (`v2/web/host-doc.js`), has no failure: among them every loop verb has a control a person has in its interactions (the controls reading, `v2/verify/controls.js`) and every space's world content is there (`v2/planner/space-content.js`, the reading the gate's world check makes) | `composition_failed` |
 | loop | the loop check has no problem | `loop_problem` (cause: the loop code) |
+| presentation | the host document's renderers draw everything its loops need a person to see: each loop with a win or lose declares `card.loop.shows` (entities, cells, zones, labels, marks: `v2/primitives/graphics/presentation.js`), and the renderer of each space its play happens in declares them in `card.draws` | `render_missing` `shows_undeclared` |
 | gate | `verifyDocument` (on the host document: `v2/web/host-doc.js`) with the playtest budget finds it viable | `gate_not_viable` |
-| controls | every loop verb of the host document has a control (a key, an axis, or a mounted UI primitive's `card.controls`); each direction pressed through `v2/verify/controls.js` moves the player the way the mounted renderer's `card.projection` shows the view (`v2/verify/directions.js`) | `controls_missing` `projection_undeclared` `direction_mismatch` `direction_inert` |
-| features | every loop primitive exists, is controllable and works when its controls are pressed from reached states (`v2/verify/features.js`; the table is in the evidence) | `feature_missing` `feature_content_empty` `feature_uncontrolled` `feature_inert` (`feature_unreached` is a warning) |
+| controls | every loop verb of the host document has a control (a key, an axis, or a mounted UI primitive's `card.controls`); each direction pressed through `v2/verify/controls.js` moves the player the way the mounted renderer's `card.projection` shows the view (`v2/verify/directions.js`); every option the game offers in the gate's play is one a person can take | `controls_missing` `option_uncontrolled` `projection_undeclared` `direction_mismatch` `direction_inert` |
+| features | every loop primitive exists, is controllable and works when its controls are pressed from reached states (`v2/verify/features.js`; the table is in the evidence); every participant a loop declares (sides, teams, racers, fighters) is an entity of the world at the start of play (`v2/planner/content.js` `absentParticipants`) | `feature_missing` `feature_content_empty` `feature_participant_absent` `feature_uncontrolled` `feature_inert` (`feature_unreached` is a warning) |
 | bots | every bot its loops name is the one the gate plays, wins with status `won` on world seeds 1-3 and replays | `bot_unnamed` `bot_selection_mismatch` `bot_failed` `bot_not_won` `replay_mismatch` |
 
 A failing static stage stops the check before anything simulates.

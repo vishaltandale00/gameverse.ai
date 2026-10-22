@@ -35,7 +35,7 @@ const LANE = { type: 'object', fields: {
 export default {
   id: ID,
   card: {
-    loop: { verbs: [], progress: ['progress', 'near_miss'], lose: { param: 'onHit', reads: { event: 'lane_hit', by: { movement: true } } } },
+    loop: { shows: ['entities'], verbs: [], progress: ['progress', 'near_miss'], lose: { param: 'onHit', once: true, reads: { event: 'lane_hit', by: { movement: true } } } },
     intent: 'Periodic hazard lanes (Crossy Road / Frogger): roads of cars, rivers of carrying logs, rails with warned trains, ramping speed, near misses, and an idle/creep "eagle" that catches dawdlers; analytic so bots can plan.',
     views: ['td', 'iso', 'side'],
     params: {

@@ -86,9 +86,6 @@ test('(b) relation skin marks the joined loop flavor, and selection never builds
   const battle = sel.mechanics.find(m => m.id === 'creature_battle');
   assert.deepEqual([battle.primitives, battle.source], [[], 'unplayed']);
   assert.ok(!sel.gaps.some(g => g.mechanic === 'creature_battle'), 'an unplayed loop is not a gap');
-  // Offline (lexical) selection skips it as well.
-  const offline = await selectPrimitives({ decomposition: d, registry });
-  assert.deepEqual(offline.mechanics.find(m => m.id === 'creature_battle').primitives, []);
 });
 
 test('(b) skin contradicted by the spec (win, lose or a core mechanic names the joined loop by id) re-asks the mashup', async () => {

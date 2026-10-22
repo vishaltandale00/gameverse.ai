@@ -58,7 +58,7 @@ export default {
       hints: () => [['confirm', config.fastTravel && S.canAct(rt, 'fast_travel') ? 'Travel / pin' : 'Pin'], ['prev', 'Zoom']],
       renderTab(tab, body, sh) {
         model = mapModel(rt, { markers: config.markers, fog: config.fog, visited });
-        sh.retitle(titleCase(rt.doc.spaces.find(s => s.id === model.space)?.name || model.space) || 'Map');
+        sh.retitle(rt.doc.spaces.find(s => s.id === model.space)?.name || 'Map');
         canvas = el('canvas', { attrs: { 'aria-label': 'World map', role: 'img' } });
         const stage = el('div.gv-map-canvas', { on: { wheel: e => { e.preventDefault?.(); zoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15); }, pointerdown: e => { drag = { x: e.clientX, y: e.clientY, pan: [...pan], moved: false }; }, pointermove: e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.hypot(dx, dy) > 4) drag.moved = true; pan = [drag.pan[0] + dx, drag.pan[1] + dy]; paint(); }, pointerup: e => { if (drag && !drag.moved) pickAt(e); drag = null; } } }, canvas);
         info = el('aside.gv-map-info');

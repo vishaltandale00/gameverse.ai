@@ -325,8 +325,8 @@ export default {
   card: {
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { battle: { type: 'choice', of: 'a battle command: a move, an item, a switch or running', from: 'options', emits: ['battle_log'] } },
-    loop: { verbs: ['battle'], progress: ['creature_defeated', 'battle_end', 'caught'], win: { param: 'onWin', scope: 'encounter', reads: { event: 'creature_defeated', by: { actions: ['battle'] } } },
-      lose: { param: 'onLose', reads: { event: 'creature_fainted', by: { actions: ['battle'] } } },
+    loop: { shows: [], verbs: ['battle'], progress: ['creature_defeated', 'battle_end', 'caught'], win: { param: 'onWin', scope: 'encounter', once: true, reads: { event: 'creature_defeated', by: { actions: ['battle'] } } },
+      lose: { param: 'onLose', shown: { var: 'party.alive', label: 'Party' }, reads: { event: 'creature_fainted', by: { actions: ['battle'] } } },
       // As an encounter: a won battle or a capture takes the foe out; a lost battle the player's side; running away leaves both.
       outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onWin', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onLose', player: 'defeated', opponent: 'keeps' }, fled: { param: 'onRun', player: 'keeps', opponent: 'keeps' }, caught: { param: 'onCapture', player: 'keeps', opponent: 'defeated' } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

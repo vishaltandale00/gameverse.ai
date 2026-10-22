@@ -19,6 +19,8 @@ const PUSH_DECAY = 0.8; // per frame; total travel = push / (1 - decay)
 const health = {
   id: KEY,
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { touch: { role: 'enemy' } },
     // The participants an event names (role -> data field): who was hurt and who hurt it (a touch, a blow).
     loop: { verbs: [], progress: ['damaged', 'defeated'], involves: { damaged: { hurt: 'who', by: 'by' } } },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).

@@ -20,6 +20,8 @@ const RESPAWN = ['checkpoint', 'nearest-safe', 'none'];
 export default {
   id: 'gameplay.hazard',
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { hazard: { role: 'hazard' } },
     loop: { verbs: [], progress: ['hazard_killed'] },
     intent: 'Damage volumes and falls (spikes, lava, acid, drowning, fall damage, kill planes, a rising camera kill line or the space bounds): typed hazards with entry damage, damage over time, statuses, kills and respawn to safe footing or the checkpoint.',
     views: ['any'],

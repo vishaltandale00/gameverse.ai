@@ -16,6 +16,9 @@ import { compare } from '../../kernel/logic.js';
 import { alive, matchesAny, sortedEntities, has, err, runBound, r6 } from './modes-lib-util.js';
 import { allowInTurnModal } from './turns.js';
 
+/** The space a zone belongs to (a stage's spawn into a zone lands in that zone's space, not the player's). */
+const zoneSpace = (rt, zone) => (zone ? (rt.doc.spaces || []).find(s => (s.zones || []).some(z => z.id === zone))?.id : undefined);
+
 const ID = 'gameplay.stage.sequence';
 export const GOALS = ['lines', 'score', 'survive', 'chain', 'viruses', 'blockers', 'jelly', 'collect', 'tile', 'when', 'none'];
 /** How each goal kind is measured (overridable per goal with event/field/var/block/archetype/tag). */
@@ -52,7 +55,7 @@ export default {
   card: {
     // select_stage exists when the instance allows choosing (select); next_stage skips an intro or a clear screen, so it
     // exists only when the stages have one (runtime-lib-controls.js instanceVerbs).
-    loop: { verbs: ['select_stage', 'next_stage'], verbsOf: config => [...(config.select ? ['select_stage'] : []), ...(config.introSec > 0 || config.clearSec > 0 ? ['next_stage'] : [])], progress: ['stage_clear', 'sequence_complete'] },
+    loop: { shows: [], verbs: ['select_stage', 'next_stage'], verbsOf: config => [...(config.select ? ['select_stage'] : []), ...(config.introSec > 0 || config.clearSec > 0 ? ['next_stage'] : [])], progress: ['stage_clear', 'sequence_complete'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { select_stage: { type: 'choice', of: 'a stage', from: 'options', emits: ['stage_selected'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
@@ -62,19 +65,19 @@ export default {
     // Levels mode: a wrapper that sequences the stages of another mode; its bot plays the wrapped mode stage by stage.
     // The win reads stage.advance (stages cleared plus the current stage's goal progress): it moves within a stage, so
     // progress toward completing the sequence is measurable before the first stage clears.
-    mode: { loop: 'levels', wraps: true, interaction: 'any', opponent: 'clock', space: [], needs: { content: [], participants: null }, win: { param: 'onComplete', end: 'endOnComplete', reads: { var: 'stage.advance', by: { events: ['*'] } } }, lose: { param: null, end: 'endOnGameOver', reads: { var: 'stage.lives', by: { events: ['*'] } } }, bot: 'stages' },
+    mode: { loop: 'levels', wraps: true, interaction: 'any', opponent: 'clock', space: [], needs: { content: [], participants: null }, win: { param: 'onComplete', end: 'endOnComplete', shown: { var: 'stage.number', label: 'Stage' }, reads: { var: 'stage.advance', by: { events: ['*'] } } }, lose: { param: null, end: 'endOnGameOver', shown: { var: 'stage.lives', label: 'Lives', applies: { param: 'lives', gt: 0 } }, reads: { var: 'stage.lives', by: { events: ['*'] } } }, bot: 'stages' },
     intent: 'Ordered stages/levels with intro, play, clear and fail phases; per-stage parameter tables applied to other primitives and vars; stage goals (lines, score, survive, chain, viruses, blockers, jelly, collect, tile, predicate), move and time limits, stars, lives and retries, loops with difficulty scaling, endless mode, arcade ladders and stage select.',
     views: ['any'],
     params: {
       id: { type: 'string', default: 'stages', effect: 'name used by the stage predicate' },
       stages: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'the stage name a person reads' }, intro: { type: 'string', display: true, effect: 'the intro line a person reads' },
+        id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'what a person reads for the stage' }, intro: { type: 'string', display: true, effect: 'the intro line a person reads' },
         params: { type: 'object', default: {}, values: { type: 'json', effect: 'the value written' }, effect: 'target -> value applied at stage start (see targets)' },
         goal: { type: 'object', fields: GOAL_FIELDS }, stars: { type: 'list', of: { type: 'number' }, default: [] },
         clear: { type: 'predicate' }, fail: { type: 'predicate' },
         onStart: { type: 'effects', default: [] }, onClear: { type: 'effects', default: [] }, onFail: { type: 'effects', default: [] },
         space: { type: 'ref', to: 'space' }, zone: { type: 'ref', to: 'zone' }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'position in space coordinates' },
-        spawn: { type: 'list', default: [], of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, id: { type: 'string' }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'position in space coordinates' }, zone: { type: 'ref', to: 'zone' }, space: { type: 'ref', to: 'space' } } } },
+        spawn: { type: 'list', default: [], of: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', required: true }, id: { type: 'string' }, at: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'position in space coordinates' }, zone: { type: 'ref', to: 'zone' }, space: { type: 'ref', to: 'space', effect: 'the space to spawn in (default: the zone\'s, else the player\'s)' } } } },
         clearOut: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [], effect: 'despawn entities (id/archetype/tag) at stage start, e.g. the previous opponent' },
       } } },
       apply: { type: 'list', default: [], of: { type: 'object', fields: { target: { type: 'string', pattern: TARGET.source, required: true, effect: "'var:<name>', 'flag:<name>' or 'use:<primitive id>[#n].<param path>'" }, table: { type: 'list', of: { type: 'json' }, min: 1, required: true }, op: { type: 'string', options: ['set', 'mul', 'add'], default: 'set' }, loopScale: { type: 'number', default: 0, min: 0, max: 10, effect: 'numeric values grow by this fraction per loop' } } }, effect: 'per-stage columns: stage i uses table[min(i, last)]' },
@@ -270,9 +273,11 @@ function install(rt, config) {
       if (d.space && d.space !== p.space) rt.moveToSpace(p, d.space, d.at ?? null, d.zone);
       else rt.space(p.space).teleport(p, { zone: d.zone, at: d.at }, rt);
     }
-    for (const sp of d.spawn) { if (sp.id && rt.entity(sp.id)) rt.despawn(sp.id); const e = rt.spawn(sp.archetype, { id: sp.id, space: sp.space, at: sp.at }); if (sp.zone) rt.space(e.space).teleport(e, { zone: sp.zone }, rt); }
+    for (const sp of d.spawn) { if (sp.id && rt.entity(sp.id)) rt.despawn(sp.id); const e = rt.spawn(sp.archetype, { id: sp.id, space: sp.space ?? zoneSpace(rt, sp.zone), at: sp.at }); if (sp.zone) rt.space(e.space).teleport(e, { zone: sp.zone }, rt); }
     runBound(rt, d.onStart, { actor: 'player' });
-    rt.emitTyped('stage_intro', s.stageId, { stage: s.stageId, index: i, number: i + 1, loop: s.loop, name: d.name ?? s.stageId, intro: d.intro ?? '' });
+    // title: the stage's declared name (display text; null when it declares none, never its id). A `name` key would
+    // overwrite the event's name in state.events.
+    rt.emitTyped('stage_intro', s.stageId, { stage: s.stageId, index: i, number: i + 1, loop: s.loop, title: d.name ?? null, intro: d.intro ?? '' });
     if (!F(config.introSec)) begin(s);
   }
   function begin(s) { s.phase = 'play'; s.pt = 0; rt.emitTyped('stage_start', s.stageId, { stage: s.stageId, index: s.index, loop: s.loop }); }
@@ -364,6 +369,6 @@ function install(rt, config) {
 
   rt.options(rt => {
     const s = st(); if (!config.select || s.phase === 'play' || s.phase === 'intro') return [];
-    return config.stages.map((x, i) => ({ x, i })).filter(({ i }) => unlocked(s, i)).map(({ x }) => ({ label: `stage ${x.id}`, actions: { select_stage: x.id } }));
+    return config.stages.map((x, i) => ({ x, i })).filter(({ i }) => unlocked(s, i)).map(({ x, i }) => ({ label: `stage ${x.id}`, text: x.name ? `Stage ${i + 1}: ${x.name}` : `Stage ${i + 1}`, actions: { select_stage: x.id } }));
   });
 }

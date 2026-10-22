@@ -6,6 +6,7 @@
 // Nothing game-specific: every rule keys off primitive ids, cards and data.
 
 import { unclaimedChoices } from '../engine/runtime-lib-controls.js';
+import { loopInstances, readsOf, winQuantity, endsGame } from '../../planner/loop.js';
 
 const has = (registry, id) => (registry ? registry.has(id) : true);
 const sysOf = (doc, id) => (doc.systems || []).find(s => s.use === id || s.use.startsWith(id + '.'));
@@ -72,8 +73,66 @@ export function defaultWorldGraphics(doc, registry) {
   return out;
 }
 
-/** HUD configuration derived from the document's systems and player archetype. */
-export function defaultHud(doc) {
+// ---- The quantities a person watches: what the loops' win and lose read (card.loop win/lose reads; the win's is
+// planner/loop.js winQuantity, the quantity the gate measures), as the end declares a person watches it:
+//   end.shown  { var, max?, label? } | { bar } | [...] | (config, doc) => [...]: what shows it when that is not the read
+//              itself (a measurement var, an event every racer emits); max a number, a var or { param } of the instance;
+//   end.once   the end happens at the first occurrence of what it reads: there is no quantity to watch;
+//   otherwise  the read: a var, an event's count (the won ending's target as its max) or a component of entities.
+const titleCase = s => String(s).replace(/[_-]+/g, ' ').replace(/^./, c => c.toUpperCase());
+/** The ending a document wins by testing an event count or a var, with its comparison target. */
+const wonEnding = (doc, test) => (doc.plot?.endings || []).find(e => (e.outcome ?? 'won') === 'won' && e.when && test(e.when));
+/**
+ * HUD goals for a document: [{ end, use, var? | count? | component?, of? | bar?, max?, label? }], one per quantity, win first.
+ * @param {any} doc @param {any} registry
+ */
+export function hudGoals(doc, registry) {
+  if (!registry) return [];
+  const loops = loopInstances(doc, registry), out = [], keys = new Set();
+  const win = winQuantity(doc, registry), owner = win ? loops.find(l => l.use === win.use) : null;
+  const ends = [...(owner ? [{ end: 'win', l: owner, e: owner.loop.win }] : []), ...loops.filter(l => l.loop.lose && endsGame(l.loop.lose) && readsOf(l.loop.lose)).map(l => ({ end: 'lose', l, e: l.loop.lose }))];
+  for (const { end, l, e } of ends) {
+    if (e.once) continue;
+    let list;
+    if (e.shown !== undefined) list = (Array.isArray(e.shown) ? e.shown : [e.shown]).flatMap(q => shownEntries(q, l.config));
+    else {
+      const rd = readsOf(e);
+      if (rd.var) { const t = end === 'win' && win?.var === rd.var ? win.target : undefined; list = [{ var: rd.var, ...(t !== undefined ? { max: t } : {}) }]; }
+      else if (rd.event) { const ending = wonEnding(doc, w => typeof w.count === 'string' && (w.count === rd.event || w.count.startsWith(rd.event + ':'))); const t = ending && ['gte', 'gt', 'eq'].find(k => typeof ending.when[k] === 'number'); list = [{ count: ending ? ending.when.count : rd.event, ...(t ? { max: ending.when[t] } : {}) }]; }
+      else list = [{ component: rd.component, of: rd.of || 'opponents' }];
+    }
+    for (const q of list) {
+      const max = q.max && typeof q.max === 'object' ? l.config[q.max.param] : q.max;
+      const g = { end, use: l.use, ...q, ...(max !== undefined ? { max } : {}) };
+      if (g.max === undefined) delete g.max;
+      const key = JSON.stringify([g.var, g.count, g.component, g.of, g.bar]);
+      if (keys.has(key)) continue;
+      keys.add(key); out.push(g);
+    }
+  }
+  return out;
+}
+const NUM = ['gt', 'gte', 'lt', 'lte', 'eq'];
+/** Does an instance config meet a shown entry's `applies` ({ param, gt|gte|lt|lte|eq }: a number its param must compare to). */
+const applies = (a, config) => !a || NUM.every(k => a[k] === undefined || ({ gt: (x, y) => x > y, gte: (x, y) => x >= y, lt: (x, y) => x < y, lte: (x, y) => x <= y, eq: (x, y) => x === y })[k](Number(config[a.param]), a[k]));
+/**
+ * The entries a declared `shown` stands for on an instance: itself, or one per entry of a list param (`each: { param,
+ * where? }`, the entry's fields matching `where`) with `$id` in its strings replaced by that entry's id and `$name` by its
+ * declared name (display text; '' when it declares none). Data only.
+ */
+function shownEntries(q, config) {
+  if (!q || typeof q !== 'object' || !applies(q.applies, config)) return [];
+  const { each, applies: _, ...rest } = q;
+  if (!each) return [rest];
+  const sub = (v, x) => (typeof v === 'string' ? v.replaceAll('$id', String(x.id)).replaceAll('$name', typeof x.name === 'string' ? x.name : '') : v);
+  return (Array.isArray(config[each.param]) ? config[each.param] : []).filter(x => x && Object.entries(each.where || {}).every(([k, v]) => x[k] === v))
+    .map(x => Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, sub(v, x)])));
+}
+/** Does a UI card's `displays` cover a goal (ui-battle shows every side's units' health). */
+const displays = (card, g) => (card?.displays || []).some(d => (d.component && d.component === g.component && (d.of ?? g.of) === g.of) || (d.var && d.var === g.var) || (d.count && d.count === g.count));
+
+/** HUD configuration derived from the document's systems and player archetype, and the loops' goal quantities. */
+export function defaultHud(doc, registry = null, goals = hudGoals(doc, registry)) {
   const player = doc.content?.archetypes?.find(a => a.id === doc.player?.archetype)?.components || {};
   const meters = [], counters = [];
   const hpMax = player.health?.max;
@@ -83,8 +142,8 @@ export function defaultHud(doc) {
   }
   const pools = sysOf(doc, 'gameplay.resource')?.with?.pools?.map(p => p.id) || Object.keys(player.resources || {});
   for (const id of pools) meters.push({ pool: id, pos: 'top-left' });
-  for (const c of sysOf(doc, 'gameplay.economy')?.with?.currencies || []) counters.push({ var: c.var || `money.${c.id}`, icon: c.icon || c.id, label: c.name, pos: 'top-right' });
-  for (const c of sysOf(doc, 'gameplay.collectible')?.with?.counters || []) if (c.var) counters.push({ var: c.var, icon: c.icon || c.id, label: c.name || c.id, pos: 'top-right' });
+  for (const c of sysOf(doc, 'gameplay.economy')?.with?.currencies || []) counters.push({ var: c.var || `money.${c.id}`, icon: c.icon || 'coin', label: c.name || '', pos: 'top-right' });
+  for (const c of sysOf(doc, 'gameplay.collectible')?.with?.counters || []) if (c.var) counters.push({ var: c.var, icon: c.icon || null, label: c.name || '', pos: 'top-right' });
   const v = doc.views?.primary;
   return {
     meters, counters,
@@ -94,7 +153,8 @@ export function defaultHud(doc) {
     clock: uses(doc, 'engine.time'),
     compass: (v === '3p' || v === '1p') && uses(doc, 'plot.quest'),
     status: uses(doc, 'gameplay.combat.status') || uses(doc, 'gameplay.combat.health'),
-    bossBar: uses(doc, 'gameplay.combat.boss'),
+    bossBar: goals.some(g => g.bar === 'boss'),
+    goals: goals.map(({ end, use, ...q }) => ({ end, use, ...q })),
     crosshair: v === '1p' ? 'dot' : 'none',
   };
 }
@@ -111,7 +171,7 @@ export function defaultGraphics(doc, registry) {
   const players = (doc.content?.archetypes || []).filter(a => a.kind === 'player');
   if (textual) add('graphics.ui.story', { style: 'auto' });
   add('graphics.ui.menu', { select: players.length > 1 && acts.has('select_character') ? [{ id: 'character', kind: 'character', action: 'select_character' }] : [] });
-  if (!textual) add('graphics.ui.hud', defaultHud(doc));
+  if (!textual) add('graphics.ui.hud', defaultHud(doc, registry));
   if (!textual && ['plot.dialogue', 'plot.barks', 'plot.storyboard', 'plot.cutscene', 'plot.events.random'].some(id => uses(doc, id))) add('graphics.ui.dialogue', {});
   if (uses(doc, 'plot.quest') || uses(doc, 'plot.journal') || uses(doc, 'plot.investigation')) {
     const tags = new Set((doc.plot?.entries || []).map(e => e.tag || 'lore'));
@@ -135,6 +195,13 @@ export function defaultGraphics(doc, registry) {
   if (uses(doc, 'gameplay.creature.battle') || uses(doc, 'gameplay.turns')) add('graphics.ui.battle', {});
   if (uses(doc, 'gameplay.cards')) add('graphics.ui.cards', {});
   if (![...listed].some(u => u.startsWith('graphics.audio.'))) add('graphics.audio.synth', {});
+  // The loops' goal quantities go to the HUD unless another UI the document mounts displays them (card.displays: the
+  // battle screen shows every side's health); a text or menu game mounts the HUD for the ones nothing else shows.
+  const mounted = [...listed, ...out.map(g => g.use)].map(u => registry?.get(u)?.card).filter(Boolean);
+  const goals = hudGoals(doc, registry).filter(g => !mounted.some(c => displays(c, g)));
+  const hud = out.find(g => g.use === 'graphics.ui.hud');
+  if (hud) hud.with = defaultHud(doc, registry, goals);
+  else if (textual && goals.length) add('graphics.ui.hud', defaultHud(doc, registry, goals));
   // Every choice verb the document's loops declare (card.actionSpace 'choice') gets a control: the UI primitives above
   // issue the ones their card.controls name; graphics.ui.choices issues the rest from the game's options.
   if (unclaimedChoices({ ...doc, graphics: [...(doc.graphics || []), ...out] }, registry).length) add('graphics.ui.choices', {});

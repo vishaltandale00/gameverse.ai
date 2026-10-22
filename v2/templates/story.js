@@ -10,7 +10,7 @@ export default {
   concept: 'Story adventure: explore places, talk to characters and choose what to say, collect items and clues, open locked ways and reach one of several endings.',
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'story', title: 'Story', seed: 1, views: { primary: 'text' },
-    spaces: [{ id: 'town', use: 'engine.space.graph', zones: [
+    spaces: [{ id: 'town', use: 'engine.space.graph', with: { scenery: 'ocean' }, zones: [
       { id: 'harbour', name: 'Harbour', tags: ['town', 'water'], exits: [{ to: 'inn' }, { to: 'chapel' }, { to: 'cliffs' }] },
       { id: 'inn', name: 'Inn', tags: ['town', 'indoors'], exits: [{ to: 'harbour' }] },
       { id: 'chapel', name: 'Chapel', tags: ['town', 'indoors'], exits: [{ to: 'harbour' }] },
@@ -112,5 +112,5 @@ export default {
     },
     player: { archetype: 'visitor', space: 'town', at: 'harbour' },
   },
-  tune: [],
+  tune: ['engine.space.graph.scenery'],
 };

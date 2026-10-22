@@ -13,6 +13,7 @@ import { compare } from '../../kernel/logic.js';
 import { ID_PATTERN } from '../../kernel/sections.js';
 import { allowInTurnModal } from './turns.js';
 import { pushModal, popModal, alive, sortedEntities, err, runBound, bindRoles, matchesAny } from './modes-lib-util.js';
+import { entityName } from '../engine/runtime-lib-names.js';
 
 const ID = 'gameplay.cards';
 const TYPES = ['attack', 'skill', 'power', 'minion', 'spell', 'curse', 'status'];
@@ -32,7 +33,7 @@ export default {
   card: {
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { play_card: { type: 'choice', of: 'a card in hand (and its target)', from: 'options', emits: ['card_played'] }, attack_with: { type: 'choice', of: 'a board card and its target', from: 'options', emits: ['minion_attacked'] }, pick_card: { type: 'choice', of: 'a reward card', from: 'options', emits: ['card_picked'] } },
-    loop: { verbs: ['play_card', 'attack_with', 'pick_card'],
+    loop: { shows: [], verbs: ['play_card', 'attack_with', 'pick_card'],
       // Minions attack in duels; a roguelike offers reward cards after a won battle when it has a pool to draw them from.
       verbsOf: config => ['play_card', ...(config.format === 'duel' ? ['attack_with'] : []), ...(config.format === 'roguelike' && config.rewards?.choices > 0 && config.rewards?.pool?.length ? ['pick_card'] : [])], progress: ['card_played', 'card_damage', 'minion_died'],
       // As an encounter: the card battle ends through gameplay.turns (card.mode.via), whose victory and defeat params it uses.
@@ -355,8 +356,10 @@ export default {
 
     rt.options(rt => {
       // label: the solvers' unique key; text: what a person reads (the document's card and enemy names).
-      const s = st(), o = s.owners.player, D = defs(), named = id => D.get(id)?.name || id, foeName = id => rt.entity(id)?.components.name ?? id;
-      if (!o || s.over || turns().current()?.side !== unitSide('player')) return s.reward ? [...s.reward.map(c => ({ label: `pick ${c}`, text: `Take ${named(c)}`, actions: { pick_card: c } })), { label: 'skip reward', text: 'Skip the reward', actions: { pick_card: 'skip' } }] : [];
+      const s = st(), o = s.owners.player, D = defs(), named = id => D.get(id)?.name ?? null, foeName = id => entityName(rt, id);
+      // text only from declared names (a card or fighter that declares none gets no text: never an id).
+      const said = (parts, f) => (parts.every(Boolean) ? { text: f(...parts) } : {});
+      if (!o || s.over || turns().current()?.side !== unitSide('player')) return s.reward ? [...s.reward.map(c => ({ label: `pick ${c}`, ...said([named(c)], n => `Take ${n}`), actions: { pick_card: c } })), { label: 'skip reward', text: 'Skip the reward', actions: { pick_card: 'skip' } }] : [];
       const foes = opponentsOf('player'), out = [];
       // The targets playCard and attackWith accept: the opposing fighters, their minions, and, while a taunt minion
       // stands, only the taunts for an attack.
@@ -370,11 +373,11 @@ export default {
         if (d.type === 'minion' && o.board.length >= config.boardSize) continue;
         const kind = d.target ?? (d.type === 'attack' ? 'enemy' : 'none');
         const targets = kind === 'enemy' ? foes : kind === 'minion' ? minions : kind === 'any' ? [...foes, ...minions] : null;
-        if (targets) for (const t of targets) out.push({ label: `play ${c.card} ${c.uid} on ${t}`, text: `Play ${named(c.card)} on ${targetName(t)}`, actions: { play_card: { uid: c.uid, target: t } } });
-        else out.push({ label: `play ${c.card} ${c.uid}`, text: `Play ${named(c.card)}`, actions: { play_card: { uid: c.uid } } });
+        if (targets) for (const t of targets) out.push({ label: `play ${c.card} ${c.uid} on ${t}`, ...said([named(c.card), targetName(t)], (n, on) => `Play ${n} on ${on}`), actions: { play_card: { uid: c.uid, target: t } } });
+        else out.push({ label: `play ${c.card} ${c.uid}`, ...said([named(c.card)], n => `Play ${n}`), actions: { play_card: { uid: c.uid } } });
       }
       const attackable = taunts.length ? taunts : [...(enemyOwners.length ? ['hero'] : []), ...minions];
-      for (const m of o.board) if (!m.sick && !m.attacked && m.power > 0) for (const t of attackable) out.push({ label: `attack with ${m.card} ${m.uid} on ${t}`, text: `Attack ${targetName(t)} with ${named(m.card)}`, actions: { attack_with: { uid: m.uid, target: t } } });
+      for (const m of o.board) if (!m.sick && !m.attacked && m.power > 0) for (const t of attackable) out.push({ label: `attack with ${m.card} ${m.uid} on ${t}`, ...said([targetName(t), named(m.card)], (on, n) => `Attack ${on} with ${n}`), actions: { attack_with: { uid: m.uid, target: t } } });
       return out;
     });
 

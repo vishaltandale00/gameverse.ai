@@ -5,8 +5,7 @@
 // cleared, row and column transitions, holes, cumulative wells), with a
 // one-piece lookahead over the best candidates. Works on any board exposed by
 // the `board` service or an editCells space; y is up (row 0 at the bottom).
-import { boardOf, readBoard, filledCount, simulateOption, untilDecision, multiSeed, ownerPath, problem } from './common.js';
-import { budget as makeBudget } from '../util.js';
+import { boardOf, readBoard, filledCount, simulateOption, untilDecision, toDecision, multiSeed, ownerPath, problem, seedBudgets } from './common.js';
 
 export const WEIGHTS = { landing: -4.500158825082766, cleared: 3.4181268101392694, rowT: -3.2178882868487753, colT: -9.348695305445199, holes: -7.899265427351652, wells: -3.3855972247263626 };
 
@@ -41,18 +40,21 @@ export function evaluatePlacement(before, after, pieceCells) {
 
 const mode = list => { const c = new Map(); for (const v of list) c.set(v, (c.get(v) || 0) + 1); return [...c].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0]?.[0] ?? 0; };
 
-/** Candidates from the current decision point: [{ i, after, v, cleared }]. */
-function candidates(rt, board, b) {
-  const snap = rt.snapshot(), before = readBoard(board), n = rt.availableOptions().length, raw = [];
-  for (let i = 0; i < n; i++) { simulateOption(rt, snap, i, { b }); raw.push({ i, after: readBoard(board), status: rt.state.status, snap: rt.snapshot() }); }
+/**
+ * Candidates from the current decision point, whose options are `options` (read there once): [{ i, after, v, cleared,
+ * next, snap? }], `next` the options of the decision each leads to; `keep`: snapshot each result (to look further).
+ */
+function candidates(rt, board, options = rt.availableOptions(), keep = true) {
+  const snap = rt.snapshot(), before = readBoard(board), raw = [];
+  for (let i = 0; i < options.length; i++) { const next = simulateOption(rt, snap, i, { options }); raw.push({ i, after: readBoard(board), status: rt.state.status, next, ...(keep ? { snap: rt.snapshot() } : {}) }); }
   rt.restore(snap);
   const piece = Math.max(1, mode(raw.map(r => filledCount(r.after) - filledCount(before)).filter(d => d > 0)));
   return raw.map(r => { const e = evaluatePlacement(before, r.after, piece); return { ...r, ...e, v: r.status === 'won' ? 1e9 : r.status === 'lost' ? -1e9 : e.v }; });
 }
 
 /** Choose the best option index at a decision point, with optional one-piece lookahead. */
-export function choosePlacement(rt, board, { depth = 2, top = 5, b = null } = {}) {
-  const first = candidates(rt, board, b).sort((x, y) => y.v - x.v);
+export function choosePlacement(rt, board, { depth = 2, top = 5, options = rt.availableOptions() } = {}) {
+  const first = candidates(rt, board, options, depth >= 2).sort((x, y) => y.v - x.v);
   if (!first.length) return null;
   if (depth < 2) return first[0];
   const snap = rt.snapshot();
@@ -60,8 +62,8 @@ export function choosePlacement(rt, board, { depth = 2, top = 5, b = null } = {}
   for (const c of first.slice(0, top)) {
     rt.restore(c.snap);
     let v = c.v;
-    if (c.status === 'playing' && rt.availableOptions().length) {
-      const next = candidates(rt, board, b);
+    if (c.status === 'playing' && c.next.length) {
+      const next = candidates(rt, board, c.next, false);
       v = next.length ? Math.max(...next.map(x => x.v)) + WEIGHTS.cleared * c.cleared + 0.25 * c.v : -1e9;
     }
     if (!best || v > best.v) best = { ...c, v };
@@ -85,29 +87,31 @@ export default {
     for (let i = 0; i < Math.min(n, 6); i++) { simulateOption(rt, snap, i); if (filledCount(readBoard(board)) > before) grew++; }
     return grew >= Math.min(n, 6) * 0.8;
   },
-  run(ctx, { pieces = 150, depth = 2, seeds = [1, 2, 3], budgetMs = 2000, maxSteps = Infinity } = {}) {
-    const b = makeBudget({ ms: budgetMs, steps: maxSteps });
+  run(ctx, { pieces = 150, depth = 2, seeds = [1, 2, 3], maxSteps = Infinity } = {}) {
+    const sb = seedBudgets(maxSteps);
+    /** The budget of the seed being played (seedBudgets: one per seed). @type {any} */
+    let b = null;
     const probe = ctx.make(ctx.seed); untilDecision(probe, 600);
     const play = seed => {
-      const rt = ctx.make(seed), board = boardOf(rt);
+      const rt = (b = sb.budget()).meter(ctx.make(seed)), board = boardOf(rt);
       let placed = 0, cleared = 0, maxH = 0;
-      untilDecision(rt, 600, b);
+      let options = toDecision(rt, 600);
       while (rt.state.status === 'playing' && placed < pieces && !b.over()) {
-        const c = choosePlacement(rt, board, { depth, b });
+        const c = choosePlacement(rt, board, { depth, options });
         if (!c) break;
-        simulateOption(rt, rt.snapshot(), c.i, { b }); // the real move: same simulation, kept
+        options = simulateOption(rt, rt.snapshot(), c.i, { options }); // the real move: same simulation, kept
         placed++; cleared += c.cleared; maxH = Math.max(maxH, c.maxH);
       }
       const won = rt.state.status === 'won' || (rt.state.status === 'playing' && placed >= pieces);
       return { seed, won, status: rt.state.status, pieces: placed, cleared, maxHeight: maxH, budget: b.hit && !won };
     };
     // Every seed it is given is played (one run per seed): one seed must win, several at two in three.
-    const r = multiSeed(play, { seeds, passRate: seeds.length > 1 ? 2 / 3 : 1, b });
+    const r = multiSeed(play, { seeds, passRate: seeds.length > 1 ? 2 / 3 : 1 });
     const path = ownerPath(ctx, probe, ['gameplay.falling', 'gameplay.puzzle']);
     const problems = [];
     const finished = r.runs.filter(x => !x.budget);
     if (!finished.length) problems.push(problem('budget_exhausted', path, 'placement search ran out of budget before a run finished', { severity: 'warning' }));
     else if (!r.ok) { const f = finished.find(x => !x.won) || finished[0]; problems.push(problem('level_too_hard', path, `a placement-search bot ${f.status === 'lost' ? `topped out after ${f.pieces} pieces` : `did not meet the goal in ${f.pieces} pieces`} in ${r.runs.length - r.wins}/${r.runs.length} runs`, { hint: 'lower the fall speed, use fewer garbage rows or a shorter starting layout' })); }
-    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`a placement bot (El-Tetris weights, lookahead ${depth - 1}) met the goal or survived ${pieces} pieces in ${r.wins}/${r.runs.length} runs`] : [], problems, metrics: { runs: r.runs }, exhaustive: false, budget: b.report() };
+    return { ok: !problems.some(p => p.severity === 'error'), proven: r.ok ? [`a placement bot (El-Tetris weights, lookahead ${depth - 1}) met the goal or survived ${pieces} pieces in ${r.wins}/${r.runs.length} runs`] : [], problems, metrics: { runs: r.runs }, exhaustive: false, budget: sb.report() };
   },
 };

@@ -15,19 +15,23 @@ const STATES = ['kickoff', 'play', 'goal', 'break', 'over', 'won', 'lost', 'draw
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['kick'], progress: ['goal', 'ball_touched', 'kick'] },
+    // The archetype its `ball` param names reads as a ball on screen (graphics/flat-art.js; never its name).
+    presents: { ball: { role: 'prop', vector: 'orb' } },
+    // Whose side its entities are on, for every consumer: wins, bots, combat teams, AI, renderers (kernel/sides.js).
+    sides: { param: 'teams', members: 'members' },
+    loop: { shows: ['entities', 'zones'], verbs: ['kick'], progress: ['goal', 'ball_touched', 'kick'] },
     // The player plays: it joins the first team when no team lists it.
     engage: { join: { param: 'teams', field: 'members' } },
     // Ball-sport mode: the player's team scores into goal zones against the other team before the clock runs out.
     // Its target service (mode.targets): every team member but the player goes for the ball while play is live.
-    mode: { loop: 'ball-sport', interaction: 'avatar-realtime', opponent: 'ai-side', space: ['engine.space.physics2d', 'engine.space.arena2d', ['position']], needs: { content: ['content.archetypes', 'spaces.zones'], participants: 'teams' }, targets: 'sports.targets', win: { param: 'onWin', end: 'endGame', reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, lose: { param: 'onLose', end: 'endGame', reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, bot: 'striker' },
+    mode: { loop: 'ball-sport', interaction: 'avatar-realtime', opponent: 'ai-side', space: ['engine.space.physics2d', 'engine.space.arena2d', ['position']], needs: { content: ['content.archetypes', 'spaces.zones'], participants: 'teams' }, targets: 'sports.targets', win: { param: 'onWin', end: 'endGame', shown: { var: 'score.*' }, reads: { event: 'goal', of: 'player', by: { actions: ['kick'], movement: true } } }, lose: { param: 'onLose', end: 'endGame', shown: { var: 'score.*' }, reads: { event: 'goal', by: { actions: ['kick'], movement: true } } }, bot: 'striker' },
     intent: 'Ball sports: ball, teams, goal zones, kickoffs, match clock with periods and overtime (golden goal or extra time), mercy rule, kicks, touches and last-touch scoring, possession; the ball rides the physics space when it has dynamics, else it is simulated here with drag, gravity, bounces and hits from players and cars.',
     views: ['td', 'side', '3p'],
     params: {
       ball: { type: 'ref', to: 'archetype', required: true, effect: 'the ball archetype' },
       ballId: { type: 'string', default: 'ball' },
       ballAt: { type: 'list', of: { type: 'number' }, min: 2, max: 3, required: true, effect: 'kickoff spot of the ball, in space coordinates' },
-      teams: { type: 'list', min: 2, required: true, of: { type: 'object', fields: { id: { type: 'string', required: true }, members: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [] }, kickoff: { type: 'list', of: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'position in space coordinates' }, default: [], effect: 'kickoff spots of the members, in order' } } } },
+      teams: { type: 'list', min: 2, required: true, of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'what a person reads for the team (the scoreboard)' }, members: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [] }, kickoff: { type: 'list', of: { type: 'list', of: { type: 'number' }, min: 2, max: 3, effect: 'position in space coordinates' }, default: [], effect: 'kickoff spots of the members, in order' } } } },
       goals: { type: 'list', min: 1, required: true, of: { type: 'object', fields: { zone: { type: 'ref', to: 'zone', required: true }, scores: { type: 'ref', to: 'sports_team', required: true, effect: 'the teams[] team awarded when the ball enters' } } } },
       periodSec: { type: 'number', default: 180, min: 1, max: 7200, unit: 's' },
       periods: { type: 'integer', default: 2, min: 1, max: 9 },

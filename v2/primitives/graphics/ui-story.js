@@ -5,7 +5,7 @@
 // renderer for graph and none spaces, and a readable overlay elsewhere.
 // Endings are left to graphics.ui.menu's results screen when it is present.
 import { THEMES, resolveTheme } from './ui-theme.js';
-import { uiHost, fill, setText, setClass, pulse, later, charName, itemName, docZone, zoneName, titleCase, tellsOf, tellWords } from './ui-lib.js';
+import { uiHost, fill, setText, setClass, pulse, charName, itemName, docZone, zoneName, titleCase, tellsOf, tellWords } from './ui-lib.js';
 import { portraitColor } from './ui-portrait.js';
 import { moveFocus } from './ui-input.js';
 import * as S from './ui-sources.js';
@@ -20,6 +20,8 @@ export function optionLabel(doc, o) {
 export default {
   id: 'graphics.ui.story',
   card: {
+    // The quantities it shows a person: the story's beats as its scenes (graphics/ui-defaults.js hudGoals).
+    displays: [{ count: 'beat' }],
     intent: 'Shows the current scene, a running story log of dialogue and events, the inventory, and the available choices as focusable buttons (keyboard, gamepad, pointer, number keys); renders endings when no results screen exists.',
     views: ['text', 'overlay'],
     // It lists the game's options as its choices and sends the chosen one's actions (ARCHITECTURE §6.3: menu, choose an option).
@@ -67,27 +69,27 @@ export default {
     rt.on('say', e => sayLine(e.character, e.text));
     rt.on('dialogue_line', e => sayLine(e.who, e.text));
     rt.on('bark', e => push('note', e.character ? `${charName(doc(), e.character)}: ${e.text ?? e.line}` : String(e.text ?? e.line ?? '')));
-    rt.on('item_gained', e => (e.who || 'player') === 'player' && push('note', 'You take the ', el('b', { text: itemName(doc(), e.item) }), '.'));
-    rt.on('item_lost', e => (e.who || 'player') === 'player' && push('note', 'You hand over the ', el('b', { text: itemName(doc(), e.item) }), '.'));
     rt.on('blocked', () => push('note', 'That way is closed to you, for now.'));
     rt.on('gate_blocked', e => push('note', e.hint || 'Something bars the way.'));
     rt.on('beat', e => { const b = doc().plot?.storyboard?.acts?.flatMap(a => a.beats || []).find(x => x.id === e.beat); if (b?.title) push('beat', b.title); });
-    rt.on('act_start', e => { const a = doc().plot?.storyboard?.acts?.find(x => x.id === e.act); push('act', a?.title || titleCase(e.act)); });
+    rt.on('act_start', e => { const a = doc().plot?.storyboard?.acts?.find(x => x.id === e.act); if (a?.title) push('act', a.title); });
     // What the document's primitives declare they tell a person (card.tells): clues, conclusions, tasks, notes.
-    for (const t of tellsOf(rt.doc, rt.registry)) rt.on(t.event, e => { const w = tellWords(doc(), t, e); push('note', w.title ? `${w.label}: ` : w.label, ...(w.title ? [el('b', { text: w.title })] : []), ...(w.detail ? [` ${w.detail}`] : [])); });
+    // An event naming who it happened to (`who`) is told only when that is the player.
+    for (const t of tellsOf(rt.doc, rt.registry)) rt.on(t.event, e => { if (e?.who !== undefined && e.who !== 'player') return; const w = tellWords(doc(), t, e); push('note', w.title ? `${w.label}: ` : w.label, ...(w.title ? [el('b', { text: w.title })] : []), ...(w.detail ? [` ${w.detail}`] : [])); });
     rt.on('content_added', e => push('note', `The world grows: ${e.zones} new places, ${e.beats} new story beats.`));
     rt.on('game_end', e => {
       const end = doc().plot?.endings?.find(x => x.id === (e.ending ?? rt.state.ending));
       push('act', end?.title || (rt.state.status === 'won' ? 'The end' : 'Game over'));
       if (end?.epilogue || end?.text) push('say', end.epilogue || end.text);
-      if (!(doc().graphics || []).some(g => g.use === 'graphics.ui.menu')) { fill(ending, el('div.gv-results.gv-panel', {}, el('h2.gv-display', { text: end?.title || (rt.state.status === 'won' ? 'The end' : 'Game over') }), el('p.gv-epilogue', { text: end?.epilogue || end?.text || '' }))); later(() => ending.classList.remove('gv-hide'), 600); }
+      if (!(doc().graphics || []).some(g => g.use === 'graphics.ui.menu')) { fill(ending, el('div.gv-results.gv-panel', {}, el('h2.gv-display', { text: end?.title || (rt.state.status === 'won' ? 'The end' : 'Game over') }), el('p.gv-epilogue', { text: end?.epilogue || end?.text || '' }))); host.later(() => ending.classList.remove('gv-hide'), 600); }
     });
 
     rt.view.onFrame(() => {
       const p = rt.player(), space = p?.space ? rt.space(p.space) : null;
       const zoneId = typeof p?.at === 'string' ? p.at : p?.zone ?? null;
       const zone = zoneId ? (space?.zones?.get?.(zoneId) || docZone(doc(), zoneId)) : null;
-      options = rt.state.status === 'playing' && !host.input.modal ? rt.availableOptions() : [];
+      // The options no other mounted UI owns (ui-sources.js unownedOptions): a battle's commands are the battle screen's.
+      options = rt.state.status === 'playing' && !host.input.modal ? S.unownedOptions(rt, 'graphics.ui.story', rt.availableOptions()) : [];
       const items = Object.entries(S.bag(rt)).filter(([, n]) => n > 0);
       const key = JSON.stringify([zoneId, options.map(o => o.label), items, rt.state.status]);
       if (key === lastKey) return; lastKey = key;

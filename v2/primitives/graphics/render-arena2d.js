@@ -9,8 +9,10 @@ import { hubOf, bindSpace, ORDER, stageProjection, checkBinding, boundsOf, bindi
 import { driveFit, driveSide } from './flat-follow.js';
 import { drawEntity, lookOf, STATES, FLAT_MODEL_FIELDS } from './flat-models.js';
 import { drawBackdrop, defaultLayers, normalizeLayers } from './flat-backdrop.js';
+import { themeFor } from './flat-art.js';
 import { normalizeTheme, themeFromBlock, paintTile } from './flat-tiles.js';
 import { blobMask } from './flat-autotile.js';
+import { drawZones } from './flat-zones.js';
 import { rgba, surface, ctx2d, light, shade } from './flat-util.js';
 import { modelsData, MODEL_COMPONENT } from './model-lib.js';
 
@@ -19,6 +21,9 @@ export default {
   card: {
     intent: 'Canvas renderer for arena2d spaces (fighters, shmups, asteroids, runners): side or top view, themed solid blocks and plank platforms, a camera that fits the scroll window, frames all fighters or follows the player, wrap ghosts and optional hit/hurt box overlays.',
     views: ['side', 'td'],
+    // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
+    // the document's loops show (card.loop.shows).
+    draws: ['entities', 'zones'],
     // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
     // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
     projection: { side: { kind: 'plane', right: '+x', up: '+y' }, td: { kind: 'plane', right: '+x', up: '+y' } },
@@ -74,9 +79,11 @@ export default {
     H.layer(ORDER.background, F => {
       if (H.cfg.backgrounds?.has(space)) return;
       const top = viewOf(apiOf()) === 'top';
-      S.defaultLayers ??= top ? normalizeLayers([{ pattern: 'gradient', depth: 0, color: '#05051a', fogColor: '#120a30' }, { pattern: 'void', depth: 0.05, color: '#2a1a6a' }, { pattern: 'stars', depth: 0.15, color: '#ffffff' }, { pattern: 'stars', depth: 0.45, color: '#bfe0ff' }]) : defaultLayers(F.doc, 'side');
+      // The space's declared scenery (engine/spaces2d-scenery.js): seen from above, space is a starfield; others its painted layers.
+      S.defaultLayers ??= top && themeFor(F.doc, space) === 'space' ? normalizeLayers([{ pattern: 'gradient', depth: 0, color: '#05051a', fogColor: '#120a30' }, { pattern: 'void', depth: 0.05, color: '#2a1a6a' }, { pattern: 'stars', depth: 0.15, color: '#ffffff' }, { pattern: 'stars', depth: 0.45, color: '#bfe0ff' }]) : defaultLayers(F.doc, top ? 'td' : 'side', space);
       drawBackdrop(F, S.defaultLayers);
     }, { space, name: 'arena2d.backdrop' });
+    H.layer(ORDER.world - 1, F => drawZones(F, apiOf()), { space, name: 'arena2d.zones' });
     H.layer(ORDER.world, F => draw(F), { space, name: 'render.arena2d' });
 
     function draw(F) {

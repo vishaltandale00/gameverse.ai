@@ -20,14 +20,14 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'board', title: 'Board', seed: 1,
     views: { primary: 'board' },
-    spaces: [{ id: 'board', use: 'engine.space.grid', with: { size: [8, 8], diagonals: true, exclusive: true },
+    spaces: [{ id: 'board', use: 'engine.space.grid', with: { scenery: 'castle', size: [8, 8], diagonals: true, exclusive: true },
       generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', terrain: [{ block: 'pillar', weight: 1, blocks: true }], density: 0.08, symmetry: 'rotate', teams: 2, deployDepth: 2 } }] }],
     systems: [
       { use: 'gameplay.combat.health', with: { iframes: 0 } },
       // The pieces are on the board before the first turn starts (the spawner runs before the turn order).
       { use: 'engine.spawner', with: { intervalSec: 0, rules: PIECES.map(([id, archetype, at]) => ({ id, archetype, at, unique: true, activation: 'always', respawnSec: 0 })) } },
       { use: 'gameplay.turns', with: {
-        sides: [{ id: 'light', control: 'player' }, { id: 'dark', control: 'ai' }], ap: 1, movePerAp: 1, actionsPerTurn: 1,
+        sides: [{ id: 'light', name: 'Light', control: 'player' }, { id: 'dark', name: 'Dark', control: 'ai' }], ap: 1, movePerAp: 1, actionsPerTurn: 1,
         overwatch: false, hitChance: false, despawnFallen: true,
         actions: [{ id: 'capture', label: 'Capture', range: 1.5, los: false, onHit: [{ do: 'damage', who: 'target', amount: 1 }] }],
         onVictory: won, onDefeat: lost } },
@@ -37,8 +37,8 @@ export default {
         piece('light_soldier', 'Light soldier', 'light', 1), piece('light_rider', 'Light rider', 'light', 2),
         piece('dark_soldier', 'Dark soldier', 'dark', 1), piece('dark_rider', 'Dark rider', 'dark', 2),
       ],
-      blocks: [{ id: 'pillar', name: 'Pillar', solid: true }],
+      blocks: [{ id: 'pillar', name: 'Pillar', solid: true, tile: 'rock', color: '#8a8478' }],
     },
   },
-  tune: ['engine.space.grid.diagonals', 'engine.generate.grid.board.symmetry'],
+  tune: ['engine.space.grid.scenery', 'engine.space.grid.diagonals', 'engine.generate.grid.board.symmetry'],
 };

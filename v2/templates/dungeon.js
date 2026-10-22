@@ -9,7 +9,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'dungeon', title: 'Dungeon', seed: 4, views: { primary: 'td' },
     // One body per cell: the space's own passability (canMove) is what blocks a step, as the grid movement does.
-    spaces: [{ id: 'dungeon', use: 'engine.space.grid', with: { size: [40, 40], exclusive: true },
+    spaces: [{ id: 'dungeon', use: 'engine.space.grid', with: { scenery: 'cave', size: [40, 40], exclusive: true },
       generators: [{ use: 'engine.generate.dungeon.rooms', with: { rooms: 8, branching: 0.3, keys: ['bronze_key', 'iron_key'], roomSize: [5, 7], boss: 'warden', guards: 'skeleton', guardsPerRoom: 1, palette: { wall: 'stone', door: 'locked_door' }, archetypes: { key: 'key', lock: 'locked_door', chest: 'chest' } } }] }],
     systems: [
       { use: 'gameplay.move.grid', with: { mode: 'step' } },
@@ -33,9 +33,9 @@ export default {
         { id: 'chest', name: 'Chest', components: {} },
       ],
       items: [{ id: 'bronze_key', name: 'Bronze key' }, { id: 'iron_key', name: 'Iron key' }],
-      blocks: [{ id: 'stone', name: 'Stone', solid: true }, { id: 'locked_door', name: 'Locked door', solid: true }],
+      blocks: [{ id: 'stone', name: 'Stone', solid: true, tile: 'rock', color: '#5a5668' }, { id: 'locked_door', name: 'Locked door', solid: true, tile: 'wood', color: '#9a6a3a' }],
     },
     player: { archetype: 'hero' },
   },
-  tune: [{ path: 'engine.generate.dungeon.rooms.rooms', min: 4, max: 12 }, { path: 'engine.generate.dungeon.rooms.guardsPerRoom', min: 1, max: 2 }, { path: 'gameplay.death.lives', min: 1, max: 9 }],
+  tune: ['engine.space.grid.scenery', { path: 'engine.generate.dungeon.rooms.rooms', min: 4, max: 12 }, { path: 'engine.generate.dungeon.rooms.guardsPerRoom', min: 1, max: 2 }, { path: 'gameplay.death.lives', min: 1, max: 9 }],
 };

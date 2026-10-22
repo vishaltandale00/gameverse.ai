@@ -2,7 +2,7 @@
 // gameplay primitives with capability requirements, and fakes for writers and decisions.
 // None of them is registered in the catalogue.
 import { testSpace } from '../v2/kernel/testing.js';
-import { buildCatalogue } from '../v2/planner/catalog.js';
+import { buildCatalogue, spaceVariants } from '../v2/planner/catalog.js';
 import { PRIMITIVES } from '../v2/primitives/index.js';
 
 const ALL = testSpace.card.provides.capabilities;
@@ -86,6 +86,21 @@ export function stepPick(req, { title = 'Test Game', premise = 'A test premise.'
   return JSON.stringify({ title, premise, primary: { name, kind: 'game', template: 'none' }, games: [], themes: [], readings: [], mechanics: [] });
 }
 
+/**
+ * A fixed selection (the shape select.js returns) for the tests of the stages after selection: the space, and what each
+ * of the decomposition's mechanics maps to (`map`: mechanic id -> primitive ids; `systems` adds requirements and
+ * infrastructure). Selection itself is the model's build (v2-p-pipeline-build*.test.js); these fixtures stand for
+ * its result, never for a guess the pipeline makes.
+ */
+export function selectionOf(registry, decomposition, { space, id = 'world', map = {}, systems = [], generators = [], variant = 0 }) {
+  const v = spaceVariants(registry, space)[variant];
+  return { version: 'test', provider: 'test', ms: 0, graphics: [], bind: {}, gaps: [],
+    spaces: [{ id, use: space, with: v.with, role: id, caps: [...v.caps] }],
+    systems: [...new Set([...Object.values(map).flat(), ...systems])], generators: generators.map(g => ({ id: g, space: id })),
+    mechanics: decomposition.mechanics.map(m => ({ ...m, primitives: [...(map[m.id] || [])], candidates: [], source: 'test', score: map[m.id]?.length ? 1 : 0 })),
+    completeness: { locomotion: { view: null, medium: null, removed: [], added: null } } };
+}
+
 /** Decisions that answer from a function of the questions. */
 export function fakeDecisions(answer, provider = 'fake') {
   const calls = [];
@@ -126,6 +141,8 @@ export function buildAnswer(req, { space = [], picks = {}, steps = {}, covered =
   // lists the scripted preference; otherwise the scripted model takes the first event offered).
   if (name === 'pick_nested_trigger') { const offered = props.pick.enum.filter(x => x !== 'none'); return JSON.stringify({ pick: (steps.trigger || []).find(e => offered.includes(e)) || offered[0] || 'none', why: 'scripted' }); }
   // build-steps.js askWins: several primitives declare a win; steps.wins lists the scripted preference (else the first offered).
+  // select.js pick_world: a space that declares alternative worlds; steps.world lists the scripted preference (else the first offered).
+  if (name === 'pick_world') { const offered = props.world.enum; return JSON.stringify({ world: (steps.world || []).find(w => offered.includes(w)) || offered[0], why: 'scripted' }); }
   if (name === 'pick_game_win') { const offered = props.pick.enum; return JSON.stringify({ pick: (steps.wins || []).find(id => offered.includes(id)) || offered[0], why: 'scripted' }); }
   const step = /^pick_(win|lose|driver|coverage)$/.exec(name)?.[1];
   if (step) {

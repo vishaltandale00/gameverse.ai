@@ -15,12 +15,15 @@ import { wallLoops, roundedLoop } from './flat-maze.js';
 import { drawBackdrop, defaultLayers } from './flat-backdrop.js';
 import { normalizeTheme, themeFromBlock, paintTile } from './flat-tiles.js';
 import { blobMask } from './flat-autotile.js';
+import { blockColorOf, drawZones, marksOf, drawMark, drawLabel } from './flat-zones.js';
 import { TAU, rgba, mix, light, shade, col, isHex, neon, lerp, path as getPath, surface, ctx2d, easeOutBack, hash2 } from './flat-util.js';
 import { modelsData, MODEL_COMPONENT, color, blocksData } from './model-lib.js';
 
 const SQ3 = Math.sqrt(3);
-const PIECE_WORDS = [['gem', /gem|jewel|candy|crystal/], ['blob', /blob|slime|puyo|bean/], ['virus', /virus|germ/], ['capsule', /capsule|pill/], ['pellet', /pellet|dot|crumb/], ['power', /power|energizer/], ['coin', /coin/], ['star', /star/], ['heart', /heart/], ['bomb', /bomb/], ['crate', /crate|box/], ['rock', /rock|boulder/], ['block', /block|tile|brick|tetro|piece/], ['key', /key/]];
-const PIECE_SET = new Set(PIECE_WORDS.map(p => p[0]));
+// Pieces a non-wall cell can be drawn as. A block is a piece when it declares one as its `tile` (content.blocks[].tile);
+// what a cell is never comes from words in its id, name or tags (ARCHITECTURE §1.2: names are themed).
+export const PIECES = Object.freeze(['gem', 'blob', 'virus', 'capsule', 'pellet', 'power', 'coin', 'star', 'heart', 'bomb', 'crate', 'rock', 'block', 'key']);
+const PIECE_SET = new Set(PIECES);
 
 /** Corner points of a cell in layout coordinates. */
 export function cellShape(topology, center) {
@@ -34,6 +37,9 @@ export default {
   card: {
     intent: 'Canvas board for grid spaces (square, hex, iso): raised, tiled, neon-maze or flat walls, checker or terrain floors, animated piece cells, gliding pieces, hover/selection/move/attack highlights and click-to-act.',
     views: ['board', 'td', 'iso'],
+    // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
+    // the document's loops show (card.loop.shows).
+    draws: ['entities', 'cells', 'zones', 'labels', 'marks'],
     // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
     // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
     projection: space => (space?.topology === 'iso' ? {} : { td: { kind: 'plane', right: '+x', up: space?.yAxis === 'down' ? '-y' : '+y' }, board: { kind: 'plane', right: '+x', up: space?.yAxis === 'down' ? '-y' : '+y' } }),
@@ -77,8 +83,9 @@ export default {
       else anims.set(k, { kind: 'swap', t0: H.clock, block: ev.to });
     });
     const wallOf = (api, b) => { if (b == null) return false; const r = api.config?.rules?.[b]; if (r && r.pass !== undefined) return r.pass === false || (Array.isArray(r.pass) && !r.pass.length); return blocks().get(b)?.solid === true; };
-    const pieceOf = b => { const d = blocks().get(b) || { id: String(b) }; if (PIECE_SET.has(d.tile)) return d.tile; const text = [d.id, d.name, d.tile, ...(d.tags || [])].join(' ').toLowerCase(); return (PIECE_WORDS.find(([, re]) => re.test(text)) || [null])[0]; };
-    const blockColor = b => col(blocks().get(b)?.color, '#7a8aa0');
+    const pieceOf = b => { const t = blocks().get(b)?.tile; return PIECE_SET.has(t) ? t : null; };
+    // Every block has its own color: the declared one, else its content.blocks position's (no two blocks alike by construction).
+    const blockColor = b => blockColorOf(rt.doc, b);
     S.renderer = {
       prepare(F) { const api = apiOf(); const topo = api?.config?.topology; stageProjection(H, S, topo === 'iso' ? 'iso' : api?.config?.yAxis === 'down' ? 'ydown' : 'yup', topo === 'iso' ? { flipY: api?.config?.yAxis !== 'down' } : {}); },
       baseZoom(F) { const api = apiOf(); const [W, Hh] = api?.size || [8, 8]; return Math.min(config.maxCell, Math.max(8, Math.min(F.w / (W + 1), F.h / (Hh + 1)))); },
@@ -92,7 +99,7 @@ export default {
         if (F.proj.kind === 'iso') { cam.x = (W - 1) / 2; cam.y = (Hh - 1) / 2; cam.zoom = Math.min(config.maxCell, F.w / ((W + Hh) * 0.5 + 1), F.h / ((W + Hh) * 0.5 * F.proj.ratio + 1.5)); }
       },
     };
-    H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, 'td'); drawBackdrop(F, S.defaultLayers, { base: config.style === 'neon' ? '#05040e' : null }); }, { space, name: 'grid.backdrop' });
+    H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, 'td', space); drawBackdrop(F, S.defaultLayers, { base: config.style === 'neon' ? '#05040e' : null }); }, { space, name: 'grid.backdrop' });
     H.layer(ORDER.world, F => draw(F), { space, name: 'render.grid' });
 
     function cellTile(theme, mask, T = 16) {
@@ -164,6 +171,8 @@ export default {
         g.fillStyle = rgba(m.color, a); g.fill();
         if (m.outline || m.pulse) { g.strokeStyle = rgba(m.color, 0.8); g.lineWidth = Math.max(1, z * 0.05); g.stroke(); }
       }
+      // The zones the loops name (graphics/presentation.js), under the walls and pieces.
+      drawZones(F, api, { cellAnchored: true });
       // Walls.
       if (neonStyle) {
         loops ??= wallLoops(W, Hh, isWall, { inset: 0.5, wrapX: /x|both/.test(api.config.wrap || ''), wrapY: /y|both/.test(api.config.wrap || '') });
@@ -227,6 +236,9 @@ export default {
         g.save(); g.globalAlpha = 1 - t; drawPiece(g, piece, p[0], p[1], z * 0.42 * (1 + t * 0.6), light(blockColor(an.block), t * 0.6), F, 1, c, an.block); g.restore();
         if (t < 0.3) glow(g, p[0], p[1], z * (0.6 + t * 2), '#ffffff', 0.6 * (1 - t / 0.3));
       }
+      // Declared block labels (a 2048 tile's number) and the marks primitives publish (crop stages), over cells and pieces.
+      for (const [k, b] of cells) { const t = blocks().get(b)?.label; if (t == null || t === '') continue; const c = k.split(',').map(Number), p = F.toScreen(center(c)); drawLabel(g, t, p[0], p[1] - (wallOf(api, b) && !iso && style === 'board' ? config.wallHeight * z : 0), z * 0.42); }
+      for (const m of marksOf(rt, space)) { const p = F.toScreen(center(m.at.slice(0, 2))); drawMark(g, m, p[0], p[1], z * 0.45, F.t); }
       // Entities glide between cells with a little hop; drawn back to front.
       const items = F.entities.map(it => {
         let gp = glide.get(it.id);

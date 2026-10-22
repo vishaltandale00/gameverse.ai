@@ -5,12 +5,13 @@
 // combo/chain popups, crosshair, tracked objective, toasts and zone titles.
 // hudModel() is the pure view model; install() renders it and animates changes.
 import { THEMES, resolveTheme } from './ui-theme.js';
-import { uiHost, later, setText, setStyle, setClass, setHidden, keyed, fill, pulse, clamp, isNum, fmtInt, fmtHour, fmtClock, titleCase, itemName, zoneName, docItem, docSystem, docZone } from './ui-lib.js';
-import { icon, itemIcon } from './ui-icons.js';
+import { tellsOf, tellWords, uiHost, setText, setStyle, setClass, setHidden, keyed, fill, pulse, clamp, isNum, fmtInt, fmtHour, fmtClock, titleCase, itemName, zoneName, docItem, docSystem, docZone } from './ui-lib.js';
+import { icon, itemIcon, statusIcon } from './ui-icons.js';
 import { glyph } from './ui-input.js';
 import * as S from './ui-sources.js';
 import { spaceGeometry, heading, bearing } from './ui-spatial.js';
 import { entityPos } from './ui-cartography.js';
+import { onPlayerSide } from '../../kernel/sides.js';
 import { declaredDenials, deniesPlayer } from '../engine/runtime-lib-controls.js';
 import { itemsData } from './model-lib.js';
 
@@ -46,6 +47,17 @@ const card = {
       format: { type: 'string', default: 'number', options: ['number', 'clock', 'percent', 'ordinal', 'speed'], effect: 'how the value is written' },
       max: { type: 'number', effect: 'a fixed max shown as value/max' }, maxVar: { type: 'string', effect: 'the var holding a max shown as value/max' },
     } }, effect: 'labelled values: timers, laps, positions, speed, moves' },
+    goals: { type: 'list', default: [], of: { type: 'object', fields: {
+      end: { type: 'string', options: ['win', 'lose'], effect: 'the loop end this quantity is what a person watches for' },
+      use: { type: 'string', effect: 'the primitive whose loop end it is' },
+      var: { type: 'string', effect: "a var (a name ending in '.*': the scoreboard of its per-team vars)" },
+      count: { type: 'string', effect: 'an event, shown as how many times it happened' },
+      component: { type: 'string', effect: 'a component of entities, shown for the entities `of` names' },
+      of: { type: 'string', options: ['opponents', 'player'], default: 'opponents' },
+      bar: { type: 'string', options: ['boss'], effect: 'a bar widget that shows it (the boss bar)' },
+      max: { type: 'json', effect: 'the target: a number or a var name' },
+      label: { type: 'string' }, pos: pos('top-right'),
+    } }, effect: 'the quantities the loops\' win and lose read (ui-defaults.js hudGoals, from card.loop win/lose reads)' },
     prompt: { type: 'boolean', default: true, effect: 'contextual interact prompt with the device glyph' },
     compass: { type: 'boolean', default: false, effect: 'heading strip with the tracked objective marker' },
     clock: { type: 'boolean', default: false, effect: 'time of day and day count (engine.time vars)' },
@@ -83,9 +95,12 @@ function maxOf(rt, maxRef, fallbackVar) {
   if (fallbackVar?.startsWith('res.')) return p.components?.resources?.[fallbackVar.slice(4)]?.max ?? null;
   return null;
 }
-const DEFAULT_COLORS = { hp: '#ff5d6c', stamina: '#7ac060', mana: '#5aa8ff', focus: '#5a9ae0', hunger: '#d8a030', flame: '#ffb347', oxygen: '#7ad8ff', fuel: '#c8a060', soul: '#e8e4ff' };
+// The player's health (the kernel's mirrored var `hp`) is red; another meter has its declared colour, else one seeded by its id.
+const DEFAULT_COLORS = { hp: '#ff5d6c' };
 const poolColor = (id, explicit) => explicit || DEFAULT_COLORS[id] || ['#7ac060', '#5aa8ff', '#d8a030', '#c06cff', '#3ad0e8'][[...String(id)].reduce((a, c) => a + c.charCodeAt(0), 0) % 5];
 
+/** What a person reads for a team (gameplay.sports teams[].name), '' when the team declares none. */
+const teamName = (doc, id) => docSystem(doc, 'gameplay.sports')?.with?.teams?.find(t => t.id === id)?.name || '';
 /** How to draw a counter with a max: icons (one per point or per two) or a number. */
 export function counterDisplay(style, max) {
   if (style === 'number' || !isNum(max) || max <= 0) return { kind: 'number' };
@@ -139,7 +154,7 @@ export function hudModel(rt, config, local = {}) {
   for (const [i, c] of config.counters.entries()) {
     let value, max = null, ic;
     if (c.item) { value = S.bag(rt)[c.item] || 0; ic = c.icon ? { name: c.icon } : itemIcon(docItem(rt.doc, c.item)); }
-    else { value = vars[c.var]; bound.add(c.var); if (!isNum(value)) continue; max = maxOf(rt, isNum(c.max) ? c.max : c.maxVar || `${c.var}.max`, c.var); ic = { name: c.icon || c.var }; }
+    else { value = vars[c.var]; bound.add(c.var); if (!isNum(value)) continue; max = maxOf(rt, isNum(c.max) ? c.max : c.maxVar || `${c.var}.max`, c.var); ic = { name: c.icon || null }; }
     const display = counterDisplay(c.style, max);
     out.counters.push({ key: `c${i}`, value, max, icon: ic, label: c.label ?? (c.item ? itemName(rt.doc, c.item) : titleCase(c.var)), pos: c.pos, display, fills: display.kind === 'icons' ? iconFills(value, display.per, display.slots) : null });
   }
@@ -154,7 +169,7 @@ export function hudModel(rt, config, local = {}) {
   if (lv && isNum(vars[lv.var])) out.lives = { value: vars[lv.var], icon: lv.icon, pos: lv.pos };
   out.readouts = readoutsFor(rt, config);
   const teams = Object.keys(vars).filter(k => /^score\.[^.]+$/.test(k));
-  if (config.auto && teams.length >= 2) out.scoreboard = { teams: teams.slice(0, 2).map(k => ({ id: k.slice(6), name: titleCase(k.slice(6)), value: vars[k] })), clock: isNum(vars['match.clock']) ? fmtClock(vars['match.clock']) : null, period: vars['match.period'] ?? null };
+  if (config.auto && teams.length >= 2) out.scoreboard = { teams: teams.slice(0, 2).map(k => ({ id: k.slice(6), name: teamName(rt.doc, k.slice(6)), value: vars[k] })), clock: isNum(vars['match.clock']) ? fmtClock(vars['match.clock']) : null, period: vars['match.period'] ?? null };
   if (config.stars && isNum(vars[config.stars.var] ?? 0)) out.stars = { value: clamp(Math.round(vars[config.stars.var] ?? 0), 0, config.stars.max), max: config.stars.max, icon: config.stars.icon, pos: config.stars.pos };
   if (config.prompt) {
     const f = S.interactFocus(rt, 'player', local.focus || null);
@@ -165,12 +180,12 @@ export function hudModel(rt, config, local = {}) {
     if (b && b.hp > 0) {
       const def = docSystem(rt.doc, 'gameplay.combat.boss')?.with?.bosses?.find(x => x.id === b.id);
       const arch = def && rt.doc.content?.archetypes?.find(a => a.id === def.archetype);
-      out.boss = { id: b.id, name: local.bossNames?.[b.id] || arch?.name || def?.name || titleCase(def?.archetype || b.id || 'Boss'), frac: clamp(b.hp / b.max, 0, 1), phase: b.phase, notches: (def?.phases || []).map(p => p.at).filter(a => a > 0 && a < 1) };
+      out.boss = { id: b.id, name: local.bossNames?.[b.id] || arch?.name || def?.name || 'Boss', frac: clamp(b.hp / b.max, 0, 1), phase: b.phase, notches: (def?.phases || []).map(p => p.at).filter(a => a > 0 && a < 1) };
     }
   }
   if (config.status && player) {
     const defs = rt.doc.content?.statuses || [];
-    out.status = S.statuses(rt, player).map(s => { const d = defs.find(x => x.id === s.id); const dur = d?.duration; return { id: s.id, name: d?.name || titleCase(s.id), icon: d?.icon || s.id, remaining: s.remaining, frac: isNum(dur) && dur > 0 && isNum(s.remaining) ? clamp(s.remaining / dur, 0, 1) : 1, stacks: s.stacks || 1, good: (s.tags || d?.tags || []).includes('buff') }; });
+    out.status = S.statuses(rt, player).map(s => { const d = defs.find(x => x.id === s.id); const dur = d?.duration; return { id: s.id, name: d?.name || '', icon: statusIcon(d), remaining: s.remaining, frac: isNum(dur) && dur > 0 && isNum(s.remaining) ? clamp(s.remaining / dur, 0, 1) : 1, stacks: s.stacks || 1, good: (s.tags || d?.tags || []).includes('buff') }; });
   }
   if (config.clock && isNum(vars['time.hour'])) {
     const hr = vars['time.hour'];
@@ -180,7 +195,7 @@ export function hudModel(rt, config, local = {}) {
   if (config.objective && q) {
     const open = (q.objectives || []).filter(x => x.state !== 'done' && x.state !== 'failed' && !x.hidden);
     const o = open.find(x => x.state === 'active' && !x.optional) || open.find(x => !x.optional) || open[0] || null;
-    if (o) out.objective = { quest: q.id, title: q.title || titleCase(q.id), text: o.text || titleCase(o.id), progress: S.objectiveProgress(o), zone: o.zone || null };
+    if (o) out.objective = { quest: q.id, title: q.title || '', text: o.text || '', progress: S.objectiveProgress(o), zone: o.zone || null };
   }
   if (config.compass && player?.space) {
     const space = rt.doc.spaces.find(s => s.id === player.space);
@@ -194,7 +209,54 @@ export function hudModel(rt, config, local = {}) {
       out.compass = { heading: hdg, markers };
     }
   }
+  out.goals = goalsFor(rt, config, out, bound, local);
   return out;
+}
+
+const countOf = (rt, name) => { const c = rt.state.counts || {}; if (c[name] !== undefined) return c[name]; let n = 0; for (const k in c) if (k.startsWith(name + ':')) n += c[k]; return n; };
+const deadOf = e => { const h = e.components?.health; return Boolean(h && (h.dead || (isNum(h.hp) && h.hp <= 0))); };
+/**
+ * The loops' goal quantities (config.goals): each is shown as a readout, meter or bar of the model unless another
+ * widget already binds it. Returns [{ ...goal, shown }]: shown is whether the HUD shows it now.
+ */
+export function goalsFor(rt, config, out, bound = new Set(), local = {}) {
+  const vars = rt.state.vars, res = [];
+  const valueShown = v => bound.has(v) || out.score?.value !== undefined && (config.score?.var ?? 'score') === v || (out.lives && (config.lives?.var ?? 'lives') === v) || out.readouts.some(r => r.var === v);
+  const maxOf2 = m => (isNum(m) ? m : typeof m === 'string' && isNum(vars[m]) ? vars[m] : null);
+  for (const [i, g] of (config.goals || []).entries()) {
+    const key = `g${i}`, pos = g.pos || 'top-right';
+    if (g.var && g.var.endsWith('.*')) { res.push({ ...g, shown: Boolean(out.scoreboard) }); continue; }
+    if (g.var || g.count) {
+      // An absent var is 0, as the kernel's var predicate reads it (the win tests it from 0).
+      const v = g.var ? vars[g.var] ?? 0 : countOf(rt, g.count);
+      if (g.var && valueShown(g.var)) { res.push({ ...g, shown: true }); continue; }
+      if (!isNum(v)) { res.push({ ...g, shown: false }); continue; }
+      const max = maxOf2(g.max);
+      out.readouts.push({ key, var: g.var || `count:${g.count}`, label: g.label !== undefined ? g.label : titleCase(String(g.var || g.count).split('.').pop().replace(/:/g, ' ')), text: fmtInt(v) + (isNum(max) ? `/${fmtInt(max)}` : ''), pos, format: 'number', low: false });
+      res.push({ ...g, shown: true }); continue;
+    }
+    if (g.bar === 'boss') { res.push({ ...g, shown: Boolean(config.bossBar) }); continue; }
+    if (g.component) {
+      if ((g.of || 'opponents') === 'player') {
+        const p = rt.player(), h = p?.components?.[g.component];
+        if (g.component === 'health' && (bound.has('hp') || out.meters.some(m => m.id === 'hp') || out.counters.some(c => c.key === 'auto-hp'))) { res.push({ ...g, shown: true }); continue; }
+        if (h && isNum(h.hp)) { out.meters.push({ key, id: g.component, label: g.label ?? 'Health', value: h.hp, max: h.max ?? h.hp, frac: clamp(h.hp / (h.max || h.hp || 1), 0, 1), color: DEFAULT_COLORS.hp, pos: 'top-left', style: 'bar', low: h.hp / (h.max || 1) <= 0.25 }); res.push({ ...g, shown: true }); continue; }
+        res.push({ ...g, shown: false }); continue;
+      }
+      // The opponents a win counts: entities carrying the component that are not the player's or on its side (kernel/sides.js).
+      const foes = Object.values(rt.state.entities).filter(e => e.components?.[g.component] !== undefined && !onPlayerSide(rt, e)).sort((a, b) => (a.id < b.id ? -1 : 1));
+      const seen = (local.foes ??= new Set()); for (const e of foes) seen.add(e.id);
+      const alive = foes.filter(e => !deadOf(e));
+      if (g.component === 'health' && alive.length >= 1 && alive.length <= 3 && seen.size <= 3) for (const e of alive) {
+        const h = e.components.health, max = h.max ?? h.hp ?? 1, hp = h.hp ?? max;
+        out.meters.push({ key: `${key}:${e.id}`, id: e.id, label: S.entityName(rt, e.id), value: hp, max, frac: clamp(hp / (max || 1), 0, 1), color: '#e8404a', pos, style: 'bar', low: hp / (max || 1) <= 0.25 });
+      }
+      else out.readouts.push({ key, var: `foes:${g.component}`, label: g.label ?? 'Foes', text: `${fmtInt(alive.length)}/${fmtInt(seen.size)}`, pos, format: 'number', low: false });
+      res.push({ ...g, shown: true }); continue;
+    }
+    res.push({ ...g, shown: false });
+  }
+  return res;
 }
 
 export default {
@@ -249,25 +311,25 @@ export default {
       if (!config.toasts) return;
       const now = host.now();
       const same = key && live.find(t => t.key === key && now - t.at < 2.5);
-      if (same) { same.count += count || 1; same.at = now; setText(same.countEl, `×${same.count}`); pulse(same.el, 'is-pop'); clearTimeout(same.timer); same.timer = later(() => drop(same), 3200); return; }
+      if (same) { same.count += count || 1; same.at = now; setText(same.countEl, `×${same.count}`); pulse(same.el, 'is-pop'); host.clearLater(same.timer); same.timer = host.later(() => drop(same), 3200); return; }
       const countEl = el('span.gv-toast-count', { text: count > 1 ? `×${count}` : '' });
       const node = el('div.gv-toast.gv-panel', { data: { kind } }, iconName ? icon(iconName, { color: iconColor }) : null, el('div', {}, kicker ? el('span.gv-toast-kicker', { text: kicker }) : null, el('span', { text })), countEl);
       const t = { key, el: node, countEl, count: count || 1, at: now };
-      t.timer = later(() => drop(t), 3600);
+      t.timer = host.later(() => drop(t), 3600);
       live.push(t); toasts.append(node);
       while (live.length > 4) drop(live[0]);
     };
-    const drop = t => { const i = live.indexOf(t); if (i < 0) return; live.splice(i, 1); clearTimeout(t.timer); t.el.classList.add('is-out'); later(() => t.el.remove(), 420); };
-    const qTitle = id => rt.doc.plot?.quests?.find(q => q.id === id)?.title || titleCase(id);
+    const drop = t => { const i = live.indexOf(t); if (i < 0) return; live.splice(i, 1); host.clearLater(t.timer); t.el.classList.add('is-out'); host.later(() => t.el.remove(), 420); };
+    const qTitle = id => rt.doc.plot?.quests?.find(q => q.id === id)?.title || '';
     host.on('notify', e => toast({ kind: e.kind || 'info', text: e.text, iconName: e.icon || 'check' }));
     rt.on('notify', e => toast({ kind: e.kind, text: e.text, iconName: e.kind === 'warn' ? 'skull' : e.kind === 'quest' ? 'quest' : null }));
-    rt.on('quest_started', e => toast({ kind: 'quest', kicker: 'New quest', text: qTitle(e.quest), iconName: 'quest' }));
-    rt.on('quest_complete', e => toast({ kind: 'quest', kicker: 'Quest complete', text: qTitle(e.quest), iconName: 'check' }));
-    rt.on('quest_failed', e => toast({ kind: 'warn', kicker: 'Quest failed', text: qTitle(e.quest), iconName: 'skull' }));
-    rt.on('objective_done', e => { const q = rt.doc.plot?.quests?.find(x => x.id === e.quest); const o = q?.objectives?.find(x => x.id === e.objective); if (o && !o.hidden) toast({ kind: 'quest', kicker: 'Objective done', text: o.text || titleCase(o.id), iconName: 'check' }); });
-    rt.on('item_gained', e => { if ((e.who || 'player') !== 'player') return; const it = docItem(rt.doc, e.item), ic = itemIcon(it); toast({ key: `item:${e.item}`, kind: 'item', text: itemName(rt.doc, e.item), iconName: ic.name, iconColor: ic.color, count: e.count || 1 }); });
-    rt.on('level_up', e => toast({ kind: 'level', kicker: 'Level up', text: `Level ${e.level ?? rt.state.vars.level ?? ''}`.trim(), iconName: 'star' }));
-    rt.on('ability_unlocked', e => toast({ kind: 'level', kicker: 'New ability', text: titleCase(e.ability ?? e.subject), iconName: 'bolt' }));
+    // What the document's primitives declare their events tell a person (card.tells), as notices: the same declaration
+    // the story log reads. An event naming who it happened to (`who`) is told only when that is the player.
+    for (const t of tellsOf(rt.doc, rt.registry)) rt.on(t.event, e => {
+      if (e?.who !== undefined && e.who !== 'player') return;
+      const w = tellWords(rt.doc, t, e), id = t.entry ? e?.[t.entry.by] : null;
+      toast({ key: `${t.event}:${id ?? ''}`, kind: 'info', kicker: w.title ? w.label : '', text: w.title || w.label, count: Number.isFinite(e?.count) ? e.count : 1 });
+    });
     rt.on('gate_blocked', e => { if ((e.who ?? 'player') === 'player' && e.hint) toast({ key: `gate:${e.gate}`, kind: 'warn', text: e.hint, iconName: 'lock' }); });
     rt.on('inventory_full', () => toast({ kind: 'warn', text: 'Inventory full', iconName: 'bag' }));
     // Refusals: every event the document's primitives declare as a denial (card.denials) says why a press did nothing.
@@ -280,8 +342,9 @@ export default {
       const first = !local.seenZones.has(e.zone);
       local.seenZones.add(e.zone);
       if (config.zoneTitles === 'first' && !first) return;
-      const z = docZone(rt.doc, e.zone);
-      fill(banner, host.el('div.gv-banner-kicker', { text: first ? 'Discovered' : (z?.tags?.[0] ? titleCase(z.tags[0]) : '') }), host.el('div.gv-banner-line'), host.el('div.gv-banner-title', { text: zoneName(rt.doc, e.zone) }), host.el('div.gv-banner-line'));
+      const z = docZone(rt.doc, e.zone), name = zoneName(rt.doc, e.zone);
+      if (!name) return; // a zone the document names nothing (a generated area) is no place to announce
+      fill(banner, host.el('div.gv-banner-kicker', { text: first ? 'Discovered' : (z?.tags?.[0] ? titleCase(z.tags[0]) : '') }), host.el('div.gv-banner-line'), host.el('div.gv-banner-title', { text: name }), host.el('div.gv-banner-line'));
     });
 
     // Damage numbers, when a renderer offers screen projection.
@@ -290,7 +353,7 @@ export default {
       const who = rt.entity(e.who); if (!who || !Array.isArray(who.at)) return;
       const p = project2(who.id, who.at); if (!p) return;
       const f = host.el(`div.gv-floater${cls ? '.' + cls : ''}`, { text: `${ev === 'healed' ? '+' : ''}${fmtInt(e.amount)}`, style: { left: `${p[0]}px`, top: `${p[1]}px`, color: ev === 'damaged' && e.who === 'player' ? 'var(--gv-bad)' : null } });
-      floaters.append(f); later(() => f.remove(), 950);
+      floaters.append(f); host.later(() => f.remove(), 950);
     });
     rt.on('damaged', e => { if (e.who === 'player') for (const n of nodes.values()) if (n.dataset?.var === 'hp') pulse(n, n.classList.contains('gv-meter') ? 'is-hit' : 'is-shake'); });
 
@@ -341,7 +404,7 @@ export default {
           if (isNum(before) && before !== c.value) {
             pulse(n.children[1], 'is-pop');
             const d = n.children[2]; setText(d, `${c.value > before ? '+' : ''}${fmtInt(c.value - before)}`); setClass(d, 'is-neg', c.value < before); d.classList.add('is-on');
-            clearTimeout(d._t); d._t = later(() => d.classList.remove('is-on'), 1100);
+            host.clearLater(d._t); d._t = host.later(() => d.classList.remove('is-on'), 1100);
           }
           setText(n.children[1], fmtInt(c.value));
           prev[c.key] = c.value;

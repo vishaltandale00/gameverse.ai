@@ -453,10 +453,7 @@
      "bindings": {
       "3p": {
        "move": [
-        "up",
-        "left",
-        "down",
-        "right"
+        "arrows"
        ],
        "jump": [
         "pad_a"

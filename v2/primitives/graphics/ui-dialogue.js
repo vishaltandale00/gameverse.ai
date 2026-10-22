@@ -5,7 +5,7 @@
 // restore rebuilds the box) or its dialogue_line / dialogue_end events.
 // Player input goes out as view.act({ choose: { index } }) or view.act({ choose: 'next' }).
 import { THEMES, resolveTheme } from './ui-theme.js';
-import { uiHost, later, setText, setStyle, setClass, setHidden, fill, clamp, charName, docSystem } from './ui-lib.js';
+import { uiHost, setText, setStyle, setClass, setHidden, fill, clamp, charName, docSystem } from './ui-lib.js';
 import { portrait, portraitColor, PORTRAIT_MODEL_FIELDS } from './ui-portrait.js';
 import { modelsData } from './model-lib.js';
 import { glyph } from './ui-input.js';
@@ -120,7 +120,7 @@ export default {
       if (verb === 'confirm') return run(machine.confirm());
       if (['up', 'down', 'left', 'right'].includes(verb)) { if (machine.move(verb)) host.sound('move'); return true; }
       const d = /^digit(\d)$/.exec(verb); if (d) return run(machine.pick(Number(d[1])));
-      return verb === 'back' ? true : false;
+      return false; // back and the rest are not handled here: the pause menu's key reaches it
     }
     function run(cmd) {
       if (!cmd) return true;
@@ -159,9 +159,9 @@ export default {
       const node = el('div.gv-sub', { data: { channel: channel || 'say' }, style: color ? { '--who': color } : {} }, who ? el('b', { text: charName(rt.doc, who) }) : null, el('span', { text: t }));
       subs.append(node); subLive.push(node);
       while (subLive.length > config.maxSubtitles) retire(subLive[0]);
-      later(() => retire(node), subtitleSeconds(t) * 1000);
+      host.later(() => retire(node), subtitleSeconds(t) * 1000);
     }
-    const retire = node => { const i = subLive.indexOf(node); if (i < 0) return; subLive.splice(i, 1); node.classList.add('is-out'); later(() => node.remove(), 380); };
+    const retire = node => { const i = subLive.indexOf(node); if (i < 0) return; subLive.splice(i, 1); node.classList.add('is-out'); host.later(() => node.remove(), 380); };
     rt.on('bark', e => subtitle({ who: e.character, text: e.text ?? e.line, channel: e.channel }));
     rt.on('say', e => { if (!machine.open) subtitle({ who: e.character, text: e.text }); });
 

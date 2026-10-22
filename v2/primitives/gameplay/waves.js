@@ -22,7 +22,7 @@ const SPAWN = { type: 'object', fields: {
 export default {
   id: ID,
   card: {
-    loop: { verbs: [], progress: ['wave_clear', 'waves_complete'], win: { param: 'onComplete', reads: { component: 'health', of: 'opponents', by: { effects: ['damage'] } } } },
+    loop: { shows: ['entities'], verbs: [], progress: ['wave_clear', 'waves_complete'], win: { param: 'onComplete', reads: { component: 'health', of: 'opponents', by: { effects: ['damage'] } } } },
     // Waves mode (shoot-'em-ups, arena survival): the player outlasts and destroys every wave the script sends, a boss
     // wave last; clearing them all wins. Defeat comes from the player's health and lives (gameplay.death), not from here.
     // Its bot dodges the enemy fire by rollouts while firing (ported from the shmup kit's dodging bots).

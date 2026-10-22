@@ -750,14 +750,16 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   /** @type {Record<string, unknown>[]} */
   const archetypes = content.archetypes;
   const pid = slug(prop(f.player, 'archetype') || '');
-  // The player's body: the archetype the form names, else the scaffold's player archetype (the structure's).
+  // The player's body: the archetype the form names, else the scaffold's player archetype (the structure's); a scaffold
+  // without one gets none stamped here.
   let playerArch = archetypes.find(a => a.id === pid);
   if (!playerArch) { const made = list(skeleton.content?.archetypes).find(a => prop(a, 'id') === skeleton.player?.archetype); if (isObj(made)) { playerArch = asObject(structuredClone(made)); archetypes.push(playerArch); } }
   out.content.archetypes = archetypes;
   const items = content.items;
   for (const it of skeleton.content?.items || []) if (!items.some(x => x.id === it.id)) items.push(structuredClone(it));
   if (items.length) out.content.items = items;
-  out.plot.characters = content.characters;
+  // The cast the form wrote (an empty list is no section: nothing stamps one).
+  if (content.characters.length) out.plot.characters = content.characters;
   if (content.dialogue) out.plot.dialogue = content.dialogue;
   if (content.quests) out.plot.quests = content.quests;
   for (const sec of sections) {
@@ -792,7 +794,7 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   const space = out.spaces.find(s => s.id === skeleton.player?.space) || out.spaces[0];
   const startZone = listOf(space.zones).find(z => prop(z, 'id') === slug(prop(f.player, 'zone'))) || listOf(space.zones)[0];
   const exits = layout.find(l => l.id === space.id)?.exits;
-  out.player = { ...structuredClone(skeleton.player || {}), archetype: playerArch?.id ?? skeleton.player?.archetype, space: space.id, at: exits ? prop(startZone, 'id') : (startZone && zoneStart(startZone)) || skeleton.player?.at };
+  out.player = { ...structuredClone(skeleton.player || {}), ...(playerArch ? { archetype: playerArch.id } : {}), space: space.id, at: exits ? prop(startZone, 'id') : (startZone && zoneStart(startZone)) || skeleton.player?.at };
   keepReferenced(out, skeleton, offered);
   return out;
 }

@@ -30,7 +30,7 @@ export function tuneTarget(doc, path, reg = registry) {
 }
 const checked = t => { const r = preflight(structuredClone(t.doc), registry, logic); assert.ok(r.ok, `${t.id}: ${JSON.stringify(r.errors?.slice(0, 5))}`); return r; };
 // One source for the options a template's bot runs with: the admission contract's (v2/templates/contract.js).
-import { BOT_OPTS } from '../v2/templates/contract.js';
+import { BOT_OPTS, BOT_STEPS } from '../v2/templates/contract.js';
 /** The world seeds every template is proven on: a template's guarantees hold for the world any job seed generates. */
 const WORLD_SEEDS = [1, 2, 3];
 const seeded = (t, seed) => ({ ...t, doc: { ...structuredClone(t.doc), seed } });
@@ -61,7 +61,7 @@ for (const t of TEMPLATES) {
 
   for (const seed of WORLD_SEEDS) {
     test(`template ${t.id} on world seed ${seed}: the publish gate finds it viable`, async () => {
-      const v = await verifyDocument(seeded(t, seed).doc, registry, logic, { budgetMs: 800, playtestMs: 1500 });
+      const v = await verifyDocument(seeded(t, seed).doc, registry, logic, { playable: true });
       assert.ok(v.viable, `${t.id} seed ${seed}: ${v.viability} ${JSON.stringify((v.problems || []).filter(p => p.severity === 'error')).slice(0, 600)}`);
     });
 
@@ -74,14 +74,14 @@ for (const t of TEMPLATES) {
       assert.deepEqual(select(ctx).chosen.map(c => c.s.id), named, 'the gate plays the bots the loops name');
       // The gate's own bot stage (v2/verify/index.js), alone: it plays the world of the document's seed.
       const opts = Object.fromEntries(named.map(id => [id, { ...BOT_OPTS[id] }]));
-      const gate = await verify(r.doc, registry, logic, { seed: r.doc.seed, plot: false, spatial: false, playtest: false, invariants: false, strategies: { budgetMs: 60000, ...opts } });
+      const gate = await verify(r.doc, registry, logic, { seed: r.doc.seed, plot: false, spatial: false, playtest: false, invariants: false, budget: { botSteps: BOT_STEPS }, strategies: opts });
       assert.deepEqual(gate.strategies.ran.map(x => x.id), named);
       for (const ran of gate.strategies.ran) {
         const id = ran.id, runs = ran.metrics.runs ?? ran.metrics.matches;
         assert.equal(ran.ok, true, `${t.id} seed ${seed} ${id}: ${JSON.stringify(gate.problems.filter(p => p.strategy === id)).slice(0, 600)}`);
         assert.deepEqual(runs.map(x => x.seed), [seed], `${t.id} ${id}: the gate's bot played the document's world seed`);
         assert.equal(runs[0].status, 'won', `${t.id} seed ${seed} ${id}: the game ended won (${JSON.stringify(runs[0]).slice(0, 300)})`);
-        const again = playBot(strategies.get(id), ctx, { budgetMs: 60000, ...opts[id] });
+        const again = playBot(strategies.get(id), ctx, { maxSteps: BOT_STEPS, ...opts[id] });
         const strip = xs => xs.map(({ budget, ...x }) => x);
         assert.deepEqual(strip(again.metrics.runs ?? again.metrics.matches), strip(runs), `${t.id} seed ${seed}: the same document and seed replay to the same result`);
       }

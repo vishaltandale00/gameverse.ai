@@ -2,21 +2,25 @@
 // plant seeds, water, grow one stage per day in season (var time.day, or an
 // internal day of `daySec` seconds; var time.season), harvest a rolled yield,
 // regrow perennials, wither out of season. Growing crops can show stage blocks
-// in the cell above the farmland.
+// in the cell above the farmland, where the space's frame has an up axis; on a
+// plane seen from above no cell lies above another, and the plot's mark shows
+// its stage (card.marks).
 import { compare } from '../../kernel/logic.js';
 import { give, take, count, bag } from './inventory.js';
 import { item as itemDef, tokens, roll, RANGE, itemsData, TOKEN_FIELDS, cellDist, cellKey, cellOf, isVec, api as spaceApi, add, whoKey, actionCell } from './items-lib.js';
+import { spaceFrame } from '../engine/runtime-lib-frame.js';
 
 const KEY = 'gameplay.farming';
 const parse = v => (isVec(v) ? { cell: v } : v || {});
-const ABOVE = [0, 1, 0];
 // Harvesting a target number of crops wins: a plot ending tests the count ('$target' is a number the content picks).
 const WIN = { when: { count: 'harvested', gte: '$target' }, reads: { event: 'harvested', by: { actions: ['harvest'] } } };
 
 export default {
   id: 'gameplay.farming',
   card: {
-    loop: { verbs: ['till', 'plant', 'water', 'harvest'], progress: ['tilled', 'planted', 'watered', 'harvested'], win: WIN },
+    // Its plots live in its store, not in cells or entities: the renderers draw them from its service (graphics/presentation.js).
+    marks: { service: 'farming' },
+    loop: { shows: ['cells', 'marks'], verbs: ['till', 'plant', 'water', 'harvest'], progress: ['tilled', 'planted', 'watered', 'harvested'], win: WIN },
     // The farm loop, played by an avatar on a cell space against the day clock (crops grow one stage a watered day and
     // wither out of season); no lose of its own. Its bot (v2/verify/strategies/farm.js) tills, plants, waters and
     // harvests through the controls a person uses.
@@ -37,7 +41,7 @@ export default {
         yield: { ...RANGE, default: [1, 1], effect: 'produce per harvest, [min, max]' },
         regrow: { type: 'integer', default: 0, min: 0, max: 365, effect: 'days to ripen again after harvest; 0 = harvesting removes it' },
         water: { type: 'boolean', default: true, effect: 'needs watering each day to grow' },
-        block: { type: 'ref', to: 'block', effect: 'block shown above the farmland while it grows' },
+        block: { type: 'ref', to: 'block', effect: 'block shown in the cell above the farmland while it grows, on a space whose frame has an up axis (a plane seen from above shows the stage as the plot\'s mark)' },
         ripeBlock: { type: 'ref', to: 'block', effect: 'block shown when ripe (default block)' },
       } }, effect: 'crops' },
       tillable: { type: 'list', default: ['dirt', 'grass'], of: { type: 'ref', to: 'block' }, effect: 'blocks a hoe turns into farmland' },
@@ -74,10 +78,14 @@ export default {
     const season = () => { const s = rt.state.vars['time.season']; return typeof s === 'number' ? config.seasonNames[s % config.seasonNames.length] : s ?? null; };
     const inSeason = c => !c.seasons.length || season() == null || c.seasons.includes(season());
     const deny = (who, action, reason, at) => { rt.emit('farm_denied', { who, action, reason, at }); return false; };
-    // Stage blocks sit above the farmland; only crop blocks are ever replaced or cleared.
+    // Stage blocks sit in the cell one step along the space's up axis (card.frame); only crop blocks are ever replaced or
+    // cleared. A plane seen from above (up null) has no cell above a cell: its neighbours are other cells of the field, so
+    // nothing is written and the plot's mark (card.marks) shows the stage.
     const isCrop = b => config.crops.some(k => k.block === b || k.ripeBlock === b);
-    function show(sp, cell, plot) {
-      const above = add(cell, ABOVE), cur = sp.getCell(above), c = plot && byItem.get(plot.crop);
+    function show(spaceId, cell, plot) {
+      const up = spaceFrame(rt, spaceId)?.up; if (up === null || up === undefined) return;
+      const step = [0, 0, 0]; step[up] = 1;
+      const sp = rt.space(spaceId), above = add(cell, step), cur = sp.getCell(above), c = plot && byItem.get(plot.crop);
       const want = c ? (plot.ripe ? c.ripeBlock ?? c.block : c.block) ?? null : null;
       if (want != null && cur !== want && (cur == null || isCrop(cur))) sp.setCell(above, want, rt, 'farming');
       else if (want == null && cur != null && isCrop(cur)) sp.setCell(above, null, rt, 'farming');
@@ -109,7 +117,7 @@ export default {
       if (!inSeason(crop)) return deny(who, 'plant', 'season', cell);
       take(rt, who, seed, 1);
       st().plots[key] = { space: e.space, at: cell, crop: crop.item, growth: 0, watered: false, ripe: false, planted: day(), owner: who };
-      show(sp, cell, st().plots[key]);
+      show(e.space, cell, st().plots[key]);
       rt.emitTyped('planted', crop.item, { who, at: cell, crop: crop.item });
       return true;
     }
@@ -120,14 +128,14 @@ export default {
       return true;
     }
     function harvest(who, v) {
-      const { sp, cell, key } = at(who, parse(v), 'harvest'); if (!sp) return false;
+      const { e, sp, cell, key } = at(who, parse(v), 'harvest'); if (!sp) return false;
       const plot = st().plots[key]; if (!plot) return deny(who, 'harvest', 'empty', cell);
       if (!plot.ripe) return deny(who, 'harvest', 'unripe', cell);
       const crop = byItem.get(plot.crop), n = roll(rt, crop.yield, 1);
       give(rt, who, crop.item, n);
       rt.emitTyped('harvested', crop.item, { who, at: cell, crop: crop.item, count: n });
-      if (crop.regrow > 0) { plot.ripe = false; plot.growth = Math.max(0, crop.days - crop.regrow); show(sp, cell, plot); }
-      else { delete st().plots[key]; show(sp, cell, null); }
+      if (crop.regrow > 0) { plot.ripe = false; plot.growth = Math.max(0, crop.days - crop.regrow); show(e.space, cell, plot); }
+      else { delete st().plots[key]; show(e.space, cell, null); }
       return true;
     }
     rt.action('till', (v, rt) => till('player', v));
@@ -141,12 +149,12 @@ export default {
       const passed = d - s.day; s.day = d;
       const rain = config.rainWaters && rt.state.vars.weather === 'rain';
       for (const [key, plot] of Object.entries(s.plots).sort()) {
-        const crop = byItem.get(plot.crop), sp = rt.space(plot.space);
+        const crop = byItem.get(plot.crop);
         for (let i = 0; i < passed && s.plots[key]; i++) {
-          if (!inSeason(crop) && config.wither) { delete s.plots[key]; show(sp, plot.at, null); rt.emit('withered', { at: plot.at, crop: plot.crop }); break; }
+          if (!inSeason(crop) && config.wither) { delete s.plots[key]; show(plot.space, plot.at, null); rt.emit('withered', { at: plot.at, crop: plot.crop }); break; }
           if (!plot.ripe && (!crop.water || plot.watered || rain)) {
             plot.growth++;
-            if (plot.growth >= crop.days) { plot.ripe = true; show(sp, plot.at, plot); rt.emitTyped('ripened', plot.crop, { at: plot.at, crop: plot.crop }); }
+            if (plot.growth >= crop.days) { plot.ripe = true; show(plot.space, plot.at, plot); rt.emitTyped('ripened', plot.crop, { at: plot.at, crop: plot.crop }); }
           }
           plot.watered = false;
         }
@@ -156,11 +164,15 @@ export default {
       const out = [];
       for (const plot of Object.values(st().plots).sort((a, b) => (a.at.join() < b.at.join() ? -1 : 1))) {
         if (plot.space !== rt.player()?.space) continue;
-        if (plot.ripe) out.push({ label: `harvest ${plot.crop} at ${plot.at.join(',')}`, actions: { harvest: { cell: plot.at } } });
-        else if (!plot.watered && byItem.get(plot.crop).water) out.push({ label: `water ${plot.crop} at ${plot.at.join(',')}`, actions: { water: { cell: plot.at } } });
+        const crop = itemDef(rt, plot.crop)?.name, at = plot.at.slice(0, 2).join(', ');
+        if (plot.ripe) out.push({ label: `harvest ${plot.crop} at ${plot.at.join(',')}`, ...(crop ? { text: `Harvest the ${crop} at ${at}` } : {}), actions: { harvest: { cell: plot.at } } });
+        else if (!plot.watered && byItem.get(plot.crop).water) out.push({ label: `water ${plot.crop} at ${plot.at.join(',')}`, ...(crop ? { text: `Water the ${crop} at ${at}` } : {}), actions: { water: { cell: plot.at } } });
       }
       return out.slice(0, 8);
     });
-    rt.provide('farming', { plots: () => structuredClone(Object.values(st().plots)), day });
+    // marks (card.marks): each plot of a space as a person sees it: its crop, growth stage of the days to ripen, ripe, watered.
+    const marks = sid => Object.values(st().plots).filter(p => p.space === sid).sort((a, b) => (a.at.join() < b.at.join() ? -1 : 1))
+      .map(p => ({ at: p.at.slice(), kind: p.crop, stage: Math.min(p.growth, byItem.get(p.crop)?.days ?? p.growth), stages: byItem.get(p.crop)?.days ?? 1, ready: p.ripe, watered: p.watered }));
+    rt.provide('farming', { plots: () => structuredClone(Object.values(st().plots)), day, marks });
   },
 };

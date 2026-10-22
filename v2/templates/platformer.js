@@ -14,7 +14,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'platformer', title: 'Platformer', seed: 1,
     views: { primary: 'side', alternates: [] },
-    spaces: [{ id: 'level', use: 'engine.space.tilemap', with: { size: [W * ROOMS.length, H], mode: 'side', gravity: -60 },
+    spaces: [{ id: 'level', use: 'engine.space.tilemap', with: { scenery: 'meadow', size: [W * ROOMS.length, H], mode: 'side', gravity: -60 },
       zones: ROOMS.map(([id, name], i) => ({ id, name, rect: rect(i) })),
       generators: [{ use: 'engine.generate.tilemap.rooms', with: {
         mode: 'side',
@@ -52,11 +52,11 @@ export default {
         { id: 'goal_flag', name: 'Goal flag', kind: 'prop', components: { goal: {}, body: { size: [1, 3] } } },
       ],
       blocks: [
-        { id: 'stone', name: 'Stone', solid: true }, { id: 'ground', name: 'Ground', solid: true }, { id: 'brick', name: 'Brick', solid: true },
-        { id: 'ledge', name: 'Ledge', solid: false, tags: ['one_way'] }, { id: 'spikes', name: 'Spikes', solid: false, tags: ['hazard'], hazard: 'spikes' },
+        { id: 'stone', name: 'Stone', solid: true, tile: 'rock' }, { id: 'ground', name: 'Ground', solid: true, tile: 'grass' }, { id: 'brick', name: 'Brick', solid: true, tile: 'brick' },
+        { id: 'ledge', name: 'Ledge', solid: false, tags: ['one_way'], tile: 'wood' }, { id: 'spikes', name: 'Spikes', solid: false, tags: ['hazard'], hazard: 'spikes', tile: 'spikes' },
       ],
     },
     player: { archetype: 'hero', at: [3, 3] },
   },
-  tune: [{ path: 'gameplay.death.lives', min: 1, max: 9 }, { path: 'gameplay.move.platformer.feel', options: ['snappy', 'floaty'] }],
+  tune: ['engine.space.tilemap.scenery', { path: 'gameplay.death.lives', min: 1, max: 9 }, { path: 'gameplay.move.platformer.feel', options: ['snappy', 'floaty'] }],
 };

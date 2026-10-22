@@ -13,7 +13,7 @@ const ID = 'gameplay.creature.catch';
 export default {
   id: ID,
   card: {
-    loop: { verbs: [], progress: ['capture_thrown', 'caught'], win: { when: { count: 'caught', gte: '$target' }, reads: { event: 'caught', by: { effects: ['catch_creature'] } } } },
+    loop: { shows: ['entities'], verbs: [], progress: ['capture_thrown', 'caught'], win: { when: { count: 'caught', gte: '$target' }, reads: { event: 'caught', by: { effects: ['catch_creature'] } } } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "balls", "min": 1, "why": "catching needs ball items", "example": [{"item": "orb", "bonus": 1}]},

@@ -3,9 +3,8 @@
 // adapterSteps, presets.js skinSections), and component fields declared with options are enums in the forms
 // (outline-form.js). Three live failures on v2-presets 5ed5399f, replayed offline on the real catalogue with scripted
 // writers (no network):
-//   chess × pokemon   the spec's nested mashup: re-planning a gap (checkmate) re-resolved the selection's adapters and
-//                     dropped engine.adapt.nested; v1 published without it. select.js did the same whenever an unmet
-//                     primitive was resolved through an adapter after the build.
+//   chess × pokemon   the spec's nested mashup: re-resolving the selection's adapters dropped engine.adapt.nested; v1
+//                     published without it. (Re-planning, where it happened, is gone: the step path builds once.)
 //   Pac-Man × haunted library   a setting joined as skin got engine.adapt.skin with nothing to map; repair filled its
 //                     maps with 'untitled' and the build died on it.
 //   interact.kind     'inspect' survived three repair rounds: the component field declared no options, so the cast form
@@ -47,16 +46,14 @@ const selectionOf = (f, decomposition = structuredClone(f.decomposition), reg = 
 
 /**
  * A scripted spec model for an offline create run of a recorded idea: it decomposes it, answers the build's questions
- * from the live mapping (the `gap` mechanics are left a gap by the build and mapped when re-planning asks, as the live
- * model did), and writes the outline's small forms with the content of the scaffold the full mapping makes (its cast,
+ * from the live mapping, and writes the outline's small forms with the content of the scaffold the full mapping makes (its cast,
  * items and content sections; the params keep the scaffold's configuration), plus the archetypes `extra` it themes for
  * the idea, two of the `spawn` archetype placed in every zone.
  */
-async function createWriter(f, { gap = [], extra = [], spawn = null } = {}) {
+async function createWriter(f, { extra = [], spawn = null } = {}) {
   const scaffold = proceduralOutline({ decomposition: structuredClone(f.decomposition), selection: await selectionOf(f), registry, logic, seed: f.seed, prompt: f.prompt }).doc;
   const decompose = decomposer(planOf(f.decomposition));
-  const built = answersOf(f, Object.fromEntries(Object.entries(f.mapping).filter(([id]) => !gap.includes(id))));
-  const replanned = answersOf(f);
+  const built = answersOf(f);
   const state = { outlining: false };
   const outline = req => {
     const name = String(req.schema?.name || ''), props = req.schema?.schema?.properties || {};
@@ -69,7 +66,7 @@ async function createWriter(f, { gap = [], extra = [], spawn = null } = {}) {
     if (section) { const [, root, key] = section.split('_'); return formAnswer(req.schema.schema, { [section]: scaffold[root]?.[key] ?? [] }); }
     return {};
   };
-  const writer = fakeWriter([req => stepPick(req) ?? decompose(req) ?? buildAnswer(req, state.outlining ? replanned : built) ?? JSON.stringify(outline(req))]);
+  const writer = fakeWriter([req => stepPick(req) ?? decompose(req) ?? buildAnswer(req, built) ?? JSON.stringify(outline(req))]);
   return { writer, state };
 }
 /** Run a create job offline: what it published, its stages and checkpoints. */
@@ -78,18 +75,15 @@ async function create(f, options = {}) {
   const versions = [], stages = [], checkpoints = {};
   const ctx = { stage(name, detail = {}) { if (name === 'outlining') state.outlining = true; stages.push({ name, ...detail }); }, draft() {}, checkpoint(name, value) { checkpoints[name] = value; },
     async publish(p) { versions.push(p); return p; }, store: { async updateMeta() {}, async version(_, v) { return versions[v - 1]; } } };
-  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: writer }, config: { replanAttempts: 3, maxDetailTasks: 0, outlineRepairRounds: 0 } });
+  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: writer }, config: { outlineRepairRounds: 0 } });
   const out = await pipeline({ gameId: 'g', prompt: f.prompt, kind: 'create', seed: f.seed }, ctx);
   return { out, versions, stages, checkpoints };
 }
 
-// ---------- 1. the nested adapter survives selection, re-planning, the outline and publish ----------
+// ---------- 1. the nested adapter survives selection, the outline and publish ----------
 
-test('chess × pokemon: an offline create run re-plans the checkmate gap as live and publishes engine.adapt.nested, wired from declarations', async () => {
-  const { out, versions } = await create(CHESS, { gap: ['checkmate_objective'] });
-  // The live path: the build left checkmate a gap, re-planning added the turn loop for it, then the outline published.
-  assert.deepEqual(out.outline.attempts.map(a => a.stage), ['selection', 'published']);
-  assert.ok(out.outline.attempts[0].actions.some(a => a.action === 'add' && a.primitive === 'gameplay.turns'), JSON.stringify(out.outline.attempts[0].actions));
+test('chess × pokemon: an offline create run builds the live mapping and publishes engine.adapt.nested, wired from declarations', async () => {
+  const { versions } = await create(CHESS);
   assert.equal(versions.length, 1);
   const doc = versions[0].doc;
   const nested = doc.systems.filter(s => s.use === NESTED);
@@ -105,24 +99,6 @@ test('chess × pokemon: an offline create run re-plans the checkmate gap as live
   // The invariant the pipeline checks before publishing holds on what it published.
   const sel = await selectionOf(CHESS);
   assert.deepEqual(mashupAdapterProblems(doc, CHESS.decomposition, sel, registry), []);
-});
-
-test('select.js: an unmet primitive resolved through an adapter after the build keeps the build\'s nested adapter (it used to replace them all)', async () => {
-  // A story runner that needs gravity, which the board lacks: selection adds it after the build (the play spec has a
-  // story) and resolves it onto a projected region. The build's mashup adapter must stay beside that region.
-  const saga = { id: 'plot.saga', card: { intent: 'A saga told while falling.', params: {}, reads: ['plot.storyboard'], requires: { capabilities: ['gravity'] } }, install() {} };
-  const { registry: reg } = buildCatalogue([], [saga, ...PRIMITIVES]);
-  const d = structuredClone(CHESS.decomposition);
-  d.core.narrative = true;
-  const sel = await selectionOf(CHESS, d, reg);
-  assert.ok(sel.systems.includes('plot.saga'));
-  const region = sel.adapters.find(a => a.use === 'engine.adapt.projection');
-  assert.ok(region, 'the saga is hosted by a projected region');
-  assert.equal(sel.bind['plot.saga'], region.id);
-  const nested = sel.adapters.filter(a => a.use === NESTED);
-  assert.equal(nested.length, 1, JSON.stringify(sel.adapters));
-  assert.deepEqual(sel.mashupAdapters, [{ relation: 'nested', mechanics: d.core.mashup[0].mechanics, instances: [{ use: NESTED, id: nested[0].id }] }]);
-  assert.deepEqual(sel.gaps, []);
 });
 
 test('keepMashupAdapters: a re-resolution keeps the mashup instances and the bindings onto their regions; a resolved id they hold moves', () => {

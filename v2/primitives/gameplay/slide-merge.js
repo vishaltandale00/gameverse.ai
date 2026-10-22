@@ -49,9 +49,9 @@ export const canMove = (grid, W, H) => DIRS.some(d => slideGrid(grid, W, H, d).m
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['slide'], progress: ['slid', 'merged'] },
+    loop: { shows: ['cells', 'labels'], verbs: ['slide'], progress: ['slid', 'merged'] },
     // Slide-merge mode: make the target tile before the board jams.
-    mode: { loop: 'slide-merge', interaction: 'cursor-board', opponent: 'none', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { param: 'onTarget', reads: { var: 'slide.max', by: { actions: ['slide'] } } }, lose: { param: 'onStuck', reads: { event: 'board_stuck', by: { actions: ['slide'] } } }, bot: 'expectimax' },
+    mode: { loop: 'slide-merge', interaction: 'cursor-board', opponent: 'none', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { param: 'onTarget', shown: { var: 'slide.max', max: { param: 'target' }, label: 'Best' }, reads: { var: 'slide.max', by: { actions: ['slide'] } } }, lose: { param: 'onStuck', once: true, reads: { event: 'board_stuck', by: { actions: ['slide'] } } }, bot: 'expectimax' },
     intent: '2048-style board: slide all tiles toward an edge, equal tiles merge once per move, a 2 or 4 spawns after each move, rocks split lines; works on any editCells board.',
     views: ['board', 'td'],
     params: {
@@ -146,7 +146,7 @@ export default {
     rt.options(rt => {
       const s = st(); if (s.phase !== 'play' || s.anim > 0) return [];
       const b = B(), vals = readVals(b);
-      return DIRS.filter(d => slideGrid(vals, b.W, b.H, d).moved).map(d => ({ label: `slide ${d}`, actions: { slide: d } }));
+      return DIRS.filter(d => slideGrid(vals, b.W, b.H, d).moved).map(d => ({ label: `slide ${d}`, text: `Slide ${d}`, actions: { slide: d } }));
     });
   },
 };

@@ -19,6 +19,8 @@ import { buildChunk, chunkCache } from '../v2/primitives/graphics/flat-chunks.js
 import { normalizeLayers, PATTERNS as BACKDROPS } from '../v2/primitives/graphics/flat-backdrop.js';
 import { PROPS, paintProp } from '../v2/art/props.js';
 import { recordingContext } from './v2-p-flat-stub.js';
+import { catalogue } from '../v2/primitives/index.js';
+import { testSpace } from '../v2/kernel/testing.js';
 
 test('blob47 has exactly 47 canonical masks; corners count only with both edges', () => {
   assert.equal(BLOB47.length, 47);
@@ -99,7 +101,8 @@ test('tile patterns are seamless across tiles and every pattern paints', () => {
   const a = new Uint8ClampedArray(T * T * 4), b = new Uint8ClampedArray(T * 3 * T * 4);
   paintTile(a, T, 0, 0, T, th, 5, 2, 255); paintTile(b, T * 3, T, 0, T, th, 5, 2, 255);
   for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) assert.equal(a[(y * T + x) * 4], b[(y * T * 3 + T + x) * 4]);
-  assert.equal(patternFor({ id: 'oak_tree' }), 'canopy'); assert.equal(patternFor({ id: 'x', tile: 'metal' }), 'metal');
+  // A block's pattern is the tile it declares; its id, name and tags never pick one (ARCHITECTURE §1.2).
+  assert.equal(patternFor({ id: 'oak_tree', name: 'Oak tree' }), 'rock'); assert.equal(patternFor({ id: 'x', tile: 'metal' }), 'metal');
   assert.equal(themeFromBlock({ id: 'w', color: '#ff0000' }).palette.a, '#ff0000');
 });
 
@@ -171,19 +174,22 @@ test('rigs: fighter poses for every state, bone FK, clip sampling, procedural pr
   for (const [name, rig] of Object.entries(BONE_PRESETS)) { const pose = bonePose(rig, 'run', 0.7); assert.ok(Object.keys(pose).length > 0, name); }
 });
 
-test('generated art picks roles, body plans and props from words', () => {
+// Roles come from the declared kind and what the components' cards declare they present (card.presents); looks are a
+// variation seeded by the archetype id; names and words never choose either (ARCHITECTURE §1.2: names are themed).
+test('generated art picks roles from declarations and looks from a seed, never from words', () => {
+  const { registry } = catalogue([testSpace]);
   assert.equal(roleOf({ id: 'mossling', kind: 'enemy' }), 'enemy');
   assert.equal(roleOf({ id: 'ember_coin', kind: 'pickup' }), 'pickup');
-  assert.equal(roleOf({ id: 'x', components: { interact: {} } }), 'npc');
-  assert.equal(lookFor({ id: 'cave_bat', kind: 'enemy' }).body, 'flyer');
-  assert.equal(lookFor({ id: 'drip_wraith', kind: 'enemy' }).body, 'ghost');
-  assert.equal(lookFor({ id: 'rust_automaton', kind: 'enemy' }).body, 'robot');
-  assert.equal(lookFor({ id: 'ash_knight', kind: 'enemy' }).headwear, 'helmet');
-  assert.equal(propFor({ id: 'map_fragment', kind: 'pickup' }, 'pickup'), 'scroll');
-  assert.equal(propFor({ id: 'old_bench', kind: 'prop' }, 'prop'), 'bench');
+  assert.equal(roleOf({ id: 'x', components: { interact: {} } }, 'x', registry), 'npc', 'gameplay.interact presents interact as npc');
+  assert.equal(roleOf({ id: 'flag', kind: 'prop', components: { goal: {} } }, 'flag', registry), 'goal', 'a component presenting a goal outranks the generic prop kind');
+  assert.equal(roleOf({ id: 'goblin_coin', name: 'Coin of the goblin' }), 'prop', 'words in the id or name never make a role');
+  assert.deepEqual(lookFor({ id: 'cave_bat', kind: 'enemy', name: 'A' }), lookFor({ id: 'cave_bat', kind: 'enemy', name: 'Wraith knight' }), 'the name never changes the look');
+  assert.equal(propFor({ id: 'k', components: { pickup: { item: 'key' } } }, 'pickup', registry, { content: { items: [{ id: 'key', kind: 'key' }] } }), 'key', 'a pickup draws its declared item kind');
+  assert.equal(propFor({ id: 'door', components: { lock: {} } }, 'prop', registry), 'door', 'gameplay.container presents a lock as a door');
   for (const k of PROPS.decor) assert.ok(paintProp(k).startsWith('<svg'), k);
   assert.ok(poseFor('run', 0.3).startsWith('run'));
-  assert.equal(themeFor({ title: 'Hollow Lantern', logline: 'a cave' }), 'cave');
+  assert.equal(themeFor({ title: 'Hollow Lantern', logline: 'a cave' }), 'meadow', 'the title and logline never pick scenery');
+  assert.equal(themeFor({}, { id: 'z', tags: ['cave'] }), 'cave', 'a zone declares its scenery by a theme tag');
 });
 
 test('every vector preset and backdrop pattern draws on a canvas', () => {

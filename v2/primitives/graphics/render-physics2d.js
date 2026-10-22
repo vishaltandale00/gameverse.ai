@@ -11,7 +11,8 @@ import { driveFit, followTarget } from './flat-follow.js';
 import { drawEntity, lookOf, STATES, FLAT_MODEL_FIELDS } from './flat-models.js';
 import { paintMaterial, materialFor, materialColors, MATERIALS } from './flat-materials.js';
 import { drawBackdrop, defaultLayers } from './flat-backdrop.js';
-import { TAU, rgba, col, seedOf, clamp01, lerp } from './flat-util.js';
+import { drawZones } from './flat-zones.js';
+import { TAU, rgba, seedOf, clamp01, lerp } from './flat-util.js';
 import { modelsData, MODEL_COMPONENT, color } from './model-lib.js';
 
 const SPRITE_ROLES = new Set(['player', 'enemy', 'boss', 'npc', 'pickup', 'goal', 'hazard', 'mount']);
@@ -21,6 +22,9 @@ export default {
   card: {
     intent: 'Canvas renderer for physics2d spaces: rotated circles, boxes, polygons and segments in physical materials (wood, stone, glass, metal, ice, rubber, TNT) with damage cracks, impact flashes, trails and break shards; sprite bodies for characters; walls, sensors and joints.',
     views: ['side', 'td'],
+    // What it draws of its space (graphics/presentation.js DRAWS): the template contract and the gate check it covers what
+    // the document's loops show (card.loop.shows).
+    draws: ['entities', 'zones'],
     // How it draws its space for each view it serves (v2/verify/directions.js): 'plane' maps the space's axes onto the
     // screen's right and up; 'chase' looks along `forward` with `right` to the right of the screen.
     projection: { side: { kind: 'plane', right: '+x', up: '+y' }, td: { kind: 'plane', right: '+x', up: '+y' } },
@@ -49,7 +53,7 @@ export default {
     const apiOf = () => { try { return rt.space(space); } catch { return null; } };
     const trails = new Map(), flashes = new Map();
     H.onReset(() => { trails.clear(); flashes.clear(); });
-    const matOf = e => { const arch = rt.archetype(e.archetype) || {}; const tag = (arch.tags || []).find(t => config.materials[t]); return materialFor(arch, e.components?.body || {}, config.materials[e.archetype] || config.materials[tag]); };
+    const matOf = e => { const arch = rt.archetype(e.archetype) || {}; const tag = (arch.tags || []).find(t => config.materials[t]); return materialFor(arch, e.components?.body || {}, config.materials[e.archetype] || config.materials[tag] || e.components?.destructible?.material); };
     rt.on('impact', ev => { for (const id of [ev.a, ev.b]) if (typeof id === 'string') flashes.set(id, { t0: H.clock, k: clamp01((ev.impulse || 1) / 6) }); });
     rt.on('despawn', ev => {
       if (!config.shards || !H.particles) return;
@@ -74,7 +78,8 @@ export default {
         } else driveFit(F, cam, [0, 0, W, Hh], config.maxScale, 0.3);
       },
     };
-    H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, 'side'); drawBackdrop(F, S.defaultLayers); }, { space, name: 'physics2d.backdrop' });
+    H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, 'side', space); drawBackdrop(F, S.defaultLayers); }, { space, name: 'physics2d.backdrop' });
+    H.layer(ORDER.world - 1, F => drawZones(F, apiOf()), { space, name: 'physics2d.zones' });
     H.layer(ORDER.world, F => draw(F), { space, name: 'render.physics2d' });
 
     function draw(F) {

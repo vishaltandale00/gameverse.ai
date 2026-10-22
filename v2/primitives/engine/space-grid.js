@@ -8,6 +8,7 @@
 // match puzzles. Tactics, puzzle, maze and ARC-style games all live here.
 import { zonesData } from './runtime-lib.js';
 import { cellStore, zoneIndex, zoneTracker, zoneEditor, ownSpaces, obstacleOf, dynamicObstacle, inSpace, key2, unkey, mod, astar, Heap, shapeHitsRect, BOUNDS_CAPS } from './spaces2d-lib.js';
+import { SCENERY_PARAM } from './spaces2d-scenery.js';
 
 const SQ = { up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0], 'up-left': [-1, 1], 'up-right': [1, 1], 'down-left': [-1, -1], 'down-right': [1, -1] };
 // odd-r hex neighbours: [dc, dr] for even and odd rows; names assume +row is "north".
@@ -39,6 +40,7 @@ export default {
     frame: config => ({ up: null, handed: config.yAxis === 'down' ? 'left' : 'right' }),
     needs: { content: ['cells'] },
     params: {
+      scenery: SCENERY_PARAM,
       topology: { type: 'string', options: ['square', 'hex', 'iso'], default: 'square', effect: 'square, hex (odd-r offset rows) or iso (square logic, diamond projection)' },
       size: { type: 'list', of: { type: 'integer', min: 1, max: 512 }, min: 2, max: 2, default: [8, 8], unit: 'cells', scale: 'world', effect: 'columns and rows' },
       diagonals: { type: 'boolean', default: false, effect: 'square/iso: 8-way moves (no corner cutting past impassable cells)' },
@@ -167,13 +169,36 @@ export default {
       if (solidAt(b, e, obstacles)) return false;
       return true;
     };
-    // Both scans run inside every navigation step: they stop at the first hit and allocate nothing (same tests as inSpace).
-    const blockerAt = (c, e) => { const k = cellKey(c); for (const id in rt.state.entities) { const o = rt.state.entities[id]; if (o !== e && o.space === sid && o.components.body?.blocking !== false && cellKey(cellOf(o.at)) === k) return true; } return false; };
+    // Both run inside every navigation step. Inside a read (rt.derived: a bot planning, options listed) the state does
+    // not change, so the entities that block cells are indexed by cell once per read; elsewhere the scans stop at the
+    // first hit and allocate nothing (same tests as inSpace).
+    const occupancy = () => rt.derived(`spaces2d.grid.occupancy:${sid}`, () => {
+      /** @type {Map<string, any[]>} */
+      const blocking = new Map(), solid = new Map();
+      const add = (m, k, o) => { const l = m.get(k); if (l) l.push(o); else m.set(k, [o]); };
+      for (const id in rt.state.entities) {
+        const o = rt.state.entities[id];
+        if (o.space !== sid || o.at == null) continue;
+        const b = o.components.body?.blocking !== false, s = obstacleOf(o) === 'solid';
+        if (!b && !s) continue;
+        const k = cellKey(cellOf(o.at));
+        if (b) add(blocking, k, o);
+        if (s) add(solid, k, o);
+      }
+      return { blocking, solid };
+    });
+    const blockerAt = (c, e) => {
+      const k = cellKey(c), idx = occupancy();
+      if (idx) return (idx.blocking.get(k) || []).some(o => o !== e);
+      for (const id in rt.state.entities) { const o = rt.state.entities[id]; if (o !== e && o.space === sid && o.components.body?.blocking !== false && cellKey(cellOf(o.at)) === k) return true; }
+      return false;
+    };
     // Entity obstacles (body.solid): always block real moves; in navigation only static ones do unless
     // obstacles: 'all' (doors and pushable crates are dynamic, assumed passable) or 'none'.
     const solidAt = (c, e, mode = 'all') => {
       if (mode === 'none') return false;
-      const k = cellKey(c);
+      const k = cellKey(c), idx = occupancy();
+      if (idx) return (idx.solid.get(k) || []).some(o => o !== e && (mode === 'all' || !dynamicObstacle(o)));
       for (const id in rt.state.entities) { const o = rt.state.entities[id]; if (o !== e && o.space === sid && obstacleOf(o) === 'solid' && (mode === 'all' || !dynamicObstacle(o)) && cellKey(cellOf(o.at)) === k) return true; }
       return false;
     };

@@ -12,7 +12,8 @@ import { buildCatalogue, isGenerator, isSpace } from '../v2/planner/catalog.js';
 import { verifyDocument, viability } from '../v2/planner/verify-adapter.js';
 import { verify } from '../v2/verify/index.js';
 import { hashOf } from '../v2/server/store.js';
-import { selectPrimitives, chooseSpaces } from '../v2/planner/select.js';
+import { selectPrimitives } from '../v2/planner/select.js';
+import { spaceCandidates } from '../v2/planner/build.js';
 import {
   generatorsFor, planWorld, spaceNeeds, unfurnishable, configureGenerators, extentProblems, scaleWorld, spaceExtent,
   furnishWorld, addGenerator, contentOf, isEmpty, grows, generationProblems, worldProblems, needSetFor,
@@ -243,32 +244,37 @@ test('generator × space matrix: preflight, real content, a clean generation pro
 
 // ---------- the planner: selection and live documents ----------
 test('selection plans a world for every space a mover or vehicle uses; a dungeon idea on mesh3d gets rooms', async () => {
-  const pick = async (space, mechanics, primitives, premise, kind = 'continuous-3d') => {
+  const pick = async (space, mechanics, primitives, premise, kind = 'continuous-3d', world = []) => {
     const d = decomposition(mechanics, { views: ['3p'], spaces: [{ role: 'world', kind }], zones: 4, acts: 1 });
     d.premise = premise;
-    // The model builds on the space and picks the listed primitives, one mechanic at a time (build.js).
-    return selectPrimitives({ decomposition: d, registry, writer: buildWriter({ space: [space], picks: Object.fromEntries(mechanics.map((m, i) => [`m${i}`, [...primitives, space]])) }) });
+    // The model builds on the space and picks the listed primitives, one mechanic at a time (build.js), and, for a space
+    // that declares alternative worlds, the world (pick_world).
+    const writer = buildWriter({ space: [space], picks: Object.fromEntries(mechanics.map((m, i) => [`m${i}`, [...primitives, space]])), steps: { world } });
+    return { sel: await selectPrimitives({ decomposition: d, registry, writer }), writer };
   };
-  const kart = await pick('engine.space.mesh3d', ['drive a shopping cart around the track'], ['gameplay.vehicle.car', 'gameplay.race'], 'Mario Kart with shopping carts');
-  assert.equal(kart.spaces[0].use, 'engine.space.mesh3d');
-  assert.deepEqual(kart.generators.map(g => g.id).sort(), ['engine.generate.roads', 'engine.generate.terrain.noise']);
-  const zelda = await pick('engine.space.mesh3d', ['explore the clockwork dungeon'], ['gameplay.move.walk', 'gameplay.combat.melee'], '3D Zelda-style dungeon inside a giant clock');
-  assert.deepEqual(zelda.generators.map(g => g.id), ['engine.generate.dungeon.rooms']);
+  const kart = await pick('engine.space.mesh3d', ['drive a shopping cart around the track'], ['gameplay.vehicle.car', 'gameplay.race'], 'Mario Kart with shopping carts', 'continuous-3d', ['terrain+road-network']);
+  assert.equal(kart.sel.spaces[0].use, 'engine.space.mesh3d');
+  assert.deepEqual(kart.sel.generators.map(g => g.id).sort(), ['engine.generate.roads', 'engine.generate.terrain.noise']);
+  // The space's declared worlds are the options, in its declaration order; the idea's words choose nothing.
+  const asked = kart.writer.calls.find(c => c.schema.name === 'pick_world');
+  assert.deepEqual(asked.schema.schema.properties.world.enum, ['terrain+road-network', 'rooms']);
+  assert.deepEqual(kart.sel.worlds, { world: ['terrain', 'road-network'] });
+  const zelda = await pick('engine.space.mesh3d', ['explore the clockwork dungeon'], ['gameplay.move.walk', 'gameplay.combat.melee'], '3D Zelda-style dungeon inside a giant clock', 'continuous-3d', ['rooms']);
+  assert.deepEqual(zelda.sel.generators.map(g => g.id), ['engine.generate.dungeon.rooms']);
   const track = await pick('engine.space.track', ['race down the lanes'], ['gameplay.move.lanes'], 'An endless lane racer', 'continuous-2d');
-  assert.deepEqual(track.generators.map(g => g.id), ['engine.generate.chunks']);
-  // A space kind no registered generator can furnish is not chosen while something moves through the world.
+  assert.deepEqual(track.sel.generators.map(g => g.id), ['engine.generate.chunks']);
+  assert.ok(!track.writer.calls.some(c => c.schema.name === 'pick_world'), 'a space with one declared world is not asked');
+  // A space kind no registered generator can furnish is not offered for an avatar while something moves through the world.
   const bare = buildCatalogue([], ['engine.space.mesh3d', 'engine.space.tilemap', 'engine.space.none', 'gameplay.move.walk'].map(id => registry.get(id)));
-  const r = chooseSpaces(bare.registry, ['gameplay.move.walk'], { spaces: [{ kind: 'continuous-3d' }], views: ['3p'] });
-  assert.ok(r.excluded.some(e => e.use === 'engine.space.mesh3d' && e.missing.includes('terrain')), JSON.stringify(r.excluded));
-  assert.ok(r.excluded.some(e => e.use === 'engine.space.tilemap'));
-  assert.equal(r.spaces[0].use, 'engine.space.none');
+  const offered = spaceCandidates(bare.registry, { views: ['3p'], mechanics: [], core: { interaction: 'avatar-realtime' } }).map(s => s.use);
+  assert.ok(!offered.includes('engine.space.mesh3d') && !offered.includes('engine.space.tilemap'), JSON.stringify(offered));
 });
 
-test('need sets: the idea picks a declared alternative only when a generator for it is relevant', () => {
+test('need sets: the first declared set the collection meets, else the space\'s own needs.content; never the idea\'s words', () => {
   const space = { id: 'w', use: 'engine.space.mesh3d' };
-  assert.deepEqual(needSetFor(registry, space, { intent: 'Mario Kart with shopping carts' }), ['terrain', 'road-network']);
-  assert.deepEqual(needSetFor(registry, space, { intent: '3D Zelda-style dungeon inside a giant clock' }), ['rooms']);
+  assert.deepEqual(needSetFor(registry, space), ['terrain', 'road-network']);
   assert.deepEqual(needSetFor(registry, space, { have: ['rooms'] }), ['rooms']);
+  assert.deepEqual(needSetFor(registry, space, { have: ['terrain', 'road-network'] }), ['terrain', 'road-network']);
 });
 
 test('live documents: Mario Kart (track and the 3D outline), the platformer and the 3D Zelda dungeon get real worlds', async t => {
@@ -276,6 +282,10 @@ test('live documents: Mario Kart (track and the 3D outline), the platformer and 
   const cases = [['kart.json', 'race_tracks'], ['kart3d-outline.json', 'race_track'], ['platformer.json', 'tower_climb'], ['zelda3d-standin.json', 'clock_dungeon']];
   for (const [file, sid] of cases) {
     const doc = structuredClone(live(file));
+    // mesh3d declares two worlds (terrain and roads, or rooms): which one is the step path's model choice (select.js
+    // pick_world), never the idea's words. This stored stand-in predates that choice, so it is given the one a dungeon
+    // makes (its rooms generator); the planner's pass configures it.
+    if (file === 'zelda3d-standin.json' && !doc.spaces[0].generators?.length) doc.spaces[0].generators = [{ use: 'engine.generate.dungeon.rooms' }];
     configureGenerators(doc, registry); // the planner's pass over a draft, then furnishing
     const f = furnishWorld(doc, registry, logic, { seed: doc.seed });
     const { rt, doc: pre } = boot(f.doc), c = contentOf(rt, sid);

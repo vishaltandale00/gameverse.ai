@@ -205,6 +205,8 @@ export function preflight(input, registry, logic) {
       if (kind !== undefined && !kindDeclares(def, e.code)) undeclared.push({ code: 'rule_undeclared', path: e.path, message: `${type} '${kind}' (${logic.owners?.[type]?.get(kind) ?? 'kernel'}) emits '${e.code}', which its registration does not declare (codes)`, hint: 'declare it with the kind: logic.' + type + '(kind, { codes: [{ code, fields, example }] })' });
     }
   };
+  /** Reference kinds the document's data names an id of (an end_game naming an ending reads plot.endings). @type {Set<string>} */
+  const referenced = new Set();
   /** @type {ValidateContext} */
   const ctx = {
     doc, registry, indexes,
@@ -214,6 +216,7 @@ export function preflight(input, registry, logic) {
     checkEffect: (e, path, errs) => { const n = errs.length; if (e?.do) vocab.push(['effect', e.do, path]); logic.checkEffect(e, path, errs, ctx); vocabFound('effect', typeof e?.do === 'string' ? e.do : undefined, errs, n); },
     noteRef(kind, id, path, mode) {
       if (refs[kind]) { const m = refs[kind][mode]; if (!m.has(id)) m.set(id, path); return; }
+      referenced.add(kind);
       if (indexes[kind] && (typeof id !== 'string' || !indexes[kind].has(id))) errors.push({ code: 'ref_unknown', path, message: `unknown ${kind} '${id}'` });
     },
     provides: { events: new Set(KERNEL_EVENTS), vars: new Set(), services: new Set() },
@@ -304,8 +307,10 @@ export function preflight(input, registry, logic) {
     errors.push({ code: 'vocabulary_owner_missing', path, message: `${type} '${kind}' is provided by '${owner}', which this document does not use`, hint: `add { "use": "${owner}" } to the document` });
   }
 
-  // Data sections must be read by some primitive.
-  const reads = new Set(['content.archetypes', ...[...used].flatMap(id => /** @type {RegisteredPrimitive} */ (registry.get(id)).card.reads || [])]); // the kernel spawns archetypes
+  // Data sections must be read: by a primitive the document uses (card.reads), by the kernel (it spawns archetypes), or
+  // through a reference into them that the document's data makes (a base kind's section: an end_game naming an ending).
+  const reads = new Set(['content.archetypes', ...[...used].flatMap(id => /** @type {RegisteredPrimitive} */ (registry.get(id)).card.reads || []),
+    ...BASE_DEFINES.filter(d => referenced.has(d.kind)).map(d => d.at)]);
   const sections = [...Object.keys(doc.plot || {}).filter(k => k !== 'premise').map(k => `plot.${k}`), ...Object.keys(doc.content || {}).map(k => `content.${k}`)];
   for (const s of sections) if (![...reads].some(r => s === r || s.startsWith(r + '.'))) warnings.push({ code: 'data_unused', path: s, message: `no primitive reads ${s}`, hint: 'add the primitive that uses it, or remove it' });
 

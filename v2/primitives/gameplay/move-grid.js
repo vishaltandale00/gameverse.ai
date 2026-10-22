@@ -90,7 +90,7 @@ export default {
       }
     }, ID);
     rt.options(rt => {
-      const p = rt.player(); if (!p || mv(p).owner !== owner) return [];
+      const p = rt.player(); if (!p || p.components.move?.owner !== owner) return []; // listing reads: no mv(), which creates the component
       const steps = c.mode === 'lane' ? Math.max(1, Math.round(1 / c.speed / rt.dt)) : c.walkFrames + c.turnFrames;
       return NAMES.map(n => ({ label: `step ${n}`, actions: { [n]: true }, steps }));
     });

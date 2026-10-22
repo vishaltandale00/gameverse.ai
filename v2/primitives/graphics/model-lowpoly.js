@@ -24,7 +24,7 @@ export function rigForSpec(spec, rigCfg = {}) {
   if (spec.rig === 'quadruped') {
     const q = rigCfg.quadruped || {};
     const length = spec.length || q.bodyLength / 0.62 || 1.6, height = spec.height || (q.legLength ? q.legLength / legFraction(q.legLength, q.bodyLength || 1.4) : 1.2);
-    return quadrupedRig({ length, height, legLength: q.legLength ? legFraction(q.legLength, q.bodyLength || 1.4) : undefined, neck: /dragon|wyrm/.test(spec.species || '') ? 0.45 : /deer|stag|horse|camel|elk/.test(spec.species || '') ? 0.42 : 0.3 });
+    return quadrupedRig({ length, height, legLength: q.legLength ? legFraction(q.legLength, q.bodyLength || 1.4) : undefined, neck: spec.features?.neck ?? 0.3 });
   }
   if (spec.rig === 'custom' || (spec.boneCount && spec.parts?.length)) return customRig(spec.parts || [], { bones: spec.boneCount ?? 8 });
   return null;
@@ -100,9 +100,13 @@ function hairStyle(style, hc, hs, hair, cloth, trim, H) {
   return out;
 }
 
-/** Generated quadruped body along the rig (horse, deer, wolf, boar, cow, cat, dragon). */
+/**
+ * Generated quadruped body along the rig (horse, deer, wolf, boar, cow, cat, dragon). Head features are the spec's
+ * declared `features` ({ neck, ears: 'long' | 'pointed' | 'short', antlers, tusks, horns, bushy tail, mane, ruff }; `horns`
+ * and `mane` also at the top level).
+ */
 export function quadrupedBody(rig, spec, { saddle = false } = {}) {
-  const pal = spec.palette || {}, J = Object.fromEntries(rig.bones.map(b => [b.name, b.head])), sp = spec.species || '';
+  const pal = spec.palette || {}, J = Object.fromEntries(rig.bones.map(b => [b.name, b.head])), ft = spec.features || {};
   const coat = 'coat' in pal ? 'coat' : '#7a6a5a', mane = 'mane' in pal ? 'mane' : coat, hooves = 'hooves' in pal ? 'hooves' : '#222', belly = 'belly' in pal ? 'belly' : coat;
   const L = rig.length, H = rig.height, hw = rig.halfWidth, P = [];
   const deep = Math.max(0.2 * H, 0.26 * (H - rig.legLength + 0.25 * H));
@@ -118,18 +122,18 @@ export function quadrupedBody(rig, spec, { saddle = false } = {}) {
   P.push(limb(J.neck_2, J.head, bodyH * 0.27, coat, 'neck_2', { blendTo: 'head', shape: 'cyl' }));
   const headL = rig.neckLength * 0.55, hh = bodyH * 0.42;
   P.push(box([0, J.head[1], J.head[2] + headL * 0.2], [hh * 0.9, hh, headL * 0.6], coat, 'head', { name: 'skull' }));
-  P.push(box([0, J.head[1] - hh * 0.15, J.head[2] + headL * 0.65], [hh * 0.7, hh * 0.65, headL * 0.6], /wolf|fox|dog|hound|dragon/.test(sp) ? coat : coat, 'head', { name: 'snout', taper: 0.85 }));
-  P.push(box([0, J.head[1] - hh * 0.05, J.head[2] + headL * 0.96], [hh * 0.42, hh * 0.25, 0.04 * L], /boar|pig/.test(sp) ? '#c88a88' : '#2a2220', 'head', { name: 'nose' }));
+  P.push(box([0, J.head[1] - hh * 0.15, J.head[2] + headL * 0.65], [hh * 0.7, hh * 0.65, headL * 0.6], coat, 'head', { name: 'snout', taper: 0.85 }));
+  P.push(box([0, J.head[1] - hh * 0.05, J.head[2] + headL * 0.96], [hh * 0.42, hh * 0.25, 0.04 * L], ft.tusks ? '#c88a88' : '#2a2220', 'head', { name: 'nose' }));
   const eyeGlow = 'glow' in pal;
   for (const x of [1, -1]) P.push(box([x * hh * 0.46, J.head[1] + hh * 0.18, J.head[2] + headL * 0.32], [0.03 * L, 0.035 * L, 0.035 * L], eyeGlow ? 'glow' : '#120c08', 'head', { mat: eyeGlow ? 'glow' : 'matte' }));
-  for (const s of ['L', 'R']) P.push({ shape: 'cone', at: J[`ear${s}`], size: [hh * 0.28, hh * (/rabbit|hare/.test(sp) ? 1.2 : /wolf|fox|cat|dog/.test(sp) ? 0.55 : 0.4), hh * 0.16], c: coat, bone: 'head', name: `ear${s}`, rot: [-0.2, 0, s === 'L' ? -0.25 : 0.25] });
-  if (/deer|stag|elk|moose/.test(sp)) for (const x of [1, -1]) {
+  for (const s of ['L', 'R']) P.push({ shape: 'cone', at: J[`ear${s}`], size: [hh * 0.28, hh * (ft.ears === 'long' ? 1.2 : ft.ears === 'pointed' ? 0.55 : 0.4), hh * 0.16], c: coat, bone: 'head', name: `ear${s}`, rot: [-0.2, 0, s === 'L' ? -0.25 : 0.25] });
+  if (ft.antlers) for (const x of [1, -1]) {
     const base = [x * hh * 0.25, J.head[1] + hh * 0.5, J.head[2] + headL * 0.15];
     P.push(limb(base, [base[0] + x * hh * 0.5, base[1] + hh * 1.2, base[2] - hh * 0.2], 0.018 * L, 'hooves' in pal ? hooves : '#d8c8a0', 'head', { shape: 'cyl', name: 'antler' }));
     P.push(limb([base[0] + x * hh * 0.25, base[1] + hh * 0.6, base[2] - hh * 0.1], [base[0] + x * hh * 0.1, base[1] + hh * 1.0, base[2] + hh * 0.3], 0.014 * L, 'hooves' in pal ? hooves : '#d8c8a0', 'head', { shape: 'cyl' }));
   }
-  if (/boar|pig|hog/.test(sp)) for (const x of [1, -1]) P.push({ shape: 'cone', at: [x * hh * 0.3, J.head[1] - hh * 0.25, J.head[2] + headL * 0.85], size: [0.03 * L, 0.12 * L, 0.03 * L], c: '#f0e8d8', bone: 'head', rot: [0.5, 0, x * 0.3] });
-  if (/cow|bull|ox|ram|goat|dragon/.test(sp) || spec.horns) for (const x of [1, -1]) P.push({ shape: 'cone', at: [x * hh * 0.42, J.head[1] + hh * 0.5, J.head[2] + headL * 0.1], size: [0.04 * L, 0.16 * L, 0.04 * L], c: '#e8e0d0', bone: 'head', rot: [-0.3, 0, -x * 0.6] });
+  if (ft.tusks) for (const x of [1, -1]) P.push({ shape: 'cone', at: [x * hh * 0.3, J.head[1] - hh * 0.25, J.head[2] + headL * 0.85], size: [0.03 * L, 0.12 * L, 0.03 * L], c: '#f0e8d8', bone: 'head', rot: [0.5, 0, x * 0.3] });
+  if (ft.horns || spec.horns) for (const x of [1, -1]) P.push({ shape: 'cone', at: [x * hh * 0.42, J.head[1] + hh * 0.5, J.head[2] + headL * 0.1], size: [0.04 * L, 0.16 * L, 0.04 * L], c: '#e8e0d0', bone: 'head', rot: [-0.3, 0, -x * 0.6] });
   // Legs: upper (thick), lower, hoof/paw.
   for (const leg of ['FL', 'FR', 'BL', 'BR']) {
     const front = leg[0] === 'F', r0 = (front ? 0.085 : 0.1) * H * (L / H > 1.6 ? 1 : 1.2);
@@ -139,11 +143,11 @@ export function quadrupedBody(rig, spec, { saddle = false } = {}) {
   }
   // Tail and mane chains (spring-bone targets).
   const tails = rig.bones.filter(b => b.name.startsWith('tail_'));
-  const bushy = /wolf|fox|dog|cat|squirrel|lion/.test(sp);
+  const bushy = Boolean(ft.bushy);
   let prevT = J.hips;
   tails.forEach((b, i) => { P.push(limb(prevT, b.head, (bushy ? 0.07 : 0.035) * L * (1 - i * 0.18), bushy ? coat : mane, i ? tails[i - 1].name : 'hips', { blendTo: b.name, name: b.name, secondary: true })); prevT = b.head; });
-  if (/horse|pony|mare|stallion|lion|mule|donkey|zebra|unicorn/.test(sp) || spec.mane) rig.bones.filter(b => b.name.startsWith('mane_')).forEach(b => P.push(box([0, b.head[1] + 0.02 * L, b.head[2] - 0.03 * L], [0.05 * L, 0.18 * H, 0.13 * L], mane, b.name, { name: b.name, secondary: true })));
-  if (/wolf|ember/.test(sp) && 'mane' in pal) P.push(box([0, J.chest[1] + bodyH * 0.35, J.chest[2] - 0.05 * L], [torsoW * 1.05, bodyH * 0.35, bodyH * 1.0], mane, 'chest', { name: 'ruff' }));
+  if (ft.mane || spec.mane) rig.bones.filter(b => b.name.startsWith('mane_')).forEach(b => P.push(box([0, b.head[1] + 0.02 * L, b.head[2] - 0.03 * L], [0.05 * L, 0.18 * H, 0.13 * L], mane, b.name, { name: b.name, secondary: true })));
+  if (ft.ruff && 'mane' in pal) P.push(box([0, J.chest[1] + bodyH * 0.35, J.chest[2] - 0.05 * L], [torsoW * 1.05, bodyH * 0.35, bodyH * 1.0], mane, 'chest', { name: 'ruff' }));
   if (spec.wings) for (const x of [1, -1]) P.push(box([x * (hw + L * 0.25), J.chest[1] + bodyH * 0.5, J.chest[2] - 0.15 * L], [L * 0.5, 0.02 * L, L * 0.35], mane, 'chest', { name: x > 0 ? 'wingL' : 'wingR' }));
   if (saddle || spec.saddle) {
     const s = J.saddle, saddleC = 'saddle' in pal ? 'saddle' : '#5a3a24', tack = 'tack' in pal ? 'tack' : '#c8a038';

@@ -8,10 +8,25 @@
 // - foliage goes to graphics.foliage.scatter when present;
 // - everything else is instanced per model template.
 import { buildingParts, BUILDING_STYLES } from './three-buildings.js';
-import { synthesizeSpec } from './three-model-gen.js';
+import { propModel } from './three-model-gen.js';
 import { GeoBuilder, appendParts } from './three-geometry.js';
 import { paletteFor } from './material-palette.js';
 
+// The world-object layer still classifies placed objects by words in their kind, prop and tags (FOLIAGE_KINDS,
+// BUILDING_KINDS, OBJECT_PROPS): the generators (engine.generate.scatter, city, structures) do not yet declare what
+// each object they place is. Archetypes and items never come here (three-model-gen.js reads their declarations).
+/** The 3D prop type (three-model-gen PROP_TYPES) a placed object's kind, prop and tags name. */
+const OBJECT_PROPS = [
+  ['campfire', /campfire|fire|brazier|bonfire|hearth/], ['lamp', /lamp|lantern|torch|light|candle|beacon/], ['chest', /chest|coffer|loot|cache|trunk/],
+  ['crate', /crate|box|package|cargo|supply/], ['barrel', /barrel|keg|cask|drum/], ['bed', /bed|cot|bunk/],
+  ['table', /table|desk|bench|workbench|counter|altar|alchemy/], ['anvil', /anvil|forge|furnace|kiln|oven|smelter/],
+  ['door', /door|gate|portal|vault/], ['tree', /tree|oak|pine|palm|birch|willow/], ['bush', /bush|shrub|hedge|plant|forage|herb|flower/],
+  ['rock', /rock|stone|boulder|ore|crystal/], ['sign', /sign|tablet|ledger|book|note|board|scroll|map/], ['statue', /statue|shrine|idol|totem|monument|seal/],
+  ['machine', /vending|machine|terminal|console|computer|generator|engine/], ['barricade', /barricade|fence|wall|barrier/],
+  ['crown', /crown|relic|artifact|trophy|chalice|orb/],
+];
+/** The prop type a placed object is built as. @param {{ kind?: string, prop?: string, model?: string, tags?: string[] }} o */
+export const objectPropType = o => { const k = `${o.prop || ''} ${o.model || ''} ${o.kind || ''} ${(o.tags || []).join(' ')}`.toLowerCase().replace(/_/g, ' '); return OBJECT_PROPS.find(([, re]) => re.test(k))?.[0] || 'crate'; };
 export const FOLIAGE_KINDS = /tree|bush|shrub|rock|boulder|grass|flower|plant|fern|reed|mushroom|stump|cactus|pebble|hedge/;
 export const BUILDING_KINDS = /building|house|hut|tower|hall|shop|barn|stable|forge|shrine|temple|church|castle|keep|warehouse|hangar|structure|ruin|inn|tavern|mill|lighthouse|station|cabin|cottage|manor|fort/;
 const ROLE_COLOR = { wall: 'wall', roof: 'roof', floor: 'trim', trim: 'trim', post: 'wood', deck: 'wood', fence: 'wood' };
@@ -62,7 +77,7 @@ export function createObjectLayer(stage, spaceId, root, opts = {}) {
     if (o.model && m[o.model]) return { id: o.model, spec: m[o.model] };
     if (o.archetype) return stage.models.specFor(o.archetype);
     const name = o.prop || o.kind || 'thing';
-    return { id: `obj:${name}:${o.style || ''}`, spec: synthesizeSpec({ id: name, kind: 'prop', tags: o.tags }) };
+    return { id: `obj:${name}:${o.style || ''}`, spec: propModel(name, objectPropType(o)) };
   };
   const matrixOf = (o, scale = 1) => {
     const s = Array.isArray(o.scale) ? o.scale : [o.scale ?? 1, o.scale ?? 1, o.scale ?? 1];

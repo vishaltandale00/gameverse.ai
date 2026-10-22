@@ -43,27 +43,47 @@ export function prng(seed) {
 }
 
 const clock = () => globalThis.performance?.now?.() ?? Date.now();
+/** Wall time, for measurements (timings, reports) only: nothing that decides what is played reads it. */
 export const now = clock;
 
+const METERED = Symbol('metered');
+
 /**
- * A budget over wall time, states and simulated steps. Wall time is only a
- * safety net: searches meant to be deterministic should bind on states/steps.
+ * A budget over the work a search does: states (decisions it keeps) and steps (frames it simulates). Both are counted
+ * from the play itself, so the same document, seed and budget always give the same search and the same verdict, on a
+ * loaded machine or across a laptop's sleep. Steps are counted where frames are simulated: `meter(rt)` makes every
+ * rt.step of that runtime count (lookahead on snapshots included), so nothing simulates past the budget unseen.
+ * Wall time decides nothing here (there is no `ms`): a caller that must cap total time does it between whole stages and
+ * marks what it skipped as budget-limited (verify/index.js wallMs), never inside a search.
+ * @param {{ states?: number, steps?: number }} [limits]
  */
-export function budget({ ms = Infinity, states = Infinity, steps = Infinity } = {}) {
+export function budget(limits = {}) {
+  if ('ms' in limits) throw Error('budget: wall time decides nothing a search plays (its limits are states and steps); cap total time between stages');
+  const { states = Infinity, steps = Infinity } = limits;
   const started = clock();
   const b = {
-    started, ms, states, steps, usedStates: 0, usedSteps: 0, hit: null,
+    states, steps, usedStates: 0, usedSteps: 0, hit: /** @type {null | 'states' | 'steps'} */ (null),
+    /** Wall time since the budget began (a measurement for reports). */
     elapsed: () => clock() - started,
-    left: () => Math.max(0, ms - (clock() - started)),
     over() {
       if (b.usedStates >= states) b.hit ??= 'states';
       else if (b.usedSteps >= steps) b.hit ??= 'steps';
-      else if (clock() - started >= ms) b.hit ??= 'ms';
       return b.hit !== null;
     },
     state(n = 1) { b.usedStates += n; },
-    step(n = 1) { b.usedSteps += n; },
-    report: () => ({ ms: Math.round(clock() - started), states: b.usedStates, steps: b.usedSteps, limit: b.hit }),
+    /** Count every frame `rt` simulates from now on against this budget (once per runtime). @template T @param {T} rt @returns {T} */
+    meter(rt) {
+      const r = /** @type {any} */ (rt);
+      if (r[METERED] === b) return rt;
+      const step = r.step;
+      r.step = (/** @type {any} */ input) => { b.usedSteps++; return step.call(r, input); };
+      r[METERED] = b;
+      return rt;
+    },
+    /** A maker whose worlds are metered. @param {(seed?: any) => any} make */
+    metered: make => (/** @type {any} */ seed) => b.meter(make(seed)),
+    /** What the search used; `ms` is a measurement, never a limit. */
+    report: () => ({ states: b.usedStates, steps: b.usedSteps, limit: b.hit, ms: Math.round(clock() - started) }),
   };
   return b;
 }

@@ -36,6 +36,8 @@ export const cardArt = (id, type) => { const h = hashHue(id), h2 = (h + 40) % 36
 export default {
   id: 'graphics.ui.cards',
   card: {
+    // The quantities it shows a person (graphics/ui-defaults.js: a loop's goal it displays needs no HUD widget).
+    displays: [{ component: 'health', of: 'opponents' }, { component: 'health', of: 'player' }],
     intent: 'Card game UI for any deck game: fanned hand with focus lift, costs and playable glow, procedural card art, energy, draw/discard piles, enemies with intents and health, duel board row, targeting and End turn.',
     views: ['ui', 'any'],
     // The interactions it gives a person controls for, and the verbs it sends through view.act (ARCHITECTURE §6.3).
@@ -60,7 +62,7 @@ export default {
     host.layer('screen').append(screen);
     let view = null, focus = 0, targeting = null, handSig = '', foeSig = '', boardSig = '';
     const cardNodes = [], foeNodes = new Map();
-    const layer = { id: 'cards', modal: true, onVerb: verb => press(verb) };
+    const layer = { id: 'cards', modal: false, takesInput: true, onVerb: verb => press(verb) }; // the turn screen is where play happens: keys the game binds still reach it
     const focusables = () => [...cardNodes, endBtn];
 
     function press(verb) {
@@ -69,12 +71,13 @@ export default {
         if (verb === 'left' || verb === 'right') { targeting.i = (targeting.i + (verb === 'left' ? -1 : 1) + targeting.ids.length) % targeting.ids.length; paintTargets(); host.sound('move'); }
         else if (verb === 'confirm') play(targeting.card, targeting.ids[targeting.i]);
         else if (verb === 'back') { targeting = null; paintTargets(); host.sound('back'); }
+        else return false;
         return true;
       }
       if (verb === 'left' || verb === 'right' || verb === 'up' || verb === 'down') { const list = focusables(); const i = moveFocus(focus, verb === 'up' ? 'left' : verb === 'down' ? 'right' : verb, list.length, 1); if (i !== focus) { focus = i; paintFocus(); host.sound('move'); } return true; }
       if (verb === 'confirm') { focusables()[focus]?._run?.(); return true; }
       if (verb === 'next') { endTurn(); return true; }
-      return true;
+      return false; // not handled: the pause menu's key reaches it
     }
     function choose(c) {
       if (!c.playable) { host.sound('error'); pulse(cardNodes[view.hand.indexOf(c)] || hand, 'is-shake'); return; }
@@ -97,8 +100,8 @@ export default {
       cardNodes.length = 0;
       fill(hand, ...view.hand.map((c, i) => {
         const def = cardDef(rt.doc, c.card) || {}, type = c.type || def.type || 'skill', t = TYPE[type] || TYPE.skill;
-        const node = el(`div.gv-card${c.playable ? '.is-playable' : '.is-unplayable'}`, { role: 'button', aria: { label: `${c.name || def.name || titleCase(c.card)}, cost ${c.cost ?? def.cost ?? 0}` }, style: { '--x': `${lay[i].x}px`, '--y': `${lay[i].y}px`, '--rot': `${lay[i].rot}deg`, '--ct': t.color, '--art': cardArt(c.card, type), 'animation-delay': `${i * 35}ms`, 'z-index': i } },
-          el('div.gv-card-cost', { text: c.cost ?? def.cost ?? 0 }), el('div.gv-card-name', { text: c.name || def.name || titleCase(c.card) }),
+        const node = el(`div.gv-card${c.playable ? '.is-playable' : '.is-unplayable'}`, { role: 'button', aria: { label: `${c.name || def.name || ''}, cost ${c.cost ?? def.cost ?? 0}` }, style: { '--x': `${lay[i].x}px`, '--y': `${lay[i].y}px`, '--rot': `${lay[i].rot}deg`, '--ct': t.color, '--art': cardArt(c.card, type), 'animation-delay': `${i * 35}ms`, 'z-index': i } },
+          el('div.gv-card-cost', { text: c.cost ?? def.cost ?? 0 }), el('div.gv-card-name', { text: c.name || def.name || '' }),
           el('div.gv-card-art', { style: { display: 'grid', 'place-items': 'center' } }, icon(t.icon, { color: '#ffffff' })),
           el('div.gv-card-type', { text: titleCase(type) }), el('div.gv-card-text', { text: c.text || def.text || '' }));
         node._run = () => choose(c);
@@ -115,7 +118,7 @@ export default {
         foeSig = sig; foeNodes.clear();
         fill(enemies, ...list.map(e => {
           const ent = rt.entity(e.id), model = ent?.components?.model || ent?.archetype || e.id;
-          const n = el('div.gv-foe', { data: { foe: e.id }, style: { '--who': portraitColor(rt.doc, model) } }, el('span.gv-intent'), el('div.gv-bsprite', {}, portrait(rt.doc, model, { mode: 'full' })), el('b', { text: e.name || titleCase(ent?.archetype || e.id) }),
+          const n = el('div.gv-foe', { data: { foe: e.id }, style: { '--who': portraitColor(rt.doc, model) } }, el('span.gv-intent'), el('div.gv-bsprite', {}, portrait(rt.doc, model, { mode: 'full' })), el('b', { text: S.entityName(rt, e.id, e.name) }),
             el('div.gv-meter', { style: { width: '150px', 'min-width': '0' } }, el('div.gv-meter-track', {}, el('div.gv-meter-chip'), el('div.gv-meter-fill', { style: { '--fill': '#ff5d5d' } })), el('span.gv-meter-value')));
           n.addEventListener('click', () => { if (targeting) { const i = targeting.ids.indexOf(e.id); if (i >= 0) play(targeting.card, e.id); } });
           foeNodes.set(e.id, n); return n;

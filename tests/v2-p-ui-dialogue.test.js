@@ -116,7 +116,7 @@ test('dialogue: preflight rejects bad configs and accepts every game instance', 
   for (const { file, doc: d } of list) assert.deepEqual(ownErrors(preflight(d, registry, logic).errors), [], file);
 });
 
-test('dialogue: a simulation modal nobody presents is offered as choices; view.modal mirrors rt.modal', () => {
+test('dialogue: a simulation modal nobody presents is offered as choices; the kernel, not the view, filters input by it', () => {
   const ask = {
     id: 'gameplay.fixture.ask', card: { intent: 'Fixture modal prompt.', provides: { actions: ['ask', 'answer'] } },
     install(rt) {
@@ -128,7 +128,8 @@ test('dialogue: a simulation modal nobody presents is offered as choices; view.m
   const d = baseDoc({ systems: [{ use: 'gameplay.fixture.ask' }], graphics: [{ use: 'graphics.ui.dialogue', with: { cps: 0 } }] });
   const m = mount(d, { primitives: [...BASE, dialogue, ask] });
   m.frame(1, { actions: { ask: true } });
-  assert.equal(m.view.modal, 'sim:gameplay.fixture.ask', 'mirrored before any UI presents it');
+  assert.equal(m.rt.modal?.owner, 'gameplay.fixture.ask');
+  assert.equal(m.view.modal, null, 'view.modal names UI layers only: the step input is filtered by rt.modal in every host');
   m.frame(4);
   assert.equal(m.text('.gv-dlg-name'), 'Fork in the road');
   assert.deepEqual([...m.qa('.gv-choice')].map(c => c.textContent), ['1Go left', '2Go right']);

@@ -174,6 +174,8 @@ function reachedBy(set, sp, e) {
 export default {
   id: 'gameplay.interact',
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { pickup: { role: 'pickup' }, interact: { role: 'npc' } },
     // The participants an event names (role -> data field): who used something and what it used.
     loop: { verbs: ['interact'], progress: ['interacted', 'used', 'read'], involves: { interacted: { user: 'who', used: 'target' } } },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).

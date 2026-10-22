@@ -14,14 +14,14 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'tactics', title: 'Tactics', seed: 1,
     views: { primary: 'td' },
-    spaces: [{ id: 'field', use: 'engine.space.grid', with: { size: [12, 12], exclusive: true, cover: true, rules: { wall: { cover: 2, opaque: true }, crate: { cover: 1 }, rubble: { cost: 2 } } },
+    spaces: [{ id: 'field', use: 'engine.space.grid', with: { scenery: 'factory', size: [12, 12], exclusive: true, cover: true, rules: { wall: { cover: 2, opaque: true }, crate: { cover: 1 }, rubble: { cost: 2 } } },
       generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', terrain: [{ block: 'wall', weight: 1, blocks: true }, { block: 'crate', weight: 2, blocks: true }, { block: 'rubble', weight: 1 }], density: 0.18, symmetry: 'rotate', teams: 2, deployDepth: 2 } }] }],
     systems: [
       { use: 'gameplay.combat.health', with: { iframes: 0, playerDeath: 'none' } },
       // The squads are on the board before the first turn starts (the spawner runs before the turn order).
       { use: 'engine.spawner', with: { intervalSec: 0, rules: [...SQUAD, ...ALIENS].map(([id, archetype, at]) => ({ id, archetype, at, unique: true, activation: 'always', respawnSec: 0 })) } },
       { use: 'gameplay.turns', with: {
-        sides: [{ id: 'squad', control: 'player' }, { id: 'aliens', control: 'ai' }], ap: 2, movePerAp: 4, overwatch: true, overwatchPenalty: 15,
+        sides: [{ id: 'squad', name: 'Squad', control: 'player' }, { id: 'aliens', name: 'Aliens', control: 'ai' }], ap: 2, movePerAp: 4, overwatch: true, overwatchPenalty: 15,
         actions: [
           { id: 'shoot', label: 'Shoot', range: 7, hit: { base: 75, cover: [0, 25, 45], flank: 10 }, crit: { chance: 10, flankBonus: 40 }, onHit: [{ do: 'damage', who: 'target', amount: 3 }], onCrit: [{ do: 'damage', who: 'target', amount: 2 }] },
           { id: 'claw', label: 'Claw', range: 1.5, hit: { base: 85, cover: [0, 0, 0] }, onHit: [{ do: 'damage', who: 'target', amount: 4 }] },
@@ -36,9 +36,9 @@ export default {
         { id: 'drone', name: 'Drone', kind: 'enemy', components: { health: { max: 6 }, turns: { side: 'aliens', actions: ['claw', 'spit'] } } },
         { id: 'brute', name: 'Brute', kind: 'enemy', components: { health: { max: 9 }, turns: { side: 'aliens', defense: 10, actions: ['claw'] } } },
       ],
-      blocks: [{ id: 'wall', name: 'Wall', solid: true }, { id: 'crate', name: 'Crate', solid: true }, { id: 'rubble', name: 'Rubble', solid: false }],
+      blocks: [{ id: 'wall', name: 'Wall', solid: true, tile: 'brick', color: '#6a6e80' }, { id: 'crate', name: 'Crate', solid: true, tile: 'wood', color: '#a0703a' }, { id: 'rubble', name: 'Rubble', solid: false, tile: 'rock', color: '#7a7468' }],
     },
     player: { archetype: 'captain', at: [2, 0] },
   },
-  tune: ['engine.generate.grid.board.density', 'engine.generate.grid.board.symmetry', 'gameplay.turns.overwatch'],
+  tune: ['engine.space.grid.scenery', 'engine.generate.grid.board.density', 'engine.generate.grid.board.symmetry', 'gameplay.turns.overwatch'],
 };

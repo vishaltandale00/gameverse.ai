@@ -16,11 +16,9 @@ const mix = (a, b, t) => cached(`m${a}${b}${t}`, () => mix0(a, b, t));
 
 export const PATTERNS = ['canopy', 'rock', 'brick', 'moss', 'wood', 'ice', 'metal', 'crystal', 'soil', 'ash', 'grass', 'sand', 'snow', 'dirt', 'stone', 'lava', 'water', 'tech', 'candy', 'checker', 'plain'];
 export const EDGES = ['soft', 'sharp', 'warm', 'glow', 'none'];
-const PATTERN_WORDS = [['canopy', /tree|bush|hedge|shrub|foliage|canopy|palm|pine|oak/], ['brick', /brick|cistern|masonry|wall/], ['moss', /moss|vine|overgrown/], ['wood', /wood|plank|log|timber|thorn|bramble|ledge|bridge/], ['ice', /ice|frost|glass|frozen/], ['metal', /metal|iron|steel|rust|plate|pipe|machine/], ['crystal', /crystal|gem|quartz/], ['grass', /grass|turf|meadow|lawn/], ['sand', /sand|dune|beach/], ['snow', /snow/], ['lava', /lava|magma|slag/], ['water', /water|sea|lake|river/], ['tech', /tech|circuit|panel|neon/], ['candy', /candy|sweet|frosting/], ['ash', /ash|cinder|soot|bone/], ['soil', /soil|dirt|earth|mud|clay/], ['rock', /rock|stone|cave|cliff|boulder/]];
+/** A block's tile pattern: the one it declares (`tile`, one of PATTERNS), never one guessed from its id, name or tags. */
 export function patternFor(block = {}) {
-  if (PATTERNS.includes(block.tile)) return block.tile;
-  const text = [block.id, block.name, block.tile, ...(block.tags || [])].join(' ').toLowerCase();
-  return (PATTERN_WORDS.find(([, re]) => re.test(text)) || ['rock'])[0];
+  return PATTERNS.includes(block.tile) ? block.tile : 'rock';
 }
 /** Theme from a block's own color when no tileset theme applies. */
 export function themeFromBlock(block = {}, edge = 'soft') {

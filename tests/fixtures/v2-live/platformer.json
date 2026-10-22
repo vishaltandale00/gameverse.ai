@@ -619,10 +619,7 @@
      "bindings": {
       "side": {
        "move": [
-        "left",
-        "right",
-        "a",
-        "d"
+        "wasd"
        ],
        "jump": [
         "space"

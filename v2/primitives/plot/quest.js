@@ -44,7 +44,7 @@ export default {
   id: ID,
   solverKey, progress,
   card: {
-    loop: { verbs: ['accept_quest', 'track_quest'], progress: ['objective_done', 'quest_complete'], win: { when: { count: 'quest_complete', gte: '$target' }, reads: { event: 'quest_complete', by: { actions: ['accept_quest'], effects: ['complete_quest', 'set_objective'], events: ['*'] } } } },
+    loop: { shows: [], verbs: ['accept_quest', 'track_quest'], progress: ['objective_done', 'quest_complete'], win: { when: { count: 'quest_complete', gte: '$target' }, reads: { event: 'quest_complete', by: { actions: ['accept_quest'], effects: ['complete_quest', 'set_objective'], events: ['*'] } } } },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { accept_quest: { type: 'choice', of: 'an offered quest', from: 'options', emits: ['quest_started'] }, track_quest: { type: 'choice', of: 'an active quest', from: 'options', emits: ['quest_tracked'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
@@ -63,7 +63,7 @@ export default {
     provides: { events: ['quest_branch', 'quest_available', 'quest_available:*', 'quest_started', 'quest_started:*', 'quest_updated', 'objective_done', 'objective_done:*', 'objective_failed', 'quest_complete', 'quest_complete:*', 'quest_failed', 'quest_failed:*', 'quest_tracked', 'quest_blocked', 'delivered'], vars: ['quests.active', 'quests.complete'], services: ['quests'], actions: ['accept_quest', 'track_quest'] },
     // What a person is told when these events fire (a story log, a toast): `label`, then the title of the document entry
     // the event names (`entry`: the section and the event field holding its id), then the entry's `detail` field when set.
-    tells: { quest_started: { label: 'New task', entry: { at: 'plot.quests', by: 'quest' }, detail: 'summary' }, quest_complete: { label: 'Task done', entry: { at: 'plot.quests', by: 'quest' } }, quest_failed: { label: 'Task failed', entry: { at: 'plot.quests', by: 'quest' } } },
+    tells: { objective_done: { label: 'Objective done', entry: { at: 'plot.quests', by: 'quest' } }, quest_started: { label: 'New task', entry: { at: 'plot.quests', by: 'quest' }, detail: 'summary' }, quest_complete: { label: 'Task done', entry: { at: 'plot.quests', by: 'quest' } }, quest_failed: { label: 'Task failed', entry: { at: 'plot.quests', by: 'quest' } } },
     reads: ['plot.quests'],
     // Section shapes this primitive reads (planner: composition renames the references they hold, repair and forms use them).
     // An objective's fields are its kind's (story-objectives.js, the same fields the validator checks): `variants`.

@@ -7,7 +7,7 @@
 // only when that action exists. Layout helpers are pure.
 import { THEMES, resolveTheme } from './ui-theme.js';
 import { uiHost, fill, titleCase, itemName, charName, docItem, docSystem, fmtInt, isNum } from './ui-lib.js';
-import { icon, itemIcon } from './ui-icons.js';
+import { icon, itemIcon, resolveIcon } from './ui-icons.js';
 import { createSheet } from './ui-sheet.js';
 import * as S from './ui-sources.js';
 import { itemsData, blocksData } from './model-lib.js';
@@ -23,7 +23,7 @@ const isCurrency = (doc, id) => docItem(doc, id)?.kind === 'currency';
 
 /** Sorted inventory cells, padded to fill whole rows: [{ id, count, def } | null]. */
 export function inventoryLayout(bag, doc, { sort = true, columns = 8, slots = 36, hideCurrency = true } = {}) {
-  let list = Object.entries(bag).filter(([id, n]) => n > 0 && !(hideCurrency && isCurrency(doc, id))).map(([id, count]) => ({ id, count, def: docItem(doc, id) || { id, name: titleCase(id), kind: 'misc' } }));
+  let list = Object.entries(bag).filter(([id, n]) => n > 0 && !(hideCurrency && isCurrency(doc, id))).map(([id, count]) => ({ id, count, def: docItem(doc, id) || { id, name: '', kind: 'misc' } }));
   if (sort) list.sort((a, b) => (KIND_ORDER.indexOf(a.def.kind) + 1 || 99) - (KIND_ORDER.indexOf(b.def.kind) + 1 || 99) || String(a.def.name || a.id).localeCompare(String(b.def.name || b.id)));
   const total = Math.max(list.length, Math.min(slots, 60));
   const cells = [...list, ...Array(Math.max(0, total - list.length)).fill(null)];
@@ -48,7 +48,7 @@ export function craftRows(rt, who = 'player') {
     const inputs = (r.inputs || []).map(i => { const have = i.item ? bag[i.item] || 0 : tagged(i.tag); return { label: i.item ? itemName(doc, i.item) : `any ${titleCase(i.tag)}`, need: i.count ?? 1, have, ok: have >= (i.count ?? 1) }; });
     const atStation = !r.station || here?.id === r.station || Boolean(here?.tags?.includes?.(r.station));
     const craftable = set ? set.has(r.id) : inputs.every(i => i.ok) && atStation;
-    return { id: r.id, name: itemName(doc, r.output?.item) || titleCase(r.id), output: r.output?.item, count: r.output?.count ?? 1, inputs, known, craftable: known && craftable, station: r.station || null, atStation };
+    return { id: r.id, name: itemName(doc, r.output?.item), output: r.output?.item, count: r.output?.count ?? 1, inputs, known, craftable: known && craftable, station: r.station || null, atStation };
   }).filter(r => r.known);
 }
 
@@ -121,7 +121,7 @@ export default {
       onClose() { if (trade?.kind === 'shop' && S.canAct(rt, 'close_shop')) rt.view.act({ close_shop: true }); if (trade?.kind === 'container' && S.canAct(rt, 'close_container')) rt.view.act({ close_container: true }); },
     });
     sheet.extra.append(wallet);
-    function paintWallet() { const m = S.money(rt); fill(wallet, ...m.map(c => el('span.gv-price', {}, icon(c.id), fmtInt(c.value)))); }
+    function paintWallet() { const m = S.money(rt); fill(wallet, ...m.map(c => el('span.gv-price', {}, icon(resolveIcon(c.icon) || 'coin'), fmtInt(c.value)))); }
     function signature(tab) { return JSON.stringify([tab, S.bag(rt), trade && (trade.kind === 'shop' ? S.shop(rt) : S.container(rt)), tab === 'equipment' || tab === 'loadout' || tab === 'items' ? S.equipment(rt) : null, tab === 'crafting' ? craftRows(rt).map(r => r.craftable) : null, S.money(rt).map(m => m.value)]); }
     const act = (verb, value) => { if (!S.canAct(rt, verb)) { host.sound('error'); return false; } rt.view.act({ [verb]: value }); host.sound('confirm'); return true; };
     const equippedIds = () => new Set((S.equipment(rt)?.slots || []).flatMap(s => s.items));
@@ -134,7 +134,7 @@ export default {
     const detailFor = (detail, def, extra = []) => {
       const ic = itemIcon(def, blockColor(doc(), def));
       fill(detail, el('div.gv-art', { style: { display: 'grid', 'place-items': 'center' } }, icon(ic.name, { color: ic.color })),
-        el('div.gv-kicker', { text: titleCase(def.kind || 'item') }), el('h3', { text: def.name || titleCase(def.id) }),
+        el('div.gv-kicker', { text: titleCase(def.kind || 'item') }), el('h3', { text: def.name || '' }),
         def.desc ? el('p', { text: def.desc }) : null,
         el('dl.gv-stats', {}, ...statLines(doc(), def).flatMap(([k, v]) => [el('dt', { text: k }), el('dd', { text: String(v) })])), ...extra);
     };
@@ -157,11 +157,11 @@ export default {
         doll.append(el('div.gv-doll-figure', {}, silhouette()));
         fill(body, el('div.gv-inv-body', {}, doll, detail));
         if (!slots.length) { fill(detail, el('p.gv-empty', { text: 'Nothing can be equipped.' })); return; }
-        const pos = dollLayout(slots), nodes = slots.map((s, i) => { const id = s.items[0], def = id && (docItem(doc(), id) || { id, name: titleCase(id) }); const n = slotCell(def ? { id, count: 1, def } : null, { label: titleCase(s.id) }); if (!def) { n.classList.remove('is-empty'); n.append(el('span.gv-slot-label', { text: titleCase(s.id) })); n.setAttribute('tabindex', '0'); } n.style.setProperty('left', `${pos[i].x}%`); n.style.setProperty('top', `${pos[i].y}%`); doll.append(n); return n; });
+        const pos = dollLayout(slots), nodes = slots.map((s, i) => { const id = s.items[0], def = id && (docItem(doc(), id) || { id, name: '' }); const n = slotCell(def ? { id, count: 1, def } : null, { label: titleCase(s.id) }); if (!def) { n.classList.remove('is-empty'); n.append(el('span.gv-slot-label', { text: titleCase(s.id) })); n.setAttribute('tabindex', '0'); } n.style.setProperty('left', `${pos[i].x}%`); n.style.setProperty('top', `${pos[i].y}%`); doll.append(n); return n; });
         // Doll navigation: nearest slot in the pressed direction.
         sh.setItems(nodes, {
           onMove: dir => { const cur = pos[sh.index], cand = pos.map((p, i) => ({ i, dx: p.x - cur.x, dy: p.y - cur.y })).filter(c => c.i !== sh.index && (dir === 'left' ? c.dx < -1 : dir === 'right' ? c.dx > 1 : dir === 'up' ? c.dy < -1 : c.dy > 1)); if (cand.length) { const best = cand.sort((a, b) => Math.hypot(a.dx, a.dy * 1.3) - Math.hypot(b.dx, b.dy * 1.3))[0]; sh.focus(best.i); host.sound('move'); } return true; },
-          onFocus: i => { const s = slots[i], id = s.items[0]; if (id) detailFor(detail, docItem(doc(), id) || { id, name: titleCase(id) }, [el('p.gv-dim', { text: `Slot: ${titleCase(s.id)}` })]); else fill(detail, el('div.gv-kicker', { text: 'Empty slot' }), el('h3', { text: titleCase(s.id) }), el('p.gv-dim', { text: `Accepts ${s.accepts.map(a => titleCase(a.replace(':', ' '))).join(', ') || 'anything'}.` })); },
+          onFocus: i => { const s = slots[i], id = s.items[0]; if (id) detailFor(detail, docItem(doc(), id) || { id, name: '' }, [el('p.gv-dim', { text: `Slot: ${titleCase(s.id)}` })]); else fill(detail, el('div.gv-kicker', { text: 'Empty slot' }), el('h3', { text: titleCase(s.id) }), el('p.gv-dim', { text: `Accepts ${s.accepts.map(a => titleCase(a.replace(':', ' '))).join(', ') || 'anything'}.` })); },
           onConfirm: i => { const s = slots[i]; if (s.items[0]) act('unequip', s.id); else sheet.open('items'); } });
       },
       loadout(body, sh) {
@@ -221,8 +221,8 @@ export default {
         const list = el('div.gv-rows'), detail = el('article.gv-detail'), entries = [];
         const lvl = rt.state.vars.level, xp = rt.state.vars.xp, next = rt.state.vars['xp.next'];
         fill(body, el('div.gv-inv-body', {}, el('div', {}, isNum(lvl) ? el('div.gv-list-section', {}, el('span', { text: `Level ${lvl}` }), el('span', { text: isNum(xp) ? `${fmtInt(xp)}${isNum(next) ? ` / ${fmtInt(next)}` : ''} XP` : '' })) : null, list), detail));
-        for (const a of abil) { const has = S.safeTest(rt, { ability: a.id }); entries.push({ id: a.id, name: a.name || titleCase(a.id), desc: a.desc, has, kind: 'ability' }); }
-        for (const n of tree) { const has = S.safeTest(rt, { perk: n.id }); entries.push({ id: n.id, name: n.name || titleCase(n.id), desc: n.desc || Object.entries(n.mods || {}).map(([k, v]) => `${titleCase(k)} ${v > 0 ? '+' : ''}${v}`).join(', '), has, kind: 'perk', cost: n.cost, requires: n.requires }); }
+        for (const a of abil) { const has = S.safeTest(rt, { ability: a.id }); entries.push({ id: a.id, name: a.name || '', desc: a.desc, has, kind: 'ability' }); }
+        for (const n of tree) { const has = S.safeTest(rt, { perk: n.id }); entries.push({ id: n.id, name: n.name || '', desc: n.desc || Object.entries(n.mods || {}).map(([k, v]) => `${titleCase(k)} ${v > 0 ? '+' : ''}${v}`).join(', '), has, kind: 'perk', cost: n.cost, requires: n.requires }); }
         if (!entries.length) { fill(detail, el('p.gv-empty', { text: 'No skills to show.' })); return; }
         const nodes = entries.map(e => { const n = el(`button.gv-btn${e.has ? '' : '.is-locked'}`, { attrs: { type: 'button' } }, icon(e.has ? 'check' : 'lock'), el('span.gv-row-main', {}, el('span', { text: e.name }), e.desc ? el('span.gv-row-sub', { text: e.desc }) : null), e.cost ? el('small', { text: `${e.cost} pt` }) : null); list.append(n); return n; });
         sh.setItems(nodes, { onFocus: i => { const e = entries[i]; fill(detail, el('div.gv-kicker', { text: e.kind === 'perk' ? 'Perk' : 'Ability' }), el('h3', { text: e.name }), e.desc ? el('p', { text: e.desc }) : null, el('p.gv-dim', { text: e.has ? 'Unlocked' : e.requires?.length ? `Requires ${e.requires.map(titleCase).join(', ')}` : 'Locked' })); },

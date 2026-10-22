@@ -20,8 +20,8 @@ const RESULTS = ['won', 'lost', 'quit'];
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['mg_press', 'mg_input'], progress: ['minigame_hit', 'minigame_end'], win: { param: 'games.onWin', scope: 'encounter', reads: { var: 'minigame.progress', by: { actions: ['mg_press', 'mg_input'] } } },
-      lose: { param: 'games.onLose', scope: 'encounter', reads: { event: 'minigame_end', by: { actions: ['mg_press', 'mg_input'] } } },
+    loop: { shows: [], verbs: ['mg_press', 'mg_input'], progress: ['minigame_hit', 'minigame_end'], win: { param: 'games.onWin', scope: 'encounter', reads: { var: 'minigame.progress', by: { actions: ['mg_press', 'mg_input'] } } },
+      lose: { param: 'games.onLose', scope: 'encounter', once: true, reads: { event: 'minigame_end', by: { actions: ['mg_press', 'mg_input'] } } },
       // As an encounter: beating the game beats whoever posed it; failing it is the player's loss.
       outcome: { sides: ['player', 'opponent'], results: { won: { param: 'games.onWin', player: 'keeps', opponent: 'defeated' }, lost: { param: 'games.onLose', player: 'defeated', opponent: 'keeps' } } } },
     intent: 'Sub-mode launcher: starts a minigame (timing bar, input sequence, button mash, or a custom mode in its own space), freezes the main world while it runs, and returns the player with win/lose effects. Fishing, lockpicking, hacking, QTEs, card duels and battle screens.',

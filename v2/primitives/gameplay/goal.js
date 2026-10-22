@@ -15,7 +15,9 @@ export const goalId = e => e.components.goal?.id || e.archetype;
 export default {
   id: KEY,
   card: {
-    loop: { verbs: [], progress: ['goal_reached'] },
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { goal: { role: 'goal', prop: 'flag' } },
+    loop: { shows: ['entities'], verbs: [], progress: ['goal_reached'] },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { goal: { type: 'object', fields: { id: { type: 'string', effect: 'the goal id (goal_reached:<id>); default: its archetype' } }, effect: 'touching this entity reaches the level\'s goal' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
@@ -25,7 +27,7 @@ export default {
     // Platformer mode: run and jump through a side-view level to its goal, past pits, hazards and enemies. The goal is
     // reached by touch, so the player's movement changes what the win reads; the space must give gravity (jumps and
     // falls), overlap (touching the goal) and pathfind (the level's route).
-    mode: { loop: 'platformer', interaction: 'avatar-realtime', opponent: 'hazards', space: ['engine.space.tilemap', ['position', 'gravity', 'overlap', 'pathfind']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'onReach', reads: { event: 'goal_reached', by: { movement: true } } }, lose: { param: null }, bot: 'platformer' },
+    mode: { loop: 'platformer', interaction: 'avatar-realtime', opponent: 'hazards', space: ['engine.space.tilemap', ['position', 'gravity', 'overlap', 'pathfind']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'onReach', once: true, reads: { event: 'goal_reached', by: { movement: true } } }, lose: { param: null }, bot: 'platformer' },
     intent: 'Level goals (entities with a `goal` component: a flag pole, an exit door, a finish line): touching one fires goal_reached once and runs onReach, which ends the level (end_game won) or clears a stage of a sequence.',
     views: ['any'],
     params: {

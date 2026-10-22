@@ -3,8 +3,12 @@
 //   stuck states (no input changes anything), snapshot round-trip
 //   (snapshot → restore → identical behavior) and replay determinism
 //   (same doc + seed + inputs → identical state hash).
-import { maker, hold, inputMacros, applyOption } from './drive.js';
-import { problem, prng, stateHash, stableStringify, budget as makeBudget } from './util.js';
+// They play the document the host mounts through the controls a person has (v2/verify/controls.js): the random
+// script presses what a key presses and holds the axes that are bound, and takes only options a control can take, so
+// "no input changes anything" means no input a person has, and a crash found is one a person can cause.
+import { holdInput, inputMacros, applyOption } from './drive.js';
+import { controlledMaker, hostPreflight } from './controls.js';
+import { problem, prng, stateHash, stableStringify, now } from './util.js';
 
 export const LIMITS = { maxEntities: 5000, growthFactor: 8, maxEventsPerStep: 2000, confirmFrames: 600, confirmGrowth: 1.5 };
 
@@ -59,23 +63,28 @@ function script(rt, rand, length) {
   return out;
 }
 
+/** The options a control a person has can take (their actions issue through the controls; no macro-only option). */
+const takeable = rt => rt.availableOptions().filter(o => { const a = o.actions || {}; return Object.values(a).some(v => v !== undefined && v !== null && v !== false) && !rt.controls.missing({ actions: a }).length; });
+
 /** Drive an rt with a script, taking a seeded option instead of the scripted input half the time. */
 function drive(rt, steps, rand, onStep) {
   for (let k = 0; k < steps.length && rt.state.status === 'playing'; k++) {
-    const options = rt.availableOptions();
+    const options = takeable(rt);
     if (options.length && rand() < 0.5) applyOption(rt, options[rand.int(options.length)]);
-    else hold(rt, steps[k].input, steps[k].frames);
+    else holdInput(rt, steps[k].input, steps[k].frames);
     if (onStep && onStep(rt) === false) break;
   }
 }
 
 /**
  * check(doc, registry, logic, opts) → { ok, problems, checks, timings }
- * opts: { seed, steps (macro count), budgetMs, limits }
+ * opts: { seed, steps (macro count), limits }: bounded by its macro count, never wall time
  */
-export function checkInvariants(doc, registry, logic, { seed, steps = 120, budgetMs = 1000, limits } = {}) {
-  const b = makeBudget({ ms: budgetMs });
-  const make = maker(doc, registry, logic);
+export function checkInvariants(doc, registry, logic, { seed, steps = 120, limits } = {}) {
+  const t0 = now();
+  const host = hostPreflight(doc, registry, logic);
+  if (!host.ok) return { ok: false, problems: host.errors.map(e => problem('preflight', e.path, `the host document does not preflight: ${e.code} ${e.message}`)), checks: {}, ms: Math.round(now() - t0) };
+  const make = controlledMaker(host.doc, registry, logic);
   const problems = [], checks = {};
   const L = { ...LIMITS, ...limits };
   const add = p => { if (!problems.some(q => q.code === p.code)) problems.push(p); };
@@ -83,7 +92,7 @@ export function checkInvariants(doc, registry, logic, { seed, steps = 120, budge
   // 1. Run a seeded random script with per-step checks; record the script for replay.
   const rand = prng(`invariants:${seed ?? doc.seed ?? doc.id}`);
   let rt;
-  try { rt = make(seed); } catch (error) { return { ok: false, problems: [problem('runtime_error', '$', `world creation threw: ${error?.message || error}`)], checks, ms: Math.round(b.elapsed()) }; }
+  try { rt = make(seed); } catch (error) { return { ok: false, problems: [problem('runtime_error', '$', `world creation threw: ${error?.message || error}`)], checks, ms: Math.round(now() - t0) }; }
   const plan = script(rt, rand, steps);
   const checker = stepChecker(L);
   const decisions = prng(`invariants-options:${seed ?? doc.seed ?? doc.id}`);
@@ -93,7 +102,7 @@ export function checkInvariants(doc, registry, logic, { seed, steps = 120, budge
       frames = rt2.state.frame;
       const p = checker.check(rt2);
       if (p) { add(p); return false; }
-      return !b.over();
+      return true;
     });
   } catch (error) { add(problem('runtime_error', 'systems', `step threw at frame ${rt.state.frame}: ${error?.message || error}`, { hint: 'see the stack in the primitive named by the message' })); }
   checks.randomRun = { frames, status: rt.state.status };
@@ -101,11 +110,11 @@ export function checkInvariants(doc, registry, logic, { seed, steps = 120, budge
   {
     const probe = make(seed), snap = probe.snapshot(), flat = () => stateHash({ ...probe.state, events: [], counts: {} });
     // Options opened by the first step (a dialogue or menu a start beat opens) count as something to do.
-    let moved = probe.availableOptions().length > 0, idle = null;
-    if (!moved) { try { probe.step({}); moved = probe.state.status === 'playing' && probe.availableOptions().length > 0; } catch { /* reported above */ } probe.restore(snap); }
+    let moved = takeable(probe).length > 0, idle = null;
+    if (!moved) { try { probe.step({}); moved = probe.state.status === 'playing' && takeable(probe).length > 0; } catch { /* reported above */ } probe.restore(snap); }
     for (const m of moved ? [] : inputMacros(probe)) {
       probe.restore(snap);
-      try { hold(probe, m.input, 10); } catch { /* reported above */ }
+      try { holdInput(probe, m.input, 10); } catch { /* reported above */ }
       const h = flat();
       if (idle === null) idle = h; else if (h !== idle) { moved = true; break; }
     }
@@ -117,15 +126,15 @@ export function checkInvariants(doc, registry, logic, { seed, steps = 120, budge
   // 2. Snapshot round-trip: restore(snapshot) then continue must equal continuing directly.
   try {
     const a = make(seed), r2 = prng(`roundtrip:${seed ?? doc.seed ?? doc.id}`), prefix = script(a, r2, 10), suffix = script(a, r2, 10);
-    for (const m of prefix) hold(a, m.input, m.frames);
+    for (const m of prefix) holdInput(a, m.input, m.frames);
     const snap = a.snapshot();
     const json = stableStringify(snap);
     a.restore(snap);
     if (stableStringify(a.snapshot()) !== json) add(problem('snapshot_roundtrip', 'state', 'snapshot() after restore(snapshot) differs from the snapshot', { hint: 'state must be plain JSON in rt.state' }));
-    for (const m of suffix) hold(a, m.input, m.frames);
+    for (const m of suffix) holdInput(a, m.input, m.frames);
     const direct = stateHash(a.state);
     a.restore(snap);
-    for (const m of suffix) hold(a, m.input, m.frames);
+    for (const m of suffix) holdInput(a, m.input, m.frames);
     const restored = stateHash(a.state);
     checks.roundTrip = direct === restored;
     if (direct !== restored) add(problem('snapshot_roundtrip', 'state', 'continuing after restore() diverges from continuing without it: some primitive keeps simulation state outside rt.state', { hint: 'move it into rt.store(key) or rebuild caches in rt.onRestore' }));
@@ -134,12 +143,12 @@ export function checkInvariants(doc, registry, logic, { seed, steps = 120, budge
   // 3. Replay determinism: two fresh worlds, same seed and inputs → same state hash.
   try {
     const r3 = prng(`replay:${seed ?? doc.seed ?? doc.id}`), x = make(seed), y = make(seed), steps2 = script(x, r3, 40);
-    for (const m of steps2) { hold(x, m.input, m.frames); hold(y, m.input, m.frames); }
+    for (const m of steps2) { holdInput(x, m.input, m.frames); holdInput(y, m.input, m.frames); }
     const hx = stateHash(x.state), hy = stateHash(y.state);
     checks.replayHash = hx;
     checks.deterministic = hx === hy;
     if (hx !== hy) add(problem('nondeterministic', '$', 'the same document, seed and inputs produced different states', { hint: 'never use Math.random, Date or performance in simulation; use rt.random()' }));
   } catch (error) { add(problem('runtime_error', 'systems', `replay run threw: ${error?.message || error}`)); }
 
-  return { ok: !problems.some(p => p.severity === 'error'), problems, checks, ms: Math.round(b.elapsed()) };
+  return { ok: !problems.some(p => p.severity === 'error'), problems, checks, ms: Math.round(now() - t0) };
 }

@@ -272,20 +272,24 @@ test('voxel models: rig parts group per bone (boots split by leg); lowpoly voxel
   assert.ok(Math.abs(filled - (4 / 3) * Math.PI * 125) / ((4 / 3) * Math.PI * 125) < 0.2, `sphere volume ${filled}`);
 });
 
-test('model generation: body plans from names and kinds, deterministic specs for everything', () => {
-  assert.equal(bodyPlan({ id: 'grey_wolf', kind: 'creature' }), 'quadruped');
-  assert.equal(bodyPlan({ id: 'cinder_hawk', kind: 'enemy' }), 'bird');
-  assert.equal(bodyPlan({ id: 'bog_slime', kind: 'enemy' }), 'blob');
-  assert.equal(bodyPlan({ id: 'goblin_raider', kind: 'enemy' }), 'humanoid');
+// Corrected expectations: body plans and held shapes came from words in ids (grey_wolf -> quadruped, warden_blade ->
+// sword); they come from declarations now (three-model-gen.js; tests/v2-p-presentation-models.test.js holds the
+// catalogue-wide property), so these assert the declared kinds and parts.
+test('model generation: body plans from declared kinds and parts, deterministic specs for everything', () => {
+  assert.equal(bodyPlan({ id: 'grey_wolf', kind: 'npc' }), 'humanoid', 'a name that reads as an animal changes nothing');
+  assert.equal(bodyPlan({ id: 'anything', kind: 'mount' }), 'quadruped');
   assert.equal(bodyPlan({ id: 'cart', kind: 'vehicle' }), 'vehicle');
   assert.equal(bodyPlan({ id: 'old_well', kind: 'prop' }), 'prop');
+  assert.equal(synthesizeSpec({ id: 'skiff', kind: 'vehicle', components: { vehicle: {}, boat: {} } }).vehicle, 'boat');
+  assert.equal(synthesizeSpec({ id: 'police_car', kind: 'vehicle', components: { vehicle: {}, aircraft: {} } }).vehicle, 'plane');
   assert.deepEqual(synthesizeSpec({ id: 'marsh_hag', kind: 'boss' }), synthesizeSpec({ id: 'marsh_hag', kind: 'boss' }));
   for (const a of [...blockport.content.archetypes, ...emberfall.content.archetypes]) {
     const s = synthesizeSpec(a);
     assert.ok(s.kind === 'lowpoly' && (s.rig || s.parts?.length), a.id);
   }
-  assert.equal(itemSpec({ id: 'warden_blade' }).item, 'sword');
-  assert.equal(itemSpec({ id: 'hunting_bow' }).item, 'bow');
+  assert.equal(itemSpec({ id: 'warden_blade', weapon: { damage: 4 } }).item, 'sword');
+  assert.equal(itemSpec({ id: 'hunting_bow', ranged: {} }).item, 'bow');
+  assert.equal(itemSpec({ id: 'hunting_bow' }).item, 'tool', 'an undeclared item is no bow for its id');
 });
 
 test('terrain: quadtree leaves tile the world without overlap and are finer near the camera', () => {

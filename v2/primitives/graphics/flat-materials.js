@@ -17,13 +17,11 @@ export const MATERIALS = {
   ball: { base: '#f5f7fb', dark: '#9aa3b0', light: '#ffffff' },
   plastic: { base: '#ff6a5a', dark: '#b03a30', light: '#ffb0a0' },
 };
-const MAT_WORDS = [['tnt', /tnt|explosive|dynamite|barrel/], ['glass', /glass|window|pane/], ['ice', /ice|frozen/], ['metal', /metal|steel|iron|girder|flipper|plunger/], ['stone', /stone|brick|block|pillar|slab/], ['rock', /rock|boulder|ground|terrain/], ['wood', /wood|plank|crate|log|beam|box/], ['rubber', /rubber|tire|bumper/], ['ball', /ball|puck|pinball|marble/]];
+/** A body's material: the one given, else the one its body declares, else by its shape (never guessed from words). */
 export function materialFor(arch = {}, body = {}, explicit = null) {
   if (explicit && MATERIALS[explicit]) return explicit;
   if (MATERIALS[body.material]) return body.material;
-  const text = [arch.id, arch.name, arch.kind, ...(arch.tags || [])].join(' ').toLowerCase();
-  const hit = MAT_WORDS.find(([, re]) => re.test(text));
-  return hit ? hit[0] : body.shape?.kind === 'circle' ? 'ball' : 'wood';
+  return body.shape?.kind === 'circle' ? 'ball' : 'wood';
 }
 /** Material colors, tinted toward a custom color when given. */
 export function materialColors(mat, tint) {

@@ -21,7 +21,7 @@ const tmp = mkdtempSync(join(os.tmpdir(), 'gv-templates-'));
 test.after(() => rmSync(tmp, { recursive: true, force: true }));
 
 test('contract: stages in order, every code stable and owned by one stage', () => {
-  assert.deepEqual(STAGES, ['format', 'tune', 'preflight', 'composition', 'loop', 'gate', 'controls', 'features', 'bots', 'bounds']);
+  assert.deepEqual(STAGES, ['format', 'tune', 'preflight', 'composition', 'loop', 'presentation', 'gate', 'controls', 'features', 'bots', 'bounds']);
   const all = Object.values(CODES).flat();
   assert.equal(new Set(all).size, all.length, 'no code belongs to two stages');
   assert.deepEqual(SEEDS, [1, 2, 3]);
@@ -62,8 +62,10 @@ test('discovery: modules and promoted files are found without a list; malformed 
 
 // The bounds stage plays every bound of every template's tune: its runs are sharded over the files
 // tests/v2-template-bounds-<n>.test.js so they run beside this one.
-for (const t of TEMPLATES) test(`contract: template ${t.id} passes every check through the bots against the live catalogue`, async () => {
+for (const t of TEMPLATES) test(`contract: template ${t.id} passes every check through the bots against the live catalogue`, async tc => {
   const r = await checkTemplate(t, live, { through: 'bots' });
+  // With a person's hands (HUMAN_INPUT): which templates only a hand faster than a person's wins (evidence, reported).
+  for (const b of r.evidence.bots) tc.diagnostic(`human-rate ${b.humanRate}/s: ${b.id} ${(b.human || []).map(h => `seed ${h.seed} ${h.status}`).join(', ')}`);
   assert.deepEqual(r.problems, [], `${t.id}: ${JSON.stringify(r.problems).slice(0, 800)}`);
   assert.deepEqual(Object.keys(r.evidence.stages), STAGES.slice(0, STAGES.indexOf('bots') + 1), 'every stage through the bots ran');
   assert.ok(r.evidence.bots.length && r.evidence.bots.every(b => b.runs.map(x => x.seed).join() === SEEDS.join()), JSON.stringify(r.evidence.bots));

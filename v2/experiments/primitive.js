@@ -107,8 +107,8 @@ export async function checkPrimitiveExperiment(experiment, { doc, base = null, b
     report.restoreExact = hashOf(rt.snapshot()) === hashOf(a.rt.snapshot());
     if (!report.restoreExact) problems.push(problem('restore_mismatch', 'restoring a snapshot and replaying did not reach the same state'));
   }
-  const vBefore = await verifyDocument(doc, baseCat.registry, baseCat.logic, { budgetMs: 600 });
-  const vAfter = await verifyDocument(gameDoc, cat.registry, cat.logic, { budgetMs: 600 });
+  const vBefore = await verifyDocument(doc, baseCat.registry, baseCat.logic);
+  const vAfter = await verifyDocument(gameDoc, cat.registry, cat.logic);
   report.verify = { before: vBefore.completable, after: vAfter.completable, source: vAfter.source };
   if (regressed(vBefore, vAfter)) problems.push(problem('plot_regressed', 'with the experiment the game can no longer be finished'));
   return finish();

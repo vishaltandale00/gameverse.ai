@@ -6,6 +6,7 @@
 import { TAU, rgba, mix, light, shade, col, hash, rng, seedOf, surface, ctx2d, lerp, damp } from './flat-util.js';
 import { sceneryImage, themeFor } from './flat-art.js';
 import { createAmbient } from '../../art/ambient.js';
+import { landOf } from '../../art/scenery.js';
 
 export const PATTERNS = ['sky', 'scenery', 'mountains', 'hills', 'forest', 'city', 'clouds', 'stars', 'cave', 'rafters', 'lanterns', 'roots', 'spores', 'arches', 'caustics', 'pipes', 'sparks', 'pipes_organ', 'thorns', 'columns', 'shelves', 'void', 'ruins', 'waves', 'dunes', 'bubbles', 'grid', 'gradient'];
 const STRIP = 512;
@@ -181,7 +182,8 @@ function seamless(src) {
   return out;
 }
 function drawScenery(F, L, ox, oy) {
-  const theme = L.theme || themeFor(F.doc, null), night = /cave|space|haunted/.test(theme);
+  const theme = L.theme || themeFor(F.doc, F.stage?.space); if (!theme) return; // a space that declares no scenery shows none
+  const night = ['cave', 'space', 'haunted'].includes(theme);
   const img = sceneryImage({ theme, time: night ? 'night' : 'day', features: L.features || [] }, F.style === 'pixel', F.doc.id);
   const g = F.ctx, h = F.h * 1.08, w = h * 1.5;
   if (img) {
@@ -201,10 +203,14 @@ export function defaultFeatures(theme) {
   return { meadow: [{ kind: 'drifting-clouds', density: 0.4, depth: 'far' }, { kind: 'birds', density: 0.3, depth: 'far' }], forest: [{ kind: 'falling-leaves', density: 0.4, depth: 'near' }], snow: [{ kind: 'snow', density: 0.5, depth: 'near' }], volcano: [{ kind: 'embers', density: 0.6, depth: 'near' }], cave: [{ kind: 'embers', density: 0.15, depth: 'mid' }], city: [{ kind: 'drifting-clouds', density: 0.3, depth: 'far' }], haunted: [{ kind: 'fog', density: 0.5, depth: 'mid' }, { kind: 'fireflies', density: 0.3, depth: 'near' }], ocean: [{ kind: 'birds', density: 0.4, depth: 'far' }], jungle: [{ kind: 'fireflies', density: 0.3, depth: 'near' }, { kind: 'falling-leaves', density: 0.2, depth: 'near' }], space: [], sky: [{ kind: 'drifting-clouds', density: 0.7, depth: 'mid' }], desert: [], castle: [{ kind: 'birds', density: 0.2, depth: 'far' }], factory: [{ kind: 'embers', density: 0.2, depth: 'mid' }], candy: [{ kind: 'bubbles', density: 0.4, depth: 'near' }] }[theme] || [];
 }
 
-/** Layers a document gets with no background primitive: painted scenery plus two seeded silhouettes. */
-export function defaultLayers(doc, kind = 'side') {
-  const theme = themeFor(doc);
-  if (kind !== 'side') return normalizeLayers([{ pattern: 'gradient', depth: 0, color: { cave: '#1a1622', space: '#05040c', snow: '#d8e4ee', desert: '#c8a060', ocean: '#1a4a6a', city: '#2a2c36', volcano: '#2a1410', haunted: '#1a1428' }[theme] || '#2a3a28', fogColor: null }]);
+/**
+ * Layers a space gets with no background primitive: its declared scenery (engine/spaces2d-scenery.js) painted, plus two
+ * seeded silhouettes; none when the space declares no scenery (the plain base the backdrop always draws).
+ */
+export function defaultLayers(doc, kind = 'side', spaceId = null) {
+  const theme = themeFor(doc, spaceId);
+  if (!theme) return [];
+  if (kind !== 'side') return normalizeLayers([{ pattern: 'gradient', depth: 0, color: shade(landOf(theme), 0.55), fogColor: null }]);
   const dark = ['cave', 'haunted', 'space', 'volcano'].includes(theme);
   return normalizeLayers([
     { pattern: 'scenery', depth: 0.08, color: '#000000', theme },

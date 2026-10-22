@@ -2,25 +2,55 @@
 // simulation of a choice on a snapshot, multi-seed runs and result records.
 import { applyOption, hold, optionLabels, hpOf, foes, vitality } from '../drive.js';
 import { seedFrom } from '../../kernel/rng.js';
-import { instancesOf, problem } from '../util.js';
+import { instancesOf, problem, budget as makeBudget, now } from '../util.js';
 
 /** Step empty input until the runtime offers options again (boards resolving), or the game ends. */
-export function untilDecision(rt, max = 600, b = null) {
+export function untilDecision(rt, max = 600) {
   let k = 0;
   while (rt.state.status === 'playing' && k < max && !rt.availableOptions().length) { rt.step({}); k++; }
-  b?.step(k);
   return k;
 }
 
-/** Apply option index i from snapshot `snap` and run to the next decision; returns the rt (mutated). */
-export function simulateOption(rt, snap, i, { rng = null, maxWait = 600, b = null } = {}) {
+/**
+ * untilDecision, returning the options the runtime offers where it stopped (read once: a decision's options are what a
+ * bot chooses among next, so it need not read them again; [] when the game ended or none came within `max` steps).
+ */
+export function toDecision(rt, max = 600) {
+  for (let k = 0; ; k++) {
+    if (rt.state.status !== 'playing') return [];
+    const options = rt.availableOptions();
+    if (options.length || k >= max) return options;
+    rt.step({});
+  }
+}
+
+/**
+ * The step budgets of one bot run, one per seed: each seed's play is metered on its own budget of `steps` frames
+ * (every frame its worlds simulate, lookahead on snapshots included: util.js budget.meter), so a seed's result never
+ * depends on the other seeds, on the machine's load or on wall time. budget() is a fresh budget for one seed (b.meter(rt)
+ * and b.metered(make) meter the worlds the run makes for it); report() sums them.
+ * @param {number} [steps] frames per seed (Infinity: the bot's own structural limits bound the run)
+ */
+export function seedBudgets(steps = Infinity) {
+  const all = [], t0 = now();
+  return {
+    budget() { const b = makeBudget({ steps }); all.push(b); return b; },
+    report: () => ({ perSeed: steps, runs: all.length, states: all.reduce((n, b) => n + b.usedStates, 0), steps: all.reduce((n, b) => n + b.usedSteps, 0), limit: all.find(b => b.hit)?.hit ?? null, ms: Math.round(now() - t0) }),
+  };
+}
+
+/**
+ * Apply option index i from snapshot `snap` and run to the next decision (rt is mutated); returns the options offered
+ * there (toDecision). `options`: the options read at `snap` already (a data option, actions and
+ * steps only, is the same after restore; a macro option, whose apply() closure may capture state, is re-read).
+ */
+export function simulateOption(rt, snap, i, { rng = null, maxWait = 600, options = null } = {}) {
   rt.restore(snap);
   if (rng !== null) rt.state.rng = rng >>> 0 || 1;
-  const o = rt.availableOptions()[i];
-  if (!o) return rt;
-  applyOption(rt, o, b);
-  untilDecision(rt, maxWait, b);
-  return rt;
+  const o = options && options[i] && typeof options[i].apply !== 'function' ? options[i] : rt.availableOptions()[i];
+  if (!o) return rt.availableOptions();
+  applyOption(rt, o);
+  return toDecision(rt, maxWait);
 }
 
 /** Deterministic alternative RNG states for chance sampling. */
@@ -56,7 +86,7 @@ export const numeric = c => { if (typeof c === 'number') return c; if (typeof c 
  * Run `play(seed)` on every seed given, one run each (a play past the budget returns at once, marked budget); pass
  * when wins/runs ≥ passRate. A caller that names seeds gets a run per seed, never fewer.
  */
-export function multiSeed(play, { seeds, passRate = 0.7, b }) {
+export function multiSeed(play, { seeds, passRate = 0.7 }) {
   const out = [];
   for (const s of seeds) out.push(play(s));
   const wins = out.filter(r => r.won).length;
@@ -104,22 +134,22 @@ export { optionLabels, hold, problem };
  * turn chosen among the options the game offers there (hints of what the controls issue), by the exchange each makes
  * when resolved on a snapshot (damage dealt minus taken, the objective's change, a won or lost end), taken through
  * the controls; with no option offered, wait a frame. -> true when the player was in such a space (the bot yielded).
- * @param {any} ctx @param {any} rt @param {string[]} caps the capabilities the bot needs @param {any} [b] its budget
+ * @param {any} ctx @param {any} rt @param {string[]} caps the capabilities the bot needs
  */
-export function yieldToEncounter(ctx, rt, caps, b = null) {
+export function yieldToEncounter(ctx, rt, caps) {
   const p = rt.player(); if (!p) return false;
   const have = new Set(ctx.capabilities?.[p.space] || []);
   if (caps.every(c => have.has(c)) && Array.isArray(p.at)) return false;
   const options = rt.availableOptions();
-  if (!options.length) { hold(rt, {}, 1, b); return true; }
+  if (!options.length) { hold(rt, {}, 1); return true; }
   const snap = rt.snapshot(), own = () => vitality(rt).hp ?? 0, f0 = foeHp(rt), h0 = own(), score = rt.state.vars.score ?? 0;
   let best = -1, bestV = -Infinity;
   for (let i = 0; i < Math.min(options.length, 24); i++) {
-    simulateOption(rt, snap, i, { b, maxWait: 240 });
+    simulateOption(rt, snap, i, { maxWait: 240 });
     const v = (f0 - foeHp(rt)) - (h0 - own()) + ((rt.state.vars.score ?? 0) - score) + (rt.state.status === 'won' ? 1e6 : rt.state.status === 'lost' ? -1e6 : 0);
     if (v > bestV) { bestV = v; best = i; }
   }
   rt.restore(snap);
-  applyOption(rt, rt.availableOptions()[best], b);
+  applyOption(rt, rt.availableOptions()[best]);
   return true;
 }

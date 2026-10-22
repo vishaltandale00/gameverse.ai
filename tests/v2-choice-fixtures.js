@@ -50,7 +50,7 @@ export const FIXTURES = {
     doc: game('choice-checkpoint', {
       space: grid(), view: 'td',
       systems: [{ use: 'gameplay.move.grid' }, { use: 'gameplay.checkpoint', with: { fastTravelBetween: true, save: false } }],
-      content: { archetypes: [hero, { id: 'bench', kind: 'prop', components: { checkpoint: true } }] },
+      content: { archetypes: [hero, { id: 'bench', name: 'Bench', kind: 'prop', components: { checkpoint: true } }] },
       player: { archetype: 'hero', at: [1, 1] },
     }),
     spawn: [['bench', [2, 2], 'bench_a'], ['bench', [9, 9], 'bench_b']],

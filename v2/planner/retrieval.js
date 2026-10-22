@@ -1,28 +1,31 @@
 // @ts-check
-// Retrieval for the iterative build (build.js) and re-planning (replan.js): the same three functions serve both.
+// Retrieval for the step path: the iterative build (build.js) and the extensions onto a template (extend.js).
 //   1. coverageOf: before asking about a mechanic, a primitive already in the collection may cover it by what it
 //      declares. Only primitives of the mechanic's own concept (mechanic.from) count, the concept's loop primitive
-//      first. The mechanic's verb (a structured field) is matched against declared names: the content sections a card
-//      needs or reads (card.loop/mode needs.content, card.content, card.reads, card.defines, card.data, card.dataShapes),
-//      its loop verbs and actions, progress events and the effects it owns. Covered without a question when the
-//      concept's loop primitive needs a content section or declares a loop verb the verb names, or when a primitive's
-//      loop verbs name the whole verb; a weaker declared match is ambiguous and asked as one small yes/no-with-enum
-//      question. Free text (intents, descriptions) never matches anything.
+//      first. The mechanic's verb (a structured field) is compared, as a whole name, with declared names: the content
+//      sections a card needs or reads (their own name: content.moves -> moves; card.loop/mode needs.content,
+//      card.content, card.reads, card.defines, card.data, card.dataShapes), its loop verbs and actions, progress events
+//      (their base: captured:* -> captured) and the effects it owns. Covered without a question when the concept's loop
+//      primitive needs a content section or declares a loop verb the verb is, or when a primitive's loop verb is it; a
+//      weaker declared match (a section it reads, an event, an effect) is ambiguous and asked as one small
+//      yes/no-with-enum question. No text is split into words or stemmed, and free text (intents, descriptions) never
+//      matches anything.
 //   2. validOptions: EVERY catalogue card whose declared loop serves the mechanic's interaction context (the play
 //      spec's interaction; for a joined concept, the interaction its own loop primitive declares), each as a single card
 //      or the smallest bundle (bundles.js) that is valid: the collection with it has no new failure or type hole in
 //      checkComposition (resolve:true, on the adapter instances resolveAdapters gives it, with their ids and bindings),
 //      no adapter nobody registers, and no new capability, service, requirement or conflict error from the same
-//      preflight (kernel/document.js) the published document passes, run on the partial document. declaredFit only
-//      orders the list; nothing is cut from it.
+//      preflight (kernel/document.js) the published document passes, run on the partial document. The list is in
+//      declaration order (declarationOrder: cards whose loop declares the mechanic's verb first, then the catalogue's
+//      order); nothing is cut from it and nothing is ranked by text.
 //   3. pickOption: one strict enum question over that whole list (id, one-line intent, bundle members), plus "none"
 //      with a reason; a list longer than MAX_LIST is first narrowed by one question over the cards' id namespaces.
 // Nothing here names a primitive, a genre or a game.
 import { resolveAdapters } from './adapters.js';
 import { isSpace, isGenerator, isGraphics } from './catalog.js';
 import { cardLoop, loopServes } from './loop.js';
-import { declaredFit, servesInteraction, relevance, tokens, vocabIndex } from './select.js';
-import { formBundle, bundleLabel, BUNDLE_PENALTY } from './bundles.js';
+import { servesInteraction, vocabIndex } from './select.js';
+import { formBundle, bundleLabel } from './bundles.js';
 import { mashupSides } from './play-spec.js';
 import { preflight, DOC_SCHEMA } from '../kernel/document.js';
 import { Logic } from '../kernel/logic.js';
@@ -42,8 +45,8 @@ import { isStr, str, prop } from '../kernel/guards.js';
  * bindings resolveAdapters gives it, and the adapters nobody registers. @typedef {{ problems: Map<string, string>, adapters: AdapterInstance[], bind: Record<string, string>, gaps: AdapterSpec[], verdict: string }} Evaluation
  */
 /**
- * An option offered for a mechanic: its id (the seed card's, the enum value), declared-fit score (less the bundle
- * penalty; ordering only), the space configuration it is valid on, its members (the seed first), the companions and
+ * An option offered for a mechanic: its id (the seed card's, the enum value), score (1 when its loop declares the
+ * mechanic's verb: declarationOrder; reported only), the space configuration it is valid on, its members (the seed first), the companions and
  * adapter instances beyond the seed with why each is there.
  * @typedef {{ id: string, score: number, variant: number, members: string[], extra: import('./bundles.js').Companion[], adapters: import('./bundles.js').BundleAdapter[] }} Option
  */
@@ -186,13 +189,8 @@ export function servesContext(card, ctx) {
   return servesInteraction(card, ctx) && loopServes(cardLoop(card), ctx);
 }
 
-/**
- * The words of a declared name or a mechanic's verb, folded to the singular the same way on both sides (moves -> move,
- * statuses -> status); generic words (select.js tokens' stop list) are left out.
- * @param {string} text @returns {string[]}
- */
-export const words = text => (text.toLowerCase().match(/[a-z][a-z0-9]*/g) || []).filter(w => w.length > 2 && tokens(w).length > 0)
-  .map(w => (/(s|x|z|ch|sh)es$/.test(w) && w.length > 4 ? w.slice(0, -2) : /[^su]s$/.test(w) && !/(ss|is)$/.test(w) && w.length > 3 ? w.slice(0, -1) : w));
+/** A declared name or a mechanic's verb as compared, whole: trimmed and lowercased (never split into words). @param {unknown} text */
+export const nameOf = text => String(text ?? '').trim().toLowerCase();
 
 /** Declared names of a card by kind, each token with the declaration it comes from. @typedef {{ needs: Map<string, string>, reads: Map<string, string>, verbs: Map<string, string>, progress: Map<string, string>, effects: Map<string, string> }} Declared */
 /** @type {WeakMap<object, Map<string, Declared>>} */
@@ -203,11 +201,11 @@ export function declaredNames(registry, id) {
   if (!byId) { byId = new Map(); declaredCache.set(registry, byId); }
   const hit = byId.get(id); if (hit) return hit;
   const c = cardOf(registry, id), loop = cardLoop(c);
-  /** @param {Iterable<unknown>} names @param {(n: string) => string} split */
-  const index = (names, split) => { /** @type {Map<string, string>} */ const m = new Map(); for (const n of names) if (isStr(n)) for (const t of words(split(n))) if (!m.has(t)) m.set(t, n); return m; };
-  // A section's own name (content.moves -> moves), never its root.
-  const section = (/** @type {string} */ s) => s.split('.').slice(1).join(' ').replace(/[_:*]/g, ' ');
-  const plain = (/** @type {string} */ s) => s.replace(/[_:*.]/g, ' ');
+  /** @param {Iterable<unknown>} names @param {(n: string) => string} key */
+  const index = (names, key) => { /** @type {Map<string, string>} */ const m = new Map(); for (const n of names) if (isStr(n)) { const k = nameOf(key(n)); if (k && !m.has(k)) m.set(k, n); } return m; };
+  // A section's own name (content.moves -> moves), never its root; an event's base (captured:* -> captured).
+  const section = (/** @type {string} */ s) => s.split('.').slice(1).join('.');
+  const plain = (/** @type {string} */ s) => s.split(':')[0];
   const needs = [...(Array.isArray(loop?.needs?.content) ? loop.needs.content : []), .../** @type {unknown[]} */ (Array.isArray(c?.content) ? c.content : []).map(x => prop(x, 'at'))].filter(x => isStr(x) && x.includes('.'));
   const reads = [...(c?.reads || []), ...(c?.defines || []).map(x => x.at), ...Object.keys(c?.data || {}), ...Object.keys(c?.dataShapes || {})].filter(x => isStr(x) && x.includes('.'));
   const effects = Object.entries(vocabIndex(registry).effects).filter(([, owner]) => owner === id).map(([k]) => k);
@@ -230,8 +228,8 @@ export function coverageOf({ registry, decomposition, mechanic: m, mapping, owne
   const key = ideaOf(m.from);
   const loopMechanic = conceptLoopOf(decomposition, m.from);
   if (loopMechanic === m.id || prop(decomposition.core, 'loop') === m.id) return none;
-  const verb = [...new Set(words(String(m.verb || '')))];
-  if (!verb.length) return none;
+  const verb = nameOf(m.verb);
+  if (!verb) return none;
   const skip = new Set(exclude);
   const fromOf = new Map(decomposition.mechanics.map(x => [x.id, ideaOf(x.from)]));
   const loopPrims = new Set(loopMechanic ? mapping[loopMechanic]?.primitives || [] : []);
@@ -243,13 +241,13 @@ export function coverageOf({ registry, decomposition, mechanic: m, mapping, owne
   const weak = [];
   for (const id of own) {
     const n = declaredNames(registry, id);
-    const named = (/** @type {Map<string, string>} */ at) => verb.filter(w => at.has(w)).map(w => /** @type {string} */ (at.get(w)));
+    const named = (/** @type {Map<string, string>} */ at) => (at.has(verb) ? [/** @type {string} */ (at.get(verb))] : []);
     const needs = named(n.needs), verbs = named(n.verbs);
     const all = [...new Set([...needs, ...named(n.reads), ...verbs, ...named(n.progress), ...named(n.effects)])];
     if (!all.length) continue;
-    const whole = verb.every(w => n.verbs.has(w));
+    const whole = verbs.length > 0;
     const loopOwn = loopPrims.has(id) && (needs.length > 0 || verbs.length > 0);
-    const why = `${id} declares ${all.join(', ')}, which "${m.verb}" names${loopPrims.has(id) ? ` (the loop primitive of ${m.from || 'its concept'})` : ''}`;
+    const why = `${id} declares ${all.join(', ')}, which "${m.verb}" is${loopPrims.has(id) ? ` (the loop primitive of ${m.from || 'its concept'})` : ''}`;
     (whole || loopOwn ? clear : weak).push({ primitive: id, why });
   }
   if (clear.length === 1) return { covered: clear[0], ambiguous: [] };
@@ -274,34 +272,47 @@ export async function askCoverage({ ask, registry, header, mechanic: m, ambiguou
 const oneLine = text => { const s = String(text || '').replace(/\s+/g, ' ').trim(); const dot = s.search(/[.:;](\s|$)/); return (dot > 20 ? s.slice(0, dot) : s).slice(0, 140); };
 
 /**
- * Every valid option for a mechanic (see the header), best declared fit first, and the cards that serve its context but
- * are not valid, with why. `exclude` cards are never offered (already in the collection is fine: re-used).
- * @param {{ registry: RegistryLike, decomposition: Spec, mechanic: Mechanic, mapping: Mapping, state: ReturnType<typeof collectionState>, systems: string[], space: string, adapters: AdapterInstance[], exclude?: Iterable<string>, verbs?: string[] }} options
+ * Declaration order for a step's options: an option whose seed card's loop declares the mechanic's verb (or provides
+ * it as an action) first, then the catalogue's own order (registry.cards()). Nothing is scored by text.
+ * @param {RegistryLike} registry @param {string} verb @returns {(a: { id: string }, b: { id: string }) => number}
+ */
+export function declarationOrder(registry, verb) {
+  const at = new Map(registry.cards().map((c, i) => [c.id, i]));
+  const named = (/** @type {string} */ id) => Number(declaresVerb(registry, id, verb));
+  return (a, b) => named(b.id) - named(a.id) || (at.get(a.id) ?? Infinity) - (at.get(b.id) ?? Infinity);
+}
+
+/** Does a card's loop declare this verb, or the card provide it as an action (whole names)? @param {RegistryLike} registry @param {string} id @param {unknown} verb */
+export function declaresVerb(registry, id, verb) {
+  const v = nameOf(verb), c = cardOf(registry, id);
+  return Boolean(v) && [...(cardLoop(c)?.verbs || []), ...(c?.provides?.actions || [])].some(x => nameOf(x) === v);
+}
+
+/**
+ * Every valid option for a mechanic (see the header), in declaration order (declarationOrder), and the cards that serve
+ * its context but are not valid, with why. `exclude` cards are never offered (already in the collection is fine: re-used).
+ * @param {{ registry: RegistryLike, decomposition: Spec, mechanic: Mechanic, mapping: Mapping, state: ReturnType<typeof collectionState>, systems: string[], space: string, adapters: AdapterInstance[], exclude?: Iterable<string> }} options
  * @returns {{ context: string | null, options: Option[], rejected: Array<{ id: string, why: string }> }}
  */
-export function validOptions({ registry, decomposition, mechanic: m, mapping, state, systems, space, adapters, exclude = [], verbs = [] }) {
+export function validOptions({ registry, decomposition, mechanic: m, mapping, state, systems, space, adapters, exclude = [] }) {
   const context = interactionContext(registry, decomposition, m, mapping);
-  const joined = joinedMechanic(decomposition, m);
   const skip = new Set(exclude);
-  const fits = registry.cards().filter(c => !isSpace(c.id) && !isGenerator(c.id) && !isGraphics(c.id) && !c.adapts && !skip.has(c.id)).flatMap(card => {
+  const fits = registry.cards().filter(c => !isSpace(c.id) && !isGenerator(c.id) && !isGraphics(c.id) && !c.adapts && !skip.has(c.id)).filter(card => {
     const loop = cardLoop(card);
-    if (!loop || (!loop.verbs.length && !loop.progress.length) || !servesContext(card, context)) return [];
-    // Ordering only: the card's own declarations speak of the mechanic first, then how it is played, then lexically.
-    const related = (declaredFit(m, card, { joined, verbs }) ?? 0) > 0 ? 1 : 0;
-    return [{ id: card.id, score: declaredFit(m, card, { interaction: context, joined: true, verbs }) ?? 0, related, rel: relevance(m, card) }];
+    return Boolean(loop && (loop.verbs.length || loop.progress.length) && servesContext(card, context));
   });
-  /** @type {Array<Option & { related: number, rel: number }>} */
+  const order = declarationOrder(registry, m.verb);
+  /** @type {Option[]} */
   const ranked = [];
   /** @type {Array<{ id: string, why: string }>} */
   const rejected = [];
   for (const f of fits) {
     const b = formBundle({ registry, seed: f.id, systems, space, adapters, composes: state.composes, resolve: state.resolve, interaction: context });
     if (!b.ok) { rejected.push({ id: f.id, why: b.why }); continue; }
-    const size = b.members.length + b.adapters.length;
-    ranked.push({ id: f.id, score: +(f.score - BUNDLE_PENALTY * (size - 1)).toFixed(3), variant: b.variant, members: b.members, extra: b.extra, adapters: b.adapters, related: f.related, rel: f.rel });
+    ranked.push({ id: f.id, score: Number(declaresVerb(registry, f.id, m.verb)), variant: b.variant, members: b.members, extra: b.extra, adapters: b.adapters });
   }
-  ranked.sort((a, b) => b.related - a.related || b.score - a.score || b.rel - a.rel || a.id.localeCompare(b.id));
-  return { context, options: ranked.map(({ related, rel, ...o }) => o), rejected };
+  ranked.sort(order);
+  return { context, options: ranked, rejected };
 }
 
 /** The category a card belongs to among `ids`: its id namespace (two segments) when another option shares it, else its family. @param {string} id @param {string[]} ids */

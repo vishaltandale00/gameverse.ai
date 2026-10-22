@@ -4,6 +4,7 @@
 // active point is where respawn_at_checkpoint (hazards, death rules) returns an
 // entity; activated points can be fast-travelled between.
 import { restoreAll, runIf, whoKey, pos, boxOf, boxesTouch, isVec, dist } from './items-lib.js';
+import { entityName } from '../engine/runtime-lib-names.js';
 
 const KEY = 'gameplay.checkpoint';
 const AUTO_ID = /^e\d+$/;
@@ -24,6 +25,8 @@ export function respawn(rt, who) {
 export default {
   id: 'gameplay.checkpoint',
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { checkpoint: { role: 'goal', prop: 'flag' } },
     // fast_travel exists only when the instance turns it on (fastTravelBetween).
     loop: { verbs: ['fast_travel'], verbsOf: config => (config.fastTravelBetween ? ['fast_travel'] : []), progress: ['checkpoint_set'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
@@ -91,7 +94,9 @@ export default {
         if (to.space !== p.space) rt.moveToSpace(p, to.space, structuredClone(to.at)); else rt.space(p.space).setPos(p, structuredClone(to.at), rt);
         st(rt).point.player = to; rt.emit('fast_traveled', { who: 'player', checkpoint: id });
       });
-      rt.options(rt => Object.keys(st(rt).active).filter(id => id !== st(rt).point.player?.id).sort().map(id => ({ label: `fast travel ${id}`, actions: { fast_travel: id } })));
+      // Each by what a person reads for the checkpoint: the name of the entity that is it.
+      const named = id => { const e = Object.values(rt.state.entities).find(x => x.components?.checkpoint !== undefined && checkpointId(x) === id); return e ? entityName(rt, e.id) : null; };
+      rt.options(rt => Object.keys(st(rt).active).filter(id => id !== st(rt).point.player?.id).sort().map(id => { const n = named(id); return { label: `fast travel ${id}`, ...(n ? { text: `Travel to ${n}` } : {}), actions: { fast_travel: id } }; }));
     }
     rt.provide('checkpoint', { point: (who = 'player') => st(rt).point[who] ?? null, activated: () => Object.keys(st(rt).active), respawn: who => respawn(rt, who), activate: (who, id) => activate(who, id, null) });
   },

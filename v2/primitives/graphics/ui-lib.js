@@ -2,7 +2,7 @@
 // - h()/patch helpers that build DOM without innerHTML (works on a test stub);
 // - one host per view: the `.gv-overlay` root, z-ordered layers, the injected
 //   theme stylesheet, a small event bus between UI primitives, persisted
-//   settings, and host holds (pause) / restart with feature detection;
+//   settings, and host holds (view.pause) / restart (view.restart), released with the view;
 // - small formatting and colour helpers.
 // UI never writes rt.state. Everything here is presentation.
 import { THEME_CSS, resolveTheme } from './ui-theme.js';
@@ -11,8 +11,6 @@ import { hslToRgb, rgbToHex } from '../../art/color.js';
 
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 export const lerp = (a, b, t) => a + (b - a) * t;
-/** setTimeout that never keeps a Node test process alive. */
-export function later(fn, ms) { const t = setTimeout(fn, ms); t?.unref?.(); return t; }
 export const isNum = v => typeof v === 'number' && Number.isFinite(v);
 
 /** Stable 0..359 hue from a string (names, ids). */
@@ -104,11 +102,42 @@ export function uiHost(rt) {
   const handlers = new Map();
   const holds = new Set();
   const settings = loadSettings();
-  let first = null, origStep = null;
+  // What the UI holds outside its own DOM (listeners on window/document, timers), released with the view
+  // (view.onDispose: the host unloads or rebuilds the game; ARCHITECTURE §1.7).
+  const listening = [], timers = new Map();
+  let disposed = false, timerSeq = 0;
   host = {
     rt, view, doc, root, settings,
-    /** Presentation clock in seconds (a host or test may supply view.now()). */
-    now: () => (typeof view.now === 'function' ? view.now() : (globalThis.performance?.now?.() ?? Date.now()) / 1000),
+    /** Presentation clock in seconds; view.now() is the host's display clock in ms (v2/web/player.js). */
+    now: () => (typeof view.now === 'function' ? view.now() : (globalThis.performance?.now?.() ?? Date.now())) / 1000,
+    /** addEventListener on a target outside the overlay (window, document), removed when the view is disposed. */
+    listen(target, type, fn, options) {
+      if (disposed || !target?.addEventListener) return () => {};
+      target.addEventListener(type, fn, options);
+      const entry = [target, type, fn, options];
+      listening.push(entry);
+      return () => { const i = listening.indexOf(entry); if (i >= 0) { listening.splice(i, 1); target.removeEventListener(type, fn, options); } };
+    },
+    /**
+     * A presentation timer (fades, toasts, banners) on the host's display clock: it fires on the first display frame
+     * `ms` after now, so it follows the frames the host draws and goes with the view. -> an id for clearLater.
+     */
+    later(fn, ms) {
+      if (disposed) return null;
+      const id = ++timerSeq; timers.set(id, { at: host.now() + (Number(ms) || 0) / 1000, fn }); return id;
+    },
+    clearLater(id) { timers.delete(id); },
+    get disposed() { return disposed; },
+    /** Release everything this UI holds outside its DOM and take its overlay out of the container. */
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      host.input.dispose();
+      for (const [target, type, fn, options] of listening.splice(0)) target.removeEventListener(type, fn, options);
+      timers.clear(); handlers.clear(); holds.clear();
+      root.remove();
+      HOSTS.delete(view);
+    },
     /** A z-ordered full-size layer; elements inside opt into pointer events. */
     layer(name) {
       if (layers[name]) return layers[name];
@@ -125,31 +154,26 @@ export function uiHost(rt) {
       root.style.setProperty('--gv-hud-scale', String(settings.hudScale));
       host.emit('settings', settings);
     },
-    /** Hold or release the simulation (pause, title screen). Prefers a host-provided view.pause. */
+    /** Hold or release the simulation (pause, title screen, panels) through the host's view.pause. */
     hold(key, on) {
       if (on) holds.add(key); else holds.delete(key);
-      if (typeof view.pause === 'function') { view.pause(holds.size > 0); return; }
-      // Workaround until the host exposes view.pause (kernel request ui.md #1):
-      // stop stepping the world in the browser only. No state is written.
-      // While held, a step that carries UI actions (equip, buy, choose...) still runs one frame so they apply.
-      if (!origStep && holds.size) { origStep = rt.step; rt.step = (input = {}) => (holds.size && !Object.values(input.actions || {}).some(Boolean) ? rt.state : origStep(input)); }
+      view.pause(holds.size > 0);
     },
     held: () => holds.size > 0,
     holds: () => [...holds],
-    /** Restart from the first displayed frame. Prefers a host-provided view.restart. */
-    restart() {
-      if (typeof view.restart === 'function') { view.restart(); host.emit('restarted'); return true; }
-      if (!first) return false;
-      rt.restore(first); host.emit('restarted'); return true; // host-level reset (kernel request ui.md #2)
-    },
-    snapshotFirst() { if (!first && rt.state.frame <= 1) first = rt.snapshot(); },
+    /** Restart from the world's first state (the host's view.restart). */
+    restart() { view.restart(); host.emit('restarted'); return true; },
     /** Play a UI sound through graphics.audio.synth when present. */
     sound(name, data) { host.emit('ui_sound', { name, ...data }); },
   };
   host.input = createUiInput(host);
+  view.onDispose?.(() => host.dispose());
   root.classList.toggle('gv-reduced', Boolean(settings.reducedMotion));
   root.style.setProperty('--gv-hud-scale', String(settings.hudScale));
-  view.onFrame?.(() => { host.snapshotFirst(); host.input.sync(); host.input.poll(); });
+  view.onFrame?.(() => {
+    host.input.sync(); host.input.poll();
+    if (timers.size) { const t = host.now(); for (const [id, x] of [...timers]) if (x.at <= t && timers.delete(id)) x.fn(); }
+  });
   HOSTS.set(view, host);
   return host;
 }
@@ -176,9 +200,12 @@ function injectStyles(doc) {
 export const docCharacter = (doc, id) => doc.plot?.characters?.find(c => c.id === id);
 export const docItem = (doc, id) => doc.content?.items?.find(i => i.id === id);
 export const docZone = (doc, id) => { for (const s of doc.spaces || []) { const z = (s.zones || []).find(x => x.id === id); if (z) return { ...z, space: s.id }; } return null; };
-export const charName = (doc, id) => id === 'player' ? (docCharacter(doc, doc.player?.archetype)?.name || 'You') : (docCharacter(doc, id)?.name || titleCase(id));
-export const itemName = (doc, id) => docItem(doc, id)?.name || titleCase(id);
-export const zoneName = (doc, id) => docZone(doc, id)?.name || titleCase(id);
+// What a person reads for an entry: the name the document declares for it, '' when it declares none (never its id,
+// title-cased or not: tests/v2-option-text.test.js). The player is 'You' unless its character or archetype is named.
+const archName = (doc, id) => doc.content?.archetypes?.find(a => a.id === id)?.name || '';
+export const charName = (doc, id) => id === 'player' ? (docCharacter(doc, doc.player?.archetype)?.name || archName(doc, doc.player?.archetype) || 'You') : (docCharacter(doc, id)?.name || archName(doc, id));
+export const itemName = (doc, id) => docItem(doc, id)?.name || '';
+export const zoneName = (doc, id) => docZone(doc, id)?.name || '';
 /**
  * What the document's primitives tell a person as their events fire (card.tells, declared by the event's owner):
  * [{ use, event, label, entry?: { at, by }, detail? }], one per instance's card, in document order.
@@ -197,7 +224,7 @@ export function tellWords(doc, tell, data) {
   if (!tell.entry) return { label: tell.label, title: '', detail: '' };
   const id = data?.[tell.entry.by], list = tell.entry.at.split('.').reduce((o, k) => o?.[k], doc);
   const e = Array.isArray(list) ? list.find(x => x?.id === id) : null;
-  return { label: tell.label, title: e?.title || e?.name || titleCase(id), detail: tell.detail && typeof e?.[tell.detail] === 'string' ? e[tell.detail] : '' };
+  return { label: tell.label, title: e?.title || e?.name || '', detail: tell.detail && typeof e?.[tell.detail] === 'string' ? e[tell.detail] : '' };
 }
 /** The document instance of a system primitive (first match), for reading its configuration. */
 export const docSystem = (doc, use) => (doc.systems || []).find(s => s.use === use || s.use.startsWith(use + '.'));

@@ -12,8 +12,9 @@
 //              formBundle: its requirements closure, companions its declarations name) whose addition to the composed
 //              document adds no new problem: preflight's structural codes, the composition check, the loop check, the
 //              content contracts its own cards declare (content.js populateProblems), and the engagement its cards
-//              declare (card.engage config filled from content the document must already have). Ordered by whether the
-//              card's loop declares the mechanic's verb, then bundle size: nothing is cut. The pick joins the document
+//              declare (card.engage config filled from content the document must already have). In declaration order
+//              (retrieval.js declarationOrder: the cards whose loop declares the mechanic's verb first, then the
+//              catalogue's order): nothing is cut and nothing is ranked by text. The pick joins the document
 //              with its bundle and the checks run again on the whole document; a pick that fails them is dropped and
 //              the question asked again without it (build.js's convention);
 //   gap layer  "none", or no valid option: the gap layer writes the primitive (cfg.gaps 'auto', within
@@ -36,7 +37,7 @@ import { loopProblems } from './loop-check.js';
 import { contractsFor, populateProblems, docRefs } from './content.js';
 import { engageDocument } from './engage.js';
 import { formBundle } from './bundles.js';
-import { pickOption, servesContext, STRUCTURAL } from './retrieval.js';
+import { pickOption, servesContext, declarationOrder, declaresVerb, STRUCTURAL } from './retrieval.js';
 import { makeAsk } from './build-steps.js';
 import { strictSpec, formKey, obj as strictObj, nul, decode } from './outline-form.js';
 import { declaredVerbs, instancesIn, instancesWithPaths } from './templates.js';
@@ -147,8 +148,8 @@ export function unengaged(d, ids, { registry, logic }) {
 }
 
 /**
- * Every valid option for one mechanic on the document (see the header), the mechanic's verb first, and the cards
- * rejected with why. @param {{ doc: Record<string, any>, registry: RegistryLike, logic: LogicLike, mechanic: PickMechanic, interactions: string[] }} args
+ * Every valid option for one mechanic on the document (see the header), in declaration order, and the cards rejected
+ * with why. @param {{ doc: Record<string, any>, registry: RegistryLike, logic: LogicLike, mechanic: PickMechanic, interactions: string[] }} args
  * @returns {{ options: Option[], rejected: Array<{ id: string, why: string }> }}
  */
 export function extensionOptions({ doc, registry, logic, mechanic, interactions }) {
@@ -172,17 +173,17 @@ export function extensionOptions({ doc, registry, logic, mechanic, interactions 
   const space = String(doc.spaces?.[0]?.use ?? '');
   const served = (/** @type {Card} */ c) => (interactions.length ? interactions.some(i => servesContext(c, i)) : servesContext(c, null));
   const pool = registry.cards().filter(c => !isSpace(c.id) && !isGenerator(c.id) && !isGraphics(c.id) && !c.adapts && !c.mode && !have.has(c.id) && (cardLoop(c)?.verbs.length ?? 0) > 0 && served(c));
-  /** @type {Array<Option & { named: number }>} */
+  /** @type {Option[]} */
   const options = [];
   /** @type {Array<{ id: string, why: string }>} */
   const rejected = [];
   for (const c of pool) {
     const b = formBundle({ registry, seed: c.id, systems: [...have], space, adapters: [], composes, resolve, interaction: interactions[0] ?? null });
     if (!b.ok) { rejected.push({ id: c.id, why: b.why }); continue; }
-    options.push({ id: c.id, score: -b.members.length, variant: 0, members: b.members, extra: b.extra, adapters: [], named: (cardLoop(c)?.verbs ?? []).includes(mechanic.verb) ? 1 : 0 });
+    options.push({ id: c.id, score: Number(declaresVerb(registry, c.id, mechanic.verb)), variant: 0, members: b.members, extra: b.extra, adapters: [] });
   }
-  options.sort((a, b) => b.named - a.named || b.score - a.score || a.id.localeCompare(b.id));
-  return { options: options.map(({ named, ...o }) => o), rejected };
+  options.sort(declarationOrder(registry, mechanic.verb));
+  return { options, rejected };
 }
 
 /** The gap layer's request for a mechanic no catalogue primitive covers. @param {PickMechanic} m @param {Record<string, any>} doc @param {string[]} interactions @param {string} spec */
@@ -212,11 +213,14 @@ export function recordingWriter(writer, calls) {
  * params the content round writes), calls (this stage's model calls, asked one after another), missing (the
  * mechanics nothing covers: the caller fails the build naming them) }
  * @param {{ doc: Record<string, any>, mechanics: readonly PickMechanic[], registry: RegistryLike, logic: LogicLike, writer: Writer, attempts: number, interactions: string[],
- *   header: string, gaps: { mode: string, service: GapService | null, max: number }, catalogue: (doc: unknown) => Promise<{ registry: RegistryLike, logic: LogicLike }>, stage?: (name: string, detail: Record<string, unknown>) => void }} args
+ *   header: string, gaps: { mode: string, service: GapService | null, max: number }, catalogue: (doc: unknown) => Promise<{ registry: RegistryLike, logic: LogicLike }>, stage?: (name: string, detail: Record<string, unknown>) => void,
+ *   deadline?: number | null }} args
+ *   deadline: the step path's time box (a performance.now() value): a step's question is not asked after it, and the
+ *   mechanic is missing with why (build-steps.js makeAsk, step_path_timeout)
  */
-export async function extendDocument({ doc: input, mechanics, registry: reg, logic: lg, writer, attempts, interactions, header, gaps, catalogue, stage = () => {} }) {
+export async function extendDocument({ doc: input, mechanics, registry: reg, logic: lg, writer, attempts, interactions, header, gaps, catalogue, stage = () => {}, deadline = null }) {
   let doc = structuredClone(input), registry = reg, logic = lg, calls = 0, written = 0;
-  const ask = makeAsk({ writer, attempts, count: () => { calls++; } });
+  const ask = makeAsk({ writer, attempts, count: () => { calls++; }, deadline });
   const coverage = templateCoverage(mechanics, doc, registry);
   /** @type {string[]} */
   const added = [];

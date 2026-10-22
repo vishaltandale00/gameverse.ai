@@ -10,9 +10,10 @@
 //   variety      cells, zones, event names and choice labels per simulated minute
 // A value that was not measured is null, never 0 (AGENTS.md); `unmeasured` says why. Findings carry a
 // stable code, a document path and severity 'info'.
-import { maker, hold, applyOption, optionLabels, inputMacros } from './drive.js';
-import { withTravel } from './macros.js';
-import { playtest as runPlaytest } from './playtest.js';
+import { hold, holdInput, optionLabels, inputMacros } from './drive.js';
+import { takeOption } from './macros.js';
+import { playtest as runPlaytest, explorerWorlds } from './playtest.js';
+import { INPUT } from './controls.js';
 import { budget as makeBudget, stableStringify, hashString, instancesOf, usedPrimitives } from './util.js';
 
 export const QUALITY_VERSION = 'quality/0.1';
@@ -39,14 +40,17 @@ export const QUALITY_THRESHOLDS = Object.freeze({ agencyShare: 0.5, longGapSecon
 
 const round = (v, d = 2) => (Number.isFinite(v) ? +v.toFixed(d) : null);
 const finding = (code, path, message, extra = {}) => ({ code, path: path || '$', message, severity: 'info', ...extra });
-/** State hash for agency: everything but this step's event list and the generic `action` count (pressing an unbound verb still emits it). */
-const choiceHash = state => hashString(stableStringify({ ...state, events: undefined, counts: { ...state.counts, action: undefined } }));
+/**
+ * State hash for agency: everything but this step's event list, the generic `action` count (pressing an unbound verb
+ * still emits it) and the input primitive's memory of what the devices held (a key pressed is not the game changing).
+ */
+const choiceHash = state => hashString(stableStringify({ ...state, events: undefined, counts: { ...state.counts, action: undefined }, prim: { ...state.prim, [INPUT]: undefined } }));
 const quantile = (sorted, q) => (sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))] : null);
 const median = sorted => (sorted.length ? (sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2) : null);
 const matches = (patterns, name) => patterns.some(p => (p.endsWith('*') ? name.startsWith(p.slice(0, -1)) : p === name));
 
 /** Agency at sampled archive cells: each option and input macro against idling for the same frames. */
-function measureAgency(make, sample, { b, maxChoices, macroFrames }) {
+function measureAgency(make, sample, { b, maxChoices, macroFrames, registry }) {
   const cells = (sample || []).filter(c => c.snap);
   if (!cells.length) return { value: null, why: 'no archive sample' };
   const rt = make();
@@ -58,11 +62,11 @@ function measureAgency(make, sample, { b, maxChoices, macroFrames }) {
     if (rt.state.status !== 'playing') continue;
     const labels = optionLabels(rt.availableOptions());
     // Each verb alone first, then the four axis moves, then diagonals and combos: a cap still tries every verb.
-    const rank = m => (!m.input.axes ? 0 : !m.input.actions && m.input.axes.move.some(v => v === 0) ? 1 : 2);
+    const rank = m => (!m.input.axes ? 0 : !m.input.actions && Object.values(m.input.axes)[0].some(v => v === 0) ? 1 : 2);
     const macros = inputMacros(rt).filter(m => m.label !== 'idle').map((m, i) => ({ m, i })).sort((a, b) => rank(a.m) - rank(b.m) || a.i - b.i).map(x => x.m);
     const choices = [...labels.slice(0, Math.ceil(maxChoices / 2)).map(label => ({ kind: 'options', label })), ...macros.map(m => ({ kind: 'macros', label: m.label, m }))].slice(0, maxChoices);
     const baseline = new Map(), outcomes = new Set();
-    const idle = n => { if (!baseline.has(n)) { rt.restore(cell.snap); hold(rt, {}, n, b); baseline.set(n, choiceHash(rt.state)); } return baseline.get(n); };
+    const idle = n => { if (!baseline.has(n)) { rt.restore(cell.snap); hold(rt, {}, n); baseline.set(n, choiceHash(rt.state)); } return baseline.get(n); };
     let tried = 0, effective = 0;
     for (const c of choices) {
       if (b.over()) { truncated = true; break; }
@@ -73,8 +77,8 @@ function measureAgency(make, sample, { b, maxChoices, macroFrames }) {
         if (c.kind === 'options') {
           const options = rt.availableOptions(), j = optionLabels(options).indexOf(c.label);
           if (j < 0) continue;
-          acts = Object.keys(options[j].actions || {}); applyOption(rt, options[j], b);
-        } else { acts = Object.keys(c.m.input.actions || {}); if (!acts.length) acts = ['move']; hold(rt, c.m.input, macroFrames, b); hold(rt, {}, 1, b); }
+          acts = Object.keys(options[j].actions || {}); takeOption(rt, options[j], registry);
+        } else { acts = Object.keys(c.m.input.actions || {}); if (!acts.length) acts = Object.keys(c.m.input.axes || {}); holdInput(rt, c.m.input, macroFrames); hold(rt, {}, 1); }
       } catch { errors++; continue; } // crashes are the publish gate's business; here the choice is just not measured
       const h = choiceHash(rt.state), changed = h !== idle(rt.state.frame - f0);
       tried++; tally[c.kind].choices++;
@@ -117,28 +121,33 @@ function measureCoverage(doc, registry, mechanics, pt, agency) {
   return { value: { mechanics: items.length, measured: measured.length, exercised: measured.filter(x => x.exercised).length, share: measured.length ? round(measured.filter(x => x.exercised).length / measured.length) : null, items } };
 }
 
+/** Frames the agency measurement simulates when its caller names no budget (a sample of ~7 cells × 24 choices × 13 frames fits). */
+export const QUALITY_STEPS = 6000;
+
 /**
- * quality(doc, registry, logic, { playtest, mechanics, seed, budgetMs, maxChoices, macroFrames, thresholds })
+ * quality(doc, registry, logic, { playtest, mechanics, seed, maxSteps, maxChoices, macroFrames, thresholds })
  * `doc` is preflighted. `playtest` is a playtest() result with its archive sample (snapshots); without one a
- * playtest runs here on part of the budget. `mechanics` is selection.mechanics.
+ * playtest runs here. `mechanics` is selection.mechanics. Agency is measured on the explorer's worlds (the controls a
+ * person has) within `maxSteps` simulated frames, never wall time.
  */
 export function quality(doc, registry, logic, opts = {}) {
-  const { mechanics = null, seed = doc.seed, budgetMs = 300, maxChoices = 24, macroFrames = 12 } = opts;
+  const { mechanics = null, seed = doc.seed, maxSteps = QUALITY_STEPS, maxChoices = 24, macroFrames = 12 } = opts;
   const th = { ...QUALITY_THRESHOLDS, ...(opts.thresholds || {}) };
-  const b = makeBudget({ ms: budgetMs });
+  const b = makeBudget({ steps: maxSteps });
   const findings = [], unmeasured = {};
   let pt = opts.playtest || null, ranPlaytest = false;
-  if (!pt) { pt = runPlaytest(doc, registry, logic, { seed, budgetMs: budgetMs / 2 }); ranPlaytest = true; }
-  let make = maker(doc, registry, logic);
-  if (pt?.travel === 'steer') make = withTravel(make, registry, { mode: 'steer' }).make;
-  const fresh = () => make(seed);
+  if (!pt) { pt = runPlaytest(doc, registry, logic, { seed }); ranPlaytest = true; }
+  // The worlds the playtest played (its archive snapshots restore into them).
+  const worlds = explorerWorlds(doc, registry, logic, { seed, travel: pt?.travel === 'steer' });
+  if (!worlds.ok) throw Error(`quality: the host document does not preflight: ${JSON.stringify(worlds.errors.slice(0, 2))}`);
+  const fresh = () => b.meter(worlds.make(seed));
   const tl = pt?.timeline || null;
   const pathOf = new Map(); for (const x of instancesOf(doc)) if (x.inst?.use && !pathOf.has(x.inst.use)) pathOf.set(x.inst.use, x.path);
   const inputPath = pathOf.get('engine.input.actions') ?? 'systems';
 
   // Agency.
   let agency = null;
-  try { const a = measureAgency(fresh, pt?.sample, { b, maxChoices, macroFrames }); agency = a.value; if (!agency) unmeasured.agency = a.why; }
+  try { const a = measureAgency(fresh, pt?.sample, { b, maxChoices, macroFrames, registry }); agency = a.value; if (!agency) unmeasured.agency = a.why; }
   catch (error) { unmeasured.agency = `threw: ${String(error?.message || error).slice(0, 120)}`; }
   if (agency) {
     if (agency.share < th.agencyShare) findings.push(finding('agency_low', 'systems', `${Math.round(agency.share * 100)}% of ${agency.choices} sampled choices change the game (at ${agency.cells} states)`, { hint: 'give the player verbs that matter where they start' }));
@@ -176,7 +185,7 @@ export function quality(doc, registry, logic, opts = {}) {
 
   return {
     version: QUALITY_VERSION, agency, coverage, progression, pacing, deadTime, variety,
-    budget: { limitMs: budgetMs, ...b.report(), playtest: ranPlaytest ? 'ran' : 'reused', truncated: Boolean(agency?.truncated) || b.hit === 'ms' },
+    budget: { limitSteps: maxSteps, ...b.report(), playtest: ranPlaytest ? 'ran' : 'reused', truncated: Boolean(agency?.truncated) || b.hit !== null },
     exhaustive: false, findings, unmeasured,
   };
 }

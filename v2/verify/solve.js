@@ -29,11 +29,10 @@ class Heap {
 }
 
 /** Settle, then step idle while the game plays and offers no options, up to `wait` steps. */
-function toDecision(rt, settleSteps, wait, b = null) {
-  settle(rt, settleSteps, b);
+function toDecision(rt, settleSteps, wait) {
+  settle(rt, settleSteps);
   let k = 0;
   while (rt.state.status === 'playing' && k < wait && !rt.availableOptions().length) { rt.step({}); k++; }
-  b?.step(k);
 }
 
 /** Replay a path of option labels from a fresh world, reaching each decision as the search did. */
@@ -53,11 +52,13 @@ const pathOf = node => { const out = []; for (let n = node; n?.label !== undefin
 
 /**
  * solve(doc, registry, logic, opts) — doc must be preflight's normalized document.
- * opts: { search, budgetMs, maxStates, maxDepth, settleSteps, waitSteps, seed, quantum, includeRng, entities, key(rt), heuristic(rt) }
+ * opts: { search, maxStates, maxSteps, maxDepth, settleSteps, waitSteps, seed, quantum, includeRng, entities, key(rt), heuristic(rt) }
+ * The search is bounded by states kept and frames simulated, never wall time: the same document and seed give the same result.
+ * `stopAtWin`: stop at the first won ending found (a caller that needs one winning path, not every ending).
  */
 export function solve(doc, registry, logic, opts = {}) {
-  const { search = 'bfs', budgetMs = 2000, maxStates = 20000, maxDepth = Infinity, settleSteps = 2, waitSteps = 600, seed } = opts;
-  const b = makeBudget({ ms: budgetMs, states: maxStates, steps: opts.maxSteps ?? Infinity });
+  const { search = 'bfs', maxStates = 20000, maxDepth = Infinity, settleSteps = 2, waitSteps = 600, seed } = opts;
+  const b = makeBudget({ states: maxStates, steps: opts.maxSteps ?? Infinity });
   // Spaces without options of their own get travel macros (warp along the space's path, or steer the real controls).
   let make = maker(doc, registry, logic), travel = null;
   if (opts.travel !== false) {
@@ -66,12 +67,12 @@ export function solve(doc, registry, logic, opts = {}) {
     if (wanted) travel = withTravel(make, registry, { mode: wanted });
     if (travel) make = travel.make;
   }
-  const rt = make(seed);
+  const rt = b.meter(make(seed));
   const abs = abstraction(doc, registry, opts);
   const keyOf = opts.key || abs.key;
   const goal = objective(doc, registry, logic);
   const h = opts.heuristic || goal.score;
-  toDecision(rt, settleSteps, waitSteps, b);
+  toDecision(rt, settleSteps, waitSteps);
 
   const beatsFired = new Set(), endings = new Map(), outcomes = {}, deadEnds = [];
   const record = () => { for (const id of Object.keys(rt.store('plot.storyboard').fired || {})) beatsFired.add(id); };
@@ -79,7 +80,7 @@ export function solve(doc, registry, logic, opts = {}) {
   let best = { score: h(rt), node: null };
   const root = { snap: rt.snapshot(), parent: null, label: undefined, depth: 0 };
   const startOptions = rt.availableOptions().length;
-  let expanded = 0, cutByDepth = false, errors = [];
+  let expanded = 0, tries = 0, cutByDepth = false, errors = [], wonFound = false;
 
   // Expand a node: try each option from its snapshot; returns child nodes (new abstract states).
   const expand = (node, seen, admit) => {
@@ -90,10 +91,12 @@ export function solve(doc, registry, logic, opts = {}) {
     if (node.depth >= maxDepth) { cutByDepth = true; return []; }
     const children = [];
     for (let i = 0; i < options.length; i++) {
+      tries++;
       rt.restore(node.snap);
-      // Options are re-read after restore: macro apply() closures may capture state.
-      const opt = rt.availableOptions()[i] || options[i];
-      try { applyOption(rt, opt, b); toDecision(rt, settleSteps, waitSteps, b); }
+      // A macro option is re-read after restore (its apply() closure may capture state); a data option (actions and
+      // steps only) is the same after restore, and re-reading every option for each one tried costs options² reads.
+      const opt = typeof options[i].apply === 'function' ? rt.availableOptions()[i] || options[i] : options[i];
+      try { applyOption(rt, opt); toDecision(rt, settleSteps, waitSteps); }
       catch (error) { errors.push({ path: [...pathOf(node), labels[i]], message: String(error?.message || error) }); continue; }
       record();
       const child = { parent: node, label: labels[i], depth: node.depth + 1 };
@@ -101,6 +104,7 @@ export function solve(doc, registry, logic, opts = {}) {
         const k = rt.state.ending || rt.state.status, path = pathOf(child);
         if (!endings.has(k) || endings.get(k).length > path.length) endings.set(k, path);
         outcomes[k] = rt.state.status;
+        if (opts.stopAtWin && rt.state.status === 'won') { wonFound = true; break; }
         continue;
       }
       const key = keyOf(rt);
@@ -121,7 +125,7 @@ export function solve(doc, registry, logic, opts = {}) {
       cutByDepth = false;
       const stack = [root];
       const admit = (key, d) => { const old = depthSeen.get(key); if (old !== undefined && old <= d) return false; depthSeen.set(key, d); return true; };
-      while (stack.length && !b.over()) {
+      while (stack.length && !b.over() && !wonFound) {
         const node = stack.pop();
         if (node.depth >= limit) { if (rt.restore(node.snap), rt.availableOptions().length) cutByDepth = true; continue; }
         const kids = expand(node, null, admit);
@@ -142,8 +146,8 @@ export function solve(doc, registry, logic, opts = {}) {
       : { a: [], i: 0, push(x) { this.a.push(x); }, pop() { return this.a[this.i++]; }, get size() { return this.a.length - this.i; } };
     root.score = h((rt.restore(root.snap), rt));
     frontier.push(root);
-    while (frontier.size && !b.over()) for (const c of expand(frontier.pop(), seen, admit)) frontier.push(c);
-    exhaustive = !frontier.size && !cutByDepth && !b.hit;
+    while (frontier.size && !b.over() && !wonFound) for (const c of expand(frontier.pop(), seen, admit)) frontier.push(c);
+    exhaustive = !frontier.size && !cutByDepth && !b.hit && !wonFound;
   }
 
   const allBeats = (doc.plot?.storyboard?.acts || []).flatMap(a => (a.beats || []).map(x => x.id));
@@ -161,7 +165,7 @@ export function solve(doc, registry, logic, opts = {}) {
     unreachedEndings: declaredEndings.filter(e => !endings.has(e)),
     beatsNeverFired: allBeats.filter(x => !beatsFired.has(x)),
     deadEnds: deadEnds.slice(0, 5), deadEndCount: deadEnds.length,
-    states: b.usedStates + 1, expanded, exhaustive, search,
+    states: b.usedStates + 1, expanded, tries, exhaustive, search,
     bestPath: best.node ? pathOf(best.node) : [], bestScore: best.score,
     startOptions, errors: errors.slice(0, 5), replayed, travel: travel ? travel.mode() : null,
     abstraction: { declared: abs.declared },

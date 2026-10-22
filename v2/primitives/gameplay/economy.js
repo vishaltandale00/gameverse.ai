@@ -144,12 +144,14 @@ export default {
       if (shops.has(t.components.shop)) open(d.who, t.components.shop);
       else if (config.ownerOpens && d.kind === 'talk' && !t.components.interact?.dialogue) { const s = config.shops.find(x => x.owner === t.id); if (s) open(d.who, s.id); }
     });
+    // An option's text from an item's declared name (none when it declares no name: never its id).
+    const said = (id, f) => { const n = itemDef(rt, id)?.name; return n ? { text: f(n) } : {}; };
     rt.options(rt => {
       const shop = shopOf('player'); if (!shop) return [];
       const out = [];
-      for (const [itemId, n] of Object.entries(st().stock[shop.id]).sort()) if (n > 0 && balance(shop.currency) >= price(shop, itemId)) out.push({ label: `buy ${itemId}`, actions: { buy: itemId } });
-      for (const itemId of Object.keys(bag(rt, 'player')).sort()) if (sellPrice(shop, itemId) > 0) out.push({ label: `sell ${itemId}`, actions: { sell: itemId } });
-      return [...out.slice(0, 16), { label: `leave ${shop.id}`, actions: { close_shop: true } }];
+      for (const [itemId, n] of Object.entries(st().stock[shop.id]).sort()) if (n > 0 && balance(shop.currency) >= price(shop, itemId)) out.push({ label: `buy ${itemId}`, ...said(itemId, n => `Buy ${n}`), actions: { buy: itemId } });
+      for (const itemId of Object.keys(bag(rt, 'player')).sort()) if (sellPrice(shop, itemId) > 0) out.push({ label: `sell ${itemId}`, ...said(itemId, n => `Sell ${n}`), actions: { sell: itemId } });
+      return [...out.slice(0, 16), { label: `leave ${shop.id}`, text: 'Leave the shop', actions: { close_shop: true } }];
     });
     const view = who => { const shop = shopOf(who); if (!shop) return null; const stock = Object.entries(st().stock[shop.id]).map(([item, n]) => ({ item, count: n, price: price(shop, item) })); const sellPrices = {}; for (const item of Object.keys(bag(rt, who))) { const p = sellPrice(shop, item); if (p > 0) sellPrices[item] = p; } return { shop: shop.id, owner: shop.owner ?? null, currency: shop.currency ?? def0, stock, sellPrices }; };
     rt.provide('shop', { open: (who = 'player') => view(who), price: (shop, item) => price(shops.get(shop), item) });

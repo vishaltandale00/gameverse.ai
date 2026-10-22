@@ -67,6 +67,8 @@ const WEAPON = {
 export default {
   id: KEY,
   card: {
+    // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
+    presents: { projectile: { role: 'projectile' } },
     // The player fires only with a weapon to fire: the instance's playerWeapon, a ranged component on the player's
     // archetype, or a ranged item the document has for it (runtime-lib-controls.js instanceVerbs).
     loop: { verbs: ['fire'], verbsOf: (config, doc) => { const hero = (doc?.content?.archetypes || []).find(a => a.id === doc?.player?.archetype); return config.playerWeapon || hero?.components?.ranged || (doc?.content?.items || []).some(i => i.ranged) ? ['fire'] : []; }, progress: ['fired', 'projectile_hit'] },

@@ -7,7 +7,7 @@
 // Timing context follows AGENTS.md (run id, commit + dirty flag, catalogue hash, pipeline version and
 // config, writers, decisions provider, machine and load); values that were not measured are null.
 //
-//   node v2/tools/generation-bench.mjs [--offline] [--only id,id] [--label text] [--out dir] [--playtest-ms 3000]
+//   node v2/tools/generation-bench.mjs [--offline] [--only id,id] [--label text] [--out dir]
 // Live runs make real model calls (one full pipeline run per idea) and are a qualification run, not CI.
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -23,7 +23,7 @@ import { createDecisions } from '../planner/decisions.js';
 import { loadOpenAIKey } from '../planner/openai.js';
 import { verifyDocument } from '../planner/verify-adapter.js';
 import { census, kindViewPreserved } from '../planner/census.js';
-import { verify } from '../verify/index.js';
+import { verify, GATE_BUDGET } from '../verify/index.js';
 import { isAvatar } from '../planner/play-spec.js';
 import { catalogueForDoc } from '../experiments/primitive.js';
 import { memoryCtx } from './kernel-bench.mjs';
@@ -58,7 +58,7 @@ export const ORIGINAL_IDEAS = [
 const arg = (name, d = null) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : d; };
 const flag = name => process.argv.includes(`--${name}`);
 const CRASH = new Set(['runtime_error', 'non_finite', 'entity_explosion', 'event_storm', 'instant_loss', 'verify_threw']);
-const PURPOSES = [[/^You decompose/, 'decompose'], [/^You map game mechanics/, 'map'], [/^You check a mechanic mapping/, 'map_check'], [/^You write game (documents|outlines)/, 'outline'], [/^You add detail/, 'detail'], [/^You (revise|change)/, 'revise']];
+const PURPOSES = [[/^You decompose/, 'decompose'], [/^You map game mechanics/, 'map'], [/^You check a mechanic mapping/, 'map_check'], [/^You write game (documents|outlines)/, 'outline'], [/^You (revise|change)/, 'revise']];
 const purposeOf = system => PURPOSES.find(([re]) => re.test(String(system || '')))?.[1] || 'other';
 
 const REPLIES = fileURLToPath(new URL('../../local-data/v2/bench/replies/', import.meta.url));
@@ -91,14 +91,14 @@ function recording(writer, calls, { replay = 'auto' } = {}) {
 }
 
 /** The playtest agent's report on one document (the publish gate's verifier, with a playtest budget). */
-export async function playReport(doc, registry, logic, { playtestMs = 3000, budgetMs = 1500 } = {}) {
-  const v = await verifyDocument(doc, registry, logic, { budgetMs, playtestMs });
+export async function playReport(doc, registry, logic) {
+  const v = await verifyDocument(doc, registry, logic, { playable: true });
   const crashes = (v.problems || []).filter(p => CRASH.has(p.code) && p.severity !== 'warning' && p.severity !== 'info');
   // The mode bots (verify strategies chosen by what the document provides): did one play the core loop to a win?
   let bots = [];
   // A bot completes the game when one of its runs is won (the run's path is the trace).
   const wonRun = m => [...(m?.runs || []), ...(m?.matches || [])].find(x => x?.won === true) || null;
-  try { const r = await verify(v.doc || doc, registry, logic, { seed: doc.seed, budgetMs: budgetMs * 2, plot: false, spatial: false, playtest: false, invariants: false }); bots = (r.strategies?.ran || []).map(x => { const w = wonRun(x.metrics); return { id: x.id, ok: x.ok, won: Boolean(w), trace: Array.isArray(w?.path) ? w.path.length : (w?.decisions ?? w?.moves ?? null), rate: x.metrics?.rate ?? null }; }); } catch { bots = []; }
+  try { const r = await verify(v.doc || doc, registry, logic, { seed: doc.seed, plot: false, spatial: false, playtest: false, invariants: false }); bots = (r.strategies?.ran || []).map(x => { const w = wonRun(x.metrics); return { id: x.id, ok: x.ok, won: Boolean(w), trace: Array.isArray(w?.path) ? w.path.length : (w?.decisions ?? w?.moves ?? null), rate: x.metrics?.rate ?? null }; }); } catch { bots = []; }
   const botWin = bots.find(b => b.won);
   const path = v.playtest?.win?.path;
   return {
@@ -130,7 +130,7 @@ export function coreCoverage(selection, doc, gaps = []) {
   return out;
 }
 
-export async function runGenerationBench({ ideas = IDEAS, replay = 'auto', offline = false, env = process.env, label = null, config = {}, playtestMs = 3000, outDir = null, writers: given = null, decisions: givenDecisions } = {}) {
+export async function runGenerationBench({ ideas = IDEAS, replay = 'auto', offline = false, env = process.env, label = null, config = {}, outDir = null, writers: given = null, decisions: givenDecisions } = {}) {
   const started = Date.now();
   const repo = fileURLToPath(new URL('../../', import.meta.url));
   const base = await loadCatalogue();
@@ -165,8 +165,7 @@ export async function runGenerationBench({ ideas = IDEAS, replay = 'auto', offli
         avatar: avatarFit(out.decomposition, out.doc, cat.registry, idea.avatar),
         coverage: coreCoverage(out.selection, out.doc, out.selection.gaps),
         census: census(out.doc, cat.registry, cat.logic), outlineCensus: fp ? census(fp, cat.registry, cat.logic, { boot: 0 }) : null,
-        play: await playReport(out.doc, cat.registry, cat.logic, { playtestMs }),
-        detail: { proposed: out.detail.proposed, accepted: out.detail.accepted, rejected: out.detail.rejected.map(r => r.reason) },
+        play: await playReport(out.doc, cat.registry, cat.logic),
         versions: versions.length,
       });
       if (outDir) writeFileSync(join(outDir, `${idea.id}.json`), JSON.stringify(out.doc, null, 1));
@@ -191,12 +190,12 @@ export async function runGenerationBench({ ideas = IDEAS, replay = 'auto', offli
     schema: 'gameverse.v2.generation-bench/0.1', runId: `${new Date(started).toISOString().replace(/[:.]/g, '-')}-${randomBytes(3).toString('hex')}`, label,
     startedAt: new Date(started).toISOString(), wallMs: Date.now() - started,
     context: {
-      sourceCommit: commit, dirty, pipeline: KERNEL_PIPELINE_VERSION, config: { ...PIPELINE_CONFIG, ...config }, playtestMs,
+      sourceCommit: commit, dirty, pipeline: KERNEL_PIPELINE_VERSION, config: { ...PIPELINE_CONFIG, ...config }, gateBudget: GATE_BUDGET,
       catalogHash: catalogHash(base.registry), primitives: base.registry.ids().length,
       writers: { spec: raw.spec ? `${raw.spec.provider}:${raw.spec.model}` : null }, servedModels: [...new Set(games.flatMap(g => g.models))],
       decisions: decisions?.provider ?? null, offline,
       machine: { platform: os.platform(), release: os.release(), arch: os.arch(), cpuModel: cpus[0]?.model || null, cpuCount: cpus.length, memoryGb: Math.round(os.totalmem() / 2 ** 30), node: process.version, loadavg: os.loadavg().map(x => +x.toFixed(2)) },
-      nesting: 'timings come from the pipeline (requestToFirstPlayableMs contains decompose/select/outline/firstPlayable/gate; detailMs follows it; totalMs covers all); play.ms is the benchmark\'s own playtest after the run',
+      nesting: 'timings come from the pipeline (requestToFirstPlayableMs contains decompose/select/outline/firstPlayable/gate; totalMs covers all (there is no detail stage)); play.ms is the benchmark\'s own playtest after the run',
     },
     summary: {
       games: games.length, succeeded: games.filter(g => g.ok).length,
@@ -222,7 +221,7 @@ export function row(g) {
  * fit against the idea's expectation, core coverage), so runs made by older code compare column for column.
  * Zero model calls. dirs: bench run directories (each with report.json and <idea>.json documents).
  */
-export async function evaluateRuns(dirs, { playtestMs = 3000 } = {}) {
+export async function evaluateRuns(dirs) {
   const base = await loadCatalogue();
   const rows = [];
   for (const dir of dirs) {
@@ -240,7 +239,7 @@ export async function evaluateRuns(dirs, { playtestMs = 3000 } = {}) {
           kindView: kindViewPreserved(decomposition, doc, cat.registry), avatar: avatarFit(decomposition, doc, cat.registry, idea.avatar),
           // A core mechanic mapped to nothing was reported as a gap by the selection.
           coverage: coreCoverage({ mechanics: mech }, doc, mech.filter(m => !(m.primitives || []).length).map(m => ({ mechanic: m.id }))),
-          census: census(doc, cat.registry, cat.logic), play: await playReport(doc, cat.registry, cat.logic, { playtestMs }), core: g.core || null,
+          census: census(doc, cat.registry, cat.logic), play: await playReport(doc, cat.registry, cat.logic), core: g.core || null,
         });
       }
       rows.push(row);
@@ -267,7 +266,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const out = arg('out', fileURLToPath(new URL('../../local-data/v2/bench/generation/', import.meta.url)));
   const runDir = join(out, `${new Date().toISOString().replace(/[:.]/g, '-')}${arg('label') ? '-' + arg('label').replace(/[^a-z0-9-]/gi, '_') : ''}`);
   mkdirSync(runDir, { recursive: true });
-  const report = await runGenerationBench({ ideas, replay: arg('replay', 'auto'), offline: flag('offline'), label: arg('label'), playtestMs: Number(arg('playtest-ms', 3000)), outDir: runDir });
+  const report = await runGenerationBench({ ideas, replay: arg('replay', 'auto'), offline: flag('offline'), label: arg('label'), outDir: runDir });
   writeFileSync(join(runDir, 'report.json'), JSON.stringify(report, null, 1));
   console.log(JSON.stringify({ dir: runDir, context: { commit: report.context.sourceCommit, dirty: report.context.dirty, writers: report.context.writers, servedModels: report.context.servedModels, decisions: report.context.decisions }, summary: report.summary }, null, 1));
 }

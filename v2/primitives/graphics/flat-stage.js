@@ -218,7 +218,9 @@ function entitiesOf(H, S, alpha) {
 }
 
 function frame(H, alpha, fixedDt) {
-  const now = typeof performance !== 'undefined' ? performance.now() / 1000 : H.clock + 1 / 60;
+  // The host's display clock (view.now, ms; KERNEL_API §6), so presentation follows the frames the host draws.
+  const ms = typeof H.view?.now === 'function' ? H.view.now() : typeof performance !== 'undefined' ? performance.now() : null;
+  const now = ms === null ? H.clock + 1 / 60 : ms / 1000;
   const realDt = fixedDt ?? (H.wall == null ? 1 / 60 : clamp(now - H.wall, 0, 0.1));
   H.wall = now; H.frameNo++;
   const fb = H.feedback;

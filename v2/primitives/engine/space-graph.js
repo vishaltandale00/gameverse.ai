@@ -2,6 +2,7 @@
 // management games, world maps, or the "macro" layer above other spaces.
 // Zones are nodes; exits are edges, optionally gated by a predicate.
 import { ZONE_FIELDS } from './runtime-lib.js';
+import { SCENERY_PARAM } from './spaces2d-scenery.js';
 /** The fields of a place (a graph zone) beyond the kernel's { id, name }: its exits name zones and may be gated by a predicate. */
 const PLACE = {
   description: { type: 'string', display: true, effect: 'what a person reads about the place' }, tags: ZONE_FIELDS.tags,
@@ -30,7 +31,7 @@ export default {
       graph_exit_space: { fields: ['zones[].exits[].to'], message: "an exit leads to a zone of its own space",
         example: townWith({ id: 'cellar', use: 'engine.space.graph', zones: [{ id: 'vault', name: 'Vault', exits: [] }] }, { to: 'vault' }) },
     },
-    params: {},
+    params: { scenery: SCENERY_PARAM },
     provides: { capabilities: ['position', 'distance', 'navigate', 'reachable'], events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'blocked'], actions: ['go'] },
     reads: [],
   },

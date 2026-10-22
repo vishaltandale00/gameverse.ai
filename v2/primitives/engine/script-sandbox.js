@@ -71,6 +71,9 @@ export default {
     return errors;
   },
   install(rt, config) {
+    // The checks ran these scripts in a synchronous realm; a host without one would play a different game (the
+    // scripts silently disabled), so it says so and does not run it.
+    if (config.scripts.length && !sandboxKind()) throw Object.assign(Error(`${ID}: this host has no synchronous sandbox (node:vm or ShadowRealm), so the document's scripts cannot run here as they were checked`), { code: 'script_host_unsupported' });
     const hosts = new Map(); // compiled realms (non-JSON), rebuilt identically from the document
     const host = s => { if (!hosts.has(s.id)) hosts.set(s.id, createHost(s.code, { timeoutMs: config.timeoutMs })); return hosts.get(s.id); };
     const st = () => { const x = rt.store(ID); x.scripts ??= {}; return x; };

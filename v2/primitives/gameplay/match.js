@@ -224,7 +224,7 @@ export function model(cfg, grid, hole) {
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['swap'], progress: ['matched', 'cascade'] },
+    loop: { shows: ['cells'], verbs: ['swap'], progress: ['matched', 'cascade'] },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { swap: { type: 'choice', of: 'two neighbouring cells', from: 'options', emits: ['swap', 'matched'] } },
     // Match-board mode: swaps under a move limit; the score (or a stage goal) wins, running out of moves loses.
@@ -472,7 +472,7 @@ export default {
       const s = st();
       if (s.phase !== 'idle' || !config.trigger.includes('swap') || (config.moves && s.moves <= 0)) return [];
       const { m } = M();
-      return m.allMoves().map(([i, j]) => { const a = m.xy(i), b = m.xy(j); return { label: `swap ${a} ${b}`, actions: { swap: { a, b } } }; });
+      return m.allMoves().map(([i, j]) => { const a = m.xy(i), b = m.xy(j); return { label: `swap ${a} ${b}`, text: `Swap ${a.join(', ')} with ${b.join(', ')}`, actions: { swap: { a, b } } }; });
     });
   },
 };

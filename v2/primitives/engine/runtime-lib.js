@@ -63,6 +63,20 @@ export const pick = (list, random) => list[Math.min(list.length - 1, Math.floor(
 /** Integer in [lo, hi] from a [lo, hi] pair (or a single number). */
 export const rollRange = (range, random) => { if (!Array.isArray(range)) return range ?? 0; const [lo, hi = lo] = range; return lo + Math.floor(random() * (hi - lo + 1)); };
 
+/**
+ * Can `who` (an entity, or a stand-in { archetype, components }) stand at `at` in space `space` (its api)? Only cell
+ * spaces (those with getCell) say no: outside their bounds (a wrapping axis has no edge), or in a cell it may not enter:
+ * the blocks service's solidity, else the space's own passability (cellRules: a floor block is passable, a door only
+ * some classes pass), else any filled cell is solid. The one reading the spawner places by and the start-of-play check
+ * judges by.
+ */
+export function standable(rt, api, space, at, who) {
+  if (!api?.getCell || !isVec(at)) return true;
+  const b = api.bounds?.();
+  if (b && at.slice(0, b.min.length).some((v, i) => !b.wrap?.[i] && (v < b.min[i] || v >= b.max[i]))) return false;
+  return !(rt.hasService('blocks') ? rt.service('blocks').solidAt(at, space) : typeof api.passable === 'function' ? !api.passable(at, who) : api.getCell(at) != null);
+}
+
 /** Find a static zone definition: { space, zone } or null. */
 export function zoneDef(doc, id) {
   for (const s of doc.spaces || []) { const z = (s.zones || []).find(x => x.id === id); if (z) return { space: s.id, zone: z }; }

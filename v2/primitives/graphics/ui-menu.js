@@ -6,7 +6,7 @@
 // Simulation is held while a screen is open; choices go out through
 // view.act (select_character, select_stage, save_game, load_game).
 import { THEMES, resolveTheme } from './ui-theme.js';
-import { uiHost, later, fill, setClass, setText, titleCase, zoneName, docSystem, fmtClock, fmtInt, isNum, clamp } from './ui-lib.js';
+import { uiHost, fill, setClass, setText, titleCase, zoneName, docSystem, fmtClock, fmtInt, isNum, clamp } from './ui-lib.js';
 import { glyph, moveFocus, docBindings } from './ui-input.js';
 import { portrait, portraitColor, PORTRAIT_MODEL_FIELDS } from './ui-portrait.js';
 import { modelsData } from './model-lib.js';
@@ -57,12 +57,13 @@ export function controlRows(doc, registryHas = () => true, registry = null) {
 
 /** Selectable options for a select screen: [{ id, name, desc, model?, tags? }] */
 export function selectOptions(doc, sel) {
-  if (sel.options?.length) return sel.options.map(o => ({ ...o, name: o.name || titleCase(o.id) }));
+  // Each entry by its declared name ('' when it declares none: never its id); a stage without one by its number.
+  if (sel.options?.length) return sel.options.map(o => ({ ...o, name: o.name || '' }));
   const from = sel.from || (sel.kind === 'stage' ? 'zones' : 'archetypes');
-  if (from === 'archetypes') return (doc.content?.archetypes || []).filter(a => a.kind === 'player' || (a.tags || []).includes('selectable')).map(a => ({ id: a.id, name: a.name || doc.plot?.characters?.find(c => c.archetype === a.id || c.id === a.id)?.name || titleCase(a.id), desc: a.desc || '', model: a.id }));
-  if (from === 'characters') return (doc.plot?.characters || []).filter(c => (c.tags || []).includes('playable') || /player|playable/.test(c.role || '')).map(c => ({ id: c.id, name: c.name || titleCase(c.id), desc: c.bio || '', model: c.id }));
-  if (from === 'stages') return (docSystem(doc, 'gameplay.stage.sequence')?.with?.stages || []).map(s => ({ id: s.id, name: s.name || s.title || titleCase(s.id), desc: s.desc || '' }));
-  return (doc.spaces || []).flatMap(s => s.zones || []).filter(z => !sel.tag || (z.tags || []).includes(sel.tag)).map(z => ({ id: z.id, name: z.name || titleCase(z.id), desc: z.description || '', tags: z.tags }));
+  if (from === 'archetypes') return (doc.content?.archetypes || []).filter(a => a.kind === 'player' || (a.tags || []).includes('selectable')).map(a => ({ id: a.id, name: a.name || doc.plot?.characters?.find(c => c.archetype === a.id || c.id === a.id)?.name || '', desc: a.desc || '', model: a.id }));
+  if (from === 'characters') return (doc.plot?.characters || []).filter(c => (c.tags || []).includes('playable') || /player|playable/.test(c.role || '')).map(c => ({ id: c.id, name: c.name || '', desc: c.bio || '', model: c.id }));
+  if (from === 'stages') return (docSystem(doc, 'gameplay.stage.sequence')?.with?.stages || []).map((s, i) => ({ id: s.id, name: s.name || s.title || `Stage ${i + 1}`, desc: s.desc || '' }));
+  return (doc.spaces || []).flatMap(s => s.zones || []).filter(z => !sel.tag || (z.tags || []).includes(sel.tag)).map(z => ({ id: z.id, name: z.name || '', desc: z.description || '', tags: z.tags }));
 }
 
 /** Results summary for game_end: { won, title, text, stats: [[label, value]] } */
@@ -132,7 +133,9 @@ export default {
     host.layer('toasts').append(banner);
     host.layer('fade').append(fade);
     const stack = []; // screen names
-    let items = [], index = 0, columns = 1, onBack = null, started = !config.title, selectQueue = [], ended = false;
+    // A world the host builds to carry on a game in play (a hot-loaded version: view.continuing) is already started.
+    const continuing = Boolean(rt.view.continuing);
+    let items = [], index = 0, columns = 1, onBack = null, started = !config.title || continuing, selectQueue = [], ended = false;
     const layer = { id: 'menu', modal: true, onVerb: verb => {
       if (verb === 'back') { onBack?.(); return true; }
       if (verb === 'menu' && stack.at(-1) === 'pause') { resume(); return true; }
@@ -251,10 +254,10 @@ export default {
       },
       vs(fighters) {
         open('vs', () => {
-          const [a, b] = fighters, side = (id, cls) => el(`div.gv-vs-side.${cls}`, { style: { '--who': portraitColor(rt.doc, id) } }, el('div.gv-bsprite', {}, portrait(rt.doc, id, { mode: 'full', flip: cls === 'is-right' })), el('b', { text: rt.entity(id)?.components?.name || rt.doc.plot?.characters?.find(c => c.id === id)?.name || titleCase(rt.entity(id)?.archetype || id) }));
+          const [a, b] = fighters, side = (id, cls) => el(`div.gv-vs-side.${cls}`, { style: { '--who': portraitColor(rt.doc, id) } }, el('div.gv-bsprite', {}, portrait(rt.doc, id, { mode: 'full', flip: cls === 'is-right' })), el('b', { text: S.entityName(rt, id) }));
           root.append(el('section.gv-vs', { aria: { label: 'Versus' } }, side(a, 'is-left'), el('div.gv-vs-mark', { text: 'VS' }), side(b, 'is-right')));
           setItems([], { back: null });
-          later(() => { if (stack.at(-1) === 'vs') closeAll(); }, 2400);
+          host.later(() => { if (stack.at(-1) === 'vs') closeAll(); }, 2400);
         });
       },
     };
@@ -278,7 +281,7 @@ export default {
     }
     function nextSelect() { const s = selectQueue.shift(); if (s) SCREENS.select(s); else closeAll(); }
     function resume() { closeAll(); }
-    function fadeIn() { fade.classList.add('is-on'); later(() => fade.classList.remove('is-on'), 180); }
+    function fadeIn() { fade.classList.add('is-on'); host.later(() => fade.classList.remove('is-on'), 180); }
     const slotKey = i => `gv.save.${rt.doc.id}.${i}`;
     function localSlot(i) { try { const raw = globalThis.localStorage?.getItem(slotKey(i)); return raw ? JSON.parse(raw).info : null; } catch { return null; } }
     function save(i) {
@@ -289,7 +292,7 @@ export default {
     }
     function load(i) {
       if (S.canAct(rt, 'load_game')) rt.view.act({ load_game: i });
-      else { try { const raw = globalThis.localStorage?.getItem(slotKey(i)); if (raw) rt.restore(JSON.parse(raw).snapshot); } catch { host.sound('error'); } } // host-level load (kernel request ui.md #2)
+      else { try { const raw = globalThis.localStorage?.getItem(slotKey(i)); if (raw) rt.view.load(JSON.parse(raw).snapshot); } catch { host.sound('error'); } } // host-level load (view.load)
       fadeIn(); closeAll();
     }
     function bestScore(r) {
@@ -300,20 +303,22 @@ export default {
     function showBanner(text, kicker = '') { if (!config.banners) return; fill(banner, kicker ? el('div.gv-banner-kicker', { text: kicker }) : null, el('div.gv-banner-line'), el('div.gv-banner-title', { text }), el('div.gv-banner-line')); }
 
     // ------------------------------------------------------------- wiring
-    if (config.pause) host.input.hotkey('menu', () => { if (!stack.length && started && !ended) SCREENS.pause(); });
-    if (config.autoPause) host.doc?.addEventListener?.('visibilitychange', () => { if (host.doc.visibilityState === 'hidden' && !stack.length && started && !ended && config.pause) SCREENS.pause(); });
+    if (config.pause) host.input.hotkey('menu', () => { if (!stack.length && started && !ended) SCREENS.pause(); }, { overModal: true });
+    if (config.autoPause) host.listen(host.doc, 'visibilitychange', () => { if (host.doc.visibilityState === 'hidden' && !stack.length && started && !ended && config.pause) SCREENS.pause(); });
     for (const s of config.select.filter(x => x.on !== 'start')) rt.on(s.on, () => { if (!stack.length) SCREENS.select(s); else selectQueue.push(s); });
     if (config.vs) rt.on('match_start', e => { const f = e.fighters || e.sides; if (f?.length >= 2) SCREENS.vs(f); });
     rt.on('round_start', e => showBanner(`Round ${e.round}`));
     rt.on('fight', () => showBanner('Fight!'));
-    rt.on('round_end', e => showBanner(e.how === 'ko' ? 'K.O.' : e.how === 'time' ? 'Time' : e.how === 'perfect' ? 'Perfect' : e.winner ? `${titleCase(e.winner)} wins` : 'Draw'));
-    rt.on('stage_intro', e => showBanner(e.name || e.title || (isNum(rt.state.vars['stage.number']) ? `Stage ${rt.state.vars['stage.number']}` : 'Get ready'), 'Stage'));
+    rt.on('round_end', e => showBanner(e.how === 'ko' ? 'K.O.' : e.how === 'time' ? 'Time' : e.how === 'perfect' ? 'Perfect' : e.winner ? (S.entityName(rt, e.winner) ? `${S.entityName(rt, e.winner)} wins` : e.winner === 'player' ? 'You win' : 'You lose') : 'Draw'));
+    // A stage by its declared name (stage_intro `title`), else its number: never its id.
+    rt.on('stage_intro', e => showBanner(e.title || (isNum(rt.state.vars['stage.number']) ? `Stage ${rt.state.vars['stage.number']}` : 'Get ready'), 'Stage'));
     rt.on('stage_clear', () => showBanner('Stage clear'));
     rt.on('wave_start', e => showBanner(`Wave ${e.wave ?? e.index ?? ''}`.trim()));
     let resultsAt = null, endEvent = null;
     rt.on('game_end', e => { ended = true; endEvent = e; if (config.results) resultsAt = host.now() + 0.9; });
     rt.view.onFrame(() => { if (resultsAt !== null && host.now() >= resultsAt) { resultsAt = null; SCREENS.results(endEvent); } });
-    if (config.title) SCREENS.title(); else { started = true; selectQueue = config.select.filter(s => s.on === 'start'); if (selectQueue.length) nextSelect(); }
+    if (continuing) { /* play goes on where it was: no title or start selects */ }
+    else if (config.title) SCREENS.title(); else { started = true; selectQueue = config.select.filter(s => s.on === 'start'); if (selectQueue.length) nextSelect(); }
     host.on('open', ({ panel }) => { if (panel === 'pause' && !stack.length) SCREENS.pause(); if (panel === 'settings') SCREENS.settings(); });
   },
 };

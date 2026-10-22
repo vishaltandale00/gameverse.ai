@@ -17,7 +17,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'creature-battle', title: 'Creature battle', seed: 1,
     views: { primary: 'ui' },
-    spaces: [{ id: 'arena', use: 'engine.space.none', zones: [{ id: 'ring', name: 'Battle ring' }] }],
+    spaces: [{ id: 'arena', use: 'engine.space.none', with: { scenery: 'meadow' }, zones: [{ id: 'ring', name: 'Battle ring' }] }],
     systems: [
       { use: 'gameplay.inventory', with: { start: [{ item: 'tonic', count: 2 }] } },
       { use: 'gameplay.creature.party', with: { start: [{ species: 'tide_pup', level: 9 }, { species: 'sprout', level: 8 }] } },
@@ -50,5 +50,5 @@ export default {
     },
     player: { archetype: 'trainer', at: 'ring' },
   },
-  tune: ['gameplay.creature.battle.difficulty'],
+  tune: ['engine.space.none.scenery', 'gameplay.creature.battle.difficulty'],
 };

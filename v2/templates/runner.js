@@ -22,7 +22,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'runner', title: 'Runner', seed: 6,
     views: { primary: 'side' },
-    spaces: [{ id: 'course', use: 'engine.space.tilemap', with: { size: [4096, 10], mode: 'side' },
+    spaces: [{ id: 'course', use: 'engine.space.tilemap', with: { scenery: 'forest', size: [4096, 10], mode: 'side' },
       generators: [{ use: 'engine.generate.chunks', with: {
         chunks: CHUNKS, along: 'columns', axis: 'x', cross: 'y', origin: [0, 0], firstAt: 12,
         legend: { '.': {}, '#': { block: 'crate', blocks: true }, '^': { block: 'spikes', hazard: true }, '~': { block: 'pit', hazard: true }, o: { archetype: 'coin' } },
@@ -42,9 +42,9 @@ export default {
         { id: 'runner', name: 'Runner', components: { health: { max: 1 }, body: { size: [0.7, 1.1] } } },
         { id: 'coin', name: 'Coin', kind: 'pickup', components: { collectible: { counter: 'coins' }, body: { size: [0.6, 0.6] } } },
       ],
-      blocks: [{ id: 'crate', name: 'Crate', solid: true }, { id: 'spikes', name: 'Spikes', solid: false, hazard: 'spikes' }, { id: 'pit', name: 'Pit', solid: false, hazard: 'pit' }],
+      blocks: [{ id: 'crate', name: 'Crate', solid: true, tile: 'wood' }, { id: 'spikes', name: 'Spikes', solid: false, hazard: 'spikes', tile: 'spikes' }, { id: 'pit', name: 'Pit', solid: false, hazard: 'pit' }],
     },
     player: { archetype: 'runner', at: [2, 0.55] },
   },
-  tune: [{ path: 'engine.generate.chunks.goal', min: 120, max: 400 }, 'engine.generate.chunks.density', { path: 'gameplay.death.lives', min: 1, max: 9 }],
+  tune: ['engine.space.tilemap.scenery', { path: 'engine.generate.chunks.goal', min: 120, max: 400 }, 'engine.generate.chunks.density', { path: 'gameplay.death.lives', min: 1, max: 9 }],
 };
