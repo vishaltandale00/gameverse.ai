@@ -6,7 +6,9 @@
 // 0.72× for 0.45 s and bringing the chaser for 7 s. A second trip while the
 // chaser is near catches you. Switching into a blocked lane is also a stumble.
 // Works on any continuous space: in 3D with gravity the jump goes through
-// space.slide; without gravity the jump height is virtual (body.lift).
+// space.slide; without gravity the jump height is virtual (body.lift). A space's
+// launch bodies (a track's ramps, body.launch via launchAt) launch the runner:
+// it takes off at that speed on the jump's own arc.
 import {
   round6, mv, bodyOf, state, spaceApi, frameOf, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, controls, verbs,
   ensureShared, motor, settle, boxHits, canProbe, v3, setFacing, COMMON_PARAMS, RETIRED_PARAMS, MOVE_COMPONENTS,
@@ -69,7 +71,9 @@ export default {
     },
     provides: { events: ['evaded', 'crashed', 'lane_switch', 'jumped', 'landed', 'slide', 'stumble', 'caught'], vars: ['move.speed', 'move.distance'], actions: ['left', 'right', 'jump', 'slide', 'crouch', 'move'] },
     requires: { capabilities: ['position'] },
-    optional: { capabilities: ['gravity', 'overlap', 'editCells'] },
+    // launch: a space's launch bodies (engine.space.track body.launch, read through launchAt) launch the runner into the
+    // jump's arc at that speed.
+    optional: { capabilities: ['gravity', 'overlap', 'editCells', 'launch'] },
     components: MOVE_COMPONENTS,
     envelope,
   },
@@ -160,6 +164,8 @@ export default {
         const before = e.at[F];
         const r = motor(rt, e, api, delta.slice(0, Math.max(dims, 2)));
         if (r.blocked[F]) rt.emit('crashed', { who: e.id });
+        // Driving onto a launch body (a ramp) launches the runner into the jump's arc at its speed.
+        if (!s.air && typeof api.launchAt === 'function') { const up = api.launchAt(e, rt); if (up > 0) { s.air = true; s.vy = up; s.slideT = 0; s.jumpQ = 0; } }
         s.dist = round6(s.dist + Math.abs(e.at[F] - before));
         b.vel = [0, 0, 0]; b.vel[F] = round6(fs * v); if (U !== null) b.vel[U] = round6(s.vy * fr.upSign);
         b.lift = U === null ? round6(s.y) : 0;

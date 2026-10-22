@@ -4,7 +4,8 @@
 // mini-turbo tiers). Per-archetype spec in components.car:
 //   { maxSpeed km/h, accel m/s², grip 0..2, mass kg, steer deg, brake ×,
 //     drift b, boost {sec, mult, cooldown}, rail b, lean b, preset?, wheelbase? m }
-// Terrain: follows surface/gravity (ramps launch, landings hurt), surface
+// Terrain: follows surface/gravity (ramps launch, landings hurt; on a track a
+// launch body launches it at its speed and it flies under the track's gravity), surface
 // materials change grip/drag/top speed, deep water stalls the engine. Rail
 // cars follow rail cells (editCells) and pick branches with steering.
 import { cellPos, has, planeFor, clamp, KMH, DEG, sign, approach, r6, err, cellKey } from './modes-lib-util.js';
@@ -39,6 +40,9 @@ export default {
     actionSpace: { drive: { kind: 'continuous', params: { throttle: { min: -1, max: 1 }, steer: { min: -1, max: 1 } } } },
     provides: { events: ['crash', 'drift', 'drift_end', 'drift_boost', 'boost', 'landed', 'airborne', 'rail_end', 'stalled', 'gear'], vars: [] },
     requires: { capabilities: ['position'], primitives: ['gameplay.vehicle.core'] },
+    // launch: a space's launch bodies (engine.space.track body.launch, read through launchAt) launch the car: it goes
+    // airborne at that speed, flies under the space's gravity and lands (airborne, landed).
+    optional: { capabilities: ['gravity', 'launch'] },
     reads: ['content.archetypes'],
     components: {
       car: { type: 'object', effect: 'wheeled handling of a vehicle', fields: {
@@ -156,7 +160,7 @@ export default {
 
         // Integrate, collide, land.
         const wasAir = d.airborne;
-        const hit = moveVehicle(rt, v, api, plane, d, dt);
+        const hit = moveVehicle(rt, v, api, plane, d, dt, { air: true });
         if (hit.tookOff) rt.emit('airborne', { vehicle: v.id });
         if (hit.landed && wasAir) {
           rt.emit('landed', { vehicle: v.id, speed: r6(hit.impactY) });

@@ -8,7 +8,8 @@
 // legend maps chars to archetypes (spawned) or blocks (cells), so the look and
 // the obstacle set are data. Proof at install: every chunk must keep a passable
 // line through it (a cross position per progress step, shifting at most
-// `maxShift` cells per step, never through a `blocks` char); impassable chunks
+// `maxShift` cells per step, never through a `blocks` char; a ramp, a char placing a
+// launch body, is driven over and never blocks); impassable chunks
 // are dropped from the pool with a problem, and an empty pool falls back to a
 // plain gap. Runtime choice uses rt.random(), so courses replay exactly. On an axis the space wraps (a looped
 // track) the course is the circuit: laid out whole up to the wrap and kept for every lap.
@@ -42,7 +43,11 @@ export function chunkGrid(chunk, along) {
   return { P: along === 'rows' ? R : C, X: along === 'rows' ? C : R, at };
 }
 
-/** Is there a line through the chunk that avoids blocking chars, shifting ≤ maxShift cross cells per step? */
+/**
+ * Is there a line through the chunk that avoids blocking chars, shifting ≤ maxShift cross cells per step? Only `blocks`
+ * and `hazard` chars stop a line: a ramp (a char placing a launch body, which never sets blocks: chunk_launch_blocks)
+ * is driven over.
+ */
 export function passable(chunk, along, legend, maxShift) {
   const g = chunkGrid(chunk, along), blocks = (i, j) => Boolean(legend[g.at(i, j)]?.blocks || legend[g.at(i, j)]?.hazard);
   let live = new Set(); for (let j = 0; j < g.X; j++) if (!blocks(0, j)) live.add(j);
@@ -56,6 +61,12 @@ export function passable(chunk, along, legend, maxShift) {
     live = next;
   }
   return live.size > 0;
+}
+
+/** Does a legend entry place a launch body (a ramp)? Its own components.body, which replaces the archetype's, else its archetype's body. */
+export function launches(def, doc) {
+  const body = def?.components?.body !== undefined ? def.components.body : (doc?.content?.archetypes || []).find(a => a?.id === def?.archetype)?.components?.body;
+  return Number(body?.launch) > 0;
 }
 
 export default {
@@ -74,7 +85,7 @@ export default {
         spacing: { type: 'number', min: 0.1, max: 50, default: 1, effect: 'progress units per picture step' },
         rows: { type: 'list', of: { type: 'string' }, min: 1, required: true, effect: 'picture of the chunk, top row first' },
       } } },
-      legend: { type: 'object', default: {}, values: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', effect: 'spawned at the char' }, block: { type: 'ref', to: 'block', effect: 'written at the char' }, blocks: { type: 'boolean', effect: 'the char blocks the way (the passability proof avoids it)' }, hazard: { type: 'boolean', effect: 'the char hurts (the passability proof avoids it)' }, components: { type: 'object', open: true, effect: 'components added to the spawned entity, by owner' } } }, effect: 'char → {archetype?, block?, blocks?, hazard?, components?}; "." is empty (unset: only ".")' },
+      legend: { type: 'object', default: {}, values: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', effect: 'spawned at the char' }, block: { type: 'ref', to: 'block', effect: 'written at the char' }, blocks: { type: 'boolean', effect: 'the char blocks the way (the passability proof avoids it); never set on a ramp' }, hazard: { type: 'boolean', effect: 'the char hurts (the passability proof avoids it)' }, components: { type: 'object', open: true, effect: "components added to the spawned entity, by owner; each replaces the archetype's component of that name whole" } } }, effect: "char → {archetype?, block?, blocks?, hazard?, components?}; \".\" is empty (unset: only \".\"). A ramp (a jump driven or run over; on engine.space.track a body with launch, the upward speed it launches at) is a char whose archetype's body declares launch and is not solid, with blocks unset: legend { R: { archetype: 'ramp' } } with the content archetype { id: 'ramp', components: { body: { size, launch } } }" },
       along: { type: 'string', options: ['rows', 'columns'], default: 'rows', effect: 'rows: the bottom row is met first (lanes, climb); columns: left to right (side view)' },
       axis: { type: 'string', options: ['x', 'y', 'z'], default: 'x', effect: 'progress axis in the space' },
       cross: { type: 'string', options: ['x', 'y', 'z'], default: 'y', effect: 'axis of the other picture dimension' },
@@ -103,6 +114,13 @@ export default {
       chunk_rows_ragged: { fields: ['chunks[].rows'], message: 'the rows of a chunk are all the same length' },
       chunk_char_unknown: { fields: ['chunks[].rows', 'legend'], message: 'every char of a chunk picture is "." or a key of legend' },
       chunk_axis_invalid: { fields: ['axis', 'cross'], message: 'cross differs from axis' },
+      // A ramp is driven over: a char placing a launch body (its legend components.body, else its archetype's body) is passable.
+      chunk_launch_blocks: { fields: ['legend', 'content.archetypes[].components.body.launch'], message: 'a char that places a launch body (a ramp, driven over) does not set blocks', example: { at: 'spaces[0].generators[0].with.legend.R.blocks', doc: {
+        spaces: [{ id: 'circuit', use: 'engine.space.track', with: { lanes: 3, length: 100, loop: true }, zones: [{ id: 'start_line', name: 'Start line', range: [0, 6] }],
+          generators: [{ use: 'engine.generate.chunks', with: { chunks: [{ id: 'jump', rows: ['.R.'] }], legend: { R: { archetype: 'ramp', blocks: true } }, origin: [0, -0.5, 0] } }] }],
+        systems: [], player: { archetype: 'driver', at: [0, 1, 0.5] },
+        content: { archetypes: [{ id: 'driver', name: 'Driver' }, { id: 'ramp', name: 'Ramp', kind: 'prop', components: { body: { size: [2, 1, 0.4], launch: 8 } } }] },
+      } } },
       // The host (a track) has no size: the example is a document of its own, a runner on a sized tilemap.
       chunk_goal_outside: { fields: ['goal', 'origin', 'axis'], message: "a goal run (from the followed entity's start) ends inside the space along the axis", example: { at: 'spaces[0].generators[0].with.goal', doc: {
         spaces: [{ id: 'runway', use: 'engine.space.tilemap', with: { size: [64, 16] }, generators: [{ use: 'engine.generate.chunks', with: { chunks: [{ id: 'open', rows: ['.'] }], goal: 100 } }] }],
@@ -153,6 +171,7 @@ export default {
     const from = config.follow === 'player' && Array.isArray(doc?.player?.at) && Number.isFinite(doc.player.at[ax]) ? doc.player.at[ax] : (config.origin[ax] ?? 0);
     if (config.goal !== undefined && Array.isArray(size) && Number.isFinite(size[ax]) && from + config.goal >= size[ax]) errors.push(problem('chunk_goal_outside', 'goal', `a run of ${config.goal} from ${from} along ${config.axis} ends past the space's far edge (${size[ax]})`, { hint: `a goal below ${size[ax] - from}` }));
     if (config.axis === config.cross) errors.push(problem('chunk_axis_invalid', 'cross', 'cross must differ from axis'));
+    for (const [ch, def] of Object.entries(legend)) if (def?.blocks && launches(def, doc)) errors.push(problem('chunk_launch_blocks', `legend.${ch}.blocks`, `char '${ch}' places a launch body (a ramp, driven over), so it does not block the way`, { hint: 'unset blocks' }));
     config.chunks.forEach((c, i) => {
       if (ids.has(c.id)) errors.push(problem('chunk_duplicate', `chunks[${i}].id`, `duplicate chunk '${c.id}'`)); ids.add(c.id);
       if (new Set(c.rows.map(r => [...r].length)).size > 1) errors.push(problem('chunk_rows_ragged', `chunks[${i}].rows`, `rows of '${c.id}' differ in length`));

@@ -4,7 +4,10 @@
 // on e.at; slide() resolves against solid bodies (block ahead, land on top),
 // the ground and the lane edges. A window around the leader gives `bounds`,
 // culls passed obstacles and reports `passed` (near-miss and combo scoring);
-// looped tracks wrap progress and count laps.
+// looped tracks wrap progress and count laps. Launch bodies (body.launch: ramps,
+// jump pads) are driven over, not around: a grounded body that comes into
+// contact with one is launched upward at its speed, once per contact
+// (launchAt; the space applies it to the ballistic bodies it integrates).
 import { zonesData } from './runtime-lib.js';
 import { zoneIndex, zoneTracker, zoneEditor, ownSpaces, inSpace, bodyOf, clamp, mod, wrapDelta, BOUNDS_CAPS, obstacleOf, obstaclesIn } from './spaces2d-lib.js';
 import { SCENERY_PARAM } from './spaces2d-scenery.js';
@@ -15,6 +18,13 @@ const v3 = a => [a[0] ?? 0, a[1] ?? 0, a[2] ?? 0];
 
 /** A rule example: the race's circuit as one plain space (its zones kept) with these zones added. */
 const CIRCUIT_ZONES = [['start_line', 'Start line', [0, 6]], ['first_bend', 'First bend', [25, 31]], ['back_straight', 'Back straight', [50, 56]], ['hairpin', 'Hairpin', [75, 81]], ['chicane', 'Chicane', [100, 106]], ['long_sweep', 'Long sweep', [125, 131]], ['final_bend', 'Final bend', [150, 156]], ['home_straight', 'Home straight', [175, 181]]].map(([id, name, range]) => ({ id, name, range }));
+/**
+ * The body fields this space reads beyond the shared body (runtime-lib.js BODY): the launch of a ramp or jump pad.
+ * A launch body is not solid: bodies drive onto it (overlap it) and are launched.
+ */
+export const TRACK_BODY = Object.freeze({ type: 'object', open: true, effect: 'a body on the track: its box, solidity and the fields the track reads', fields: {
+  launch: { type: 'number', min: 0.1, unit: 'u/s', effect: 'a ramp or jump pad (not solid: driven over): a grounded body that comes into contact with it is launched upward at this speed, once per contact, and falls back under gravity (the space\'s for the bodies it integrates, its controller\'s for others: launchAt)' },
+} });
 const circuitWith = (...zones) => ({ doc: { spaces: [{ id: 'circuit', use: 'engine.space.track', with: { lanes: 5, laneWidth: 1, length: 200, loop: true }, zones: [...CIRCUIT_ZONES, ...zones] }] } });
 
 export default {
@@ -38,22 +48,26 @@ export default {
       leader: { type: 'string', default: 'player', effect: 'entity whose progress defines the window' },
     },
     provides: {
-      capabilities: ['position', 'distance', 'overlap', 'raycast', 'gravity', 'dynamics', 'bounds', 'wrap'],
-      capabilityMethods: { ...BOUNDS_CAPS },
-      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'passed', 'culled', 'lap', 'landed', 'zone_added', 'zone_removed', 'zone_moved'],
+      capabilities: ['position', 'distance', 'overlap', 'raycast', 'gravity', 'dynamics', 'bounds', 'wrap', 'launch'],
+      // launchAt(e, rt) → the upward speed a launch body gives e now (0: none): e is grounded and in a contact with a
+      // launch body that has not launched it yet; emits launched_ramp. Controllers integrating their own vertical
+      // motion call it after they move and take off at that speed.
+      capabilityMethods: { ...BOUNDS_CAPS, launch: ['launchAt'] },
+      events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'passed', 'culled', 'lap', 'landed', 'launched_ramp', 'zone_added', 'zone_removed', 'zone_moved'],
     },
     at: 'At = [progress, lane, height], the centre of the body box; components.body.size = [length, width in lanes, height] (default [1, 0.8, 1]). Resting on the ground means height = size[2] / 2.',
     zones: 'Zone = {id, name?, range:[p0,p1), lanes?:[l0,l1] inclusive, tags?, rules?} — track segments (tunnel, bridge, finish)',
     data: zonesData('range', 'lanes', 'tags'),
+    components: { body: TRACK_BODY },
     rules: {
       track_loop_length: { fields: ['loop', 'length'], message: 'a looped track has a length > 0' },
       zone_range_invalid: { fields: ['zones[].range'], message: 'a track zone has range [p0, p1) with p1 > p0', example: circuitWith({ id: 'pit', name: 'Pit', range: [40, 30] }) },
       zone_lanes_invalid: { fields: ['zones[].lanes', 'lanes'], message: 'zone lanes [l0, l1] lie within 0..lanes-1 with l0 ≤ l1', example: circuitWith({ id: 'pit', name: 'Pit', range: [30, 40], lanes: [3, 7] }) },
     },
-    state: 'rt.state.spaces[id] = {laps:{entity:n}, passed:{obstacle:true}, inside, zones?}',
-    notes: 'slide blocked keys x/y/z are progress/lane/height. Solid bodies (body.solid) block and can be stood on, one-way ones (body.oneWay) only stood on; riders (body.standingOn) move with ballistic movers and with setPos(e, at, rt, {carry:true}); body.obstacle marks things the leader can pass (passed event, used for near-miss); body.cull despawns them once behind the window; body.ballistic bodies are integrated (oncoming trains: gravityScale 0, vel [-v,0,0]).',
+    state: 'rt.state.spaces[id] = {laps:{entity:n}, passed:{obstacle:true}, launched?:{entity:[launch body ids it is in contact with that launched it]}, inside, zones?}',
+    notes: 'slide blocked keys x/y/z are progress/lane/height. Solid bodies (body.solid) block and can be stood on, one-way ones (body.oneWay) only stood on; riders (body.standingOn) move with ballistic movers and with setPos(e, at, rt, {carry:true}); body.obstacle marks things the leader can pass (passed event, used for near-miss); body.cull despawns them once behind the window; body.ballistic bodies are integrated (oncoming trains: gravityScale 0, vel [-v,0,0]). body.launch bodies (ramps, jump pads; not solid) launch a grounded body that comes into contact with them upward at that speed, once per contact (the contact ends when they stop overlapping), emitting launched_ramp {who, by, speed}: the space applies it to the ballistic bodies it integrates that gravity acts on and that collide; a controller integrating its own vertical motion (vehicle.car, move.lanes) calls launchAt(e, rt) after it moves and takes off at the speed returned.',
   },
-  capabilities(config) { const caps = ['position', 'distance', 'overlap', 'raycast', 'gravity', 'dynamics', 'bounds']; if (config.loop) caps.push('wrap'); return caps; },
+  capabilities(config) { const caps = ['position', 'distance', 'overlap', 'raycast', 'gravity', 'dynamics', 'bounds', 'launch']; if (config.loop) caps.push('wrap'); return caps; },
   validate(config, doc, ctx, inst) {
     const errors = [];
     if (config.loop && !(config.length > 0)) errors.push({ code: 'track_loop_length', path: 'with.length', message: 'a looped track needs a positive length' });
@@ -133,13 +147,31 @@ export default {
       const o = list.find(o => overlap3(box(probe, s), o.box, -EPS) && Math.abs(o.box[5] - (at[2] - s[2] / 2)) < 0.03);
       return o ? { id: o.id } : null;
     }
+    /**
+     * The upward speed launch bodies give e now (0: none), once per contact: the launch bodies e overlaps that have not
+     * launched it during this contact, while e is grounded; a contact ends when they stop overlapping.
+     */
+    function launchAt(e, rt) {
+      if (!Array.isArray(e?.at) || e.space !== sid) return 0;
+      const s = size(e), mine = boxOf(e), all = (sst().launched ??= {});
+      const touching = inSpace(rt, sid, o => o !== e && Number(o.components.body?.launch) > 0 && overlap3(mine, boxOf(o), -EPS));
+      const had = all[e.id] || [], kept = had.filter(id => touching.some(o => o.id === id));
+      const fresh = groundedAt(e, e.at, s) ? touching.filter(o => !kept.includes(o.id)) : [];
+      const by = fresh.reduce((a, o) => (!a || o.components.body.launch > a.components.body.launch ? o : a), null);
+      const ids = [...kept, ...fresh.map(o => o.id)];
+      if (ids.length) all[e.id] = ids; else delete all[e.id];
+      if (!by) return 0;
+      const speed = by.components.body.launch;
+      rt.emit('launched_ramp', { who: e.id, by: by.id, speed });
+      return speed;
+    }
     const window = () => { const l = leader(), p = l ? l.at[0] : 0; return [p - config.window[0], p + config.window[1]]; };
 
     const api = {
       kind: 'track', anchor: 'center', size: [L, config.lanes], config,
       get zones() { return zones().byId; },
       place(e, rt) { size(e); if (e.at == null) { const z = zones().list[0]; e.at = [z ? z.range[0] : 0, Math.floor(config.lanes / 2), 0]; } e.at = v3(e.at); if (e.at[2] < size(e)[2] / 2) e.at[2] = size(e)[2] / 2; setPos(e, e.at, rt); },
-      remove(e, rt) { for (const z of sst().inside?.[e.id] || []) rt.emitTyped('leave_zone', z, { who: e.id, zone: z }); tracker.forget(e); e.zone = null; },
+      remove(e, rt) { for (const z of sst().inside?.[e.id] || []) rt.emitTyped('leave_zone', z, { who: e.id, zone: z }); tracker.forget(e); e.zone = null; if (sst().launched) delete sst().launched[e.id]; },
       pos: e => e.at, setPos,
       entitiesAt: at => { const p = v3(at); return inSpace(rt, sid, e => { const b = boxOf(e); return overlap3([p[0], p[1], p[2], p[0], p[1], p[2]], b, EPS); }).map(e => e.id); },
       inZone: (e, zone) => { const z = zones().byId.get(zone); return Boolean(z) && zoneHas(z, e.at); },
@@ -195,7 +227,7 @@ export default {
         return best;
       },
       gravityAt: () => [0, 0, config.gravity],
-      slide,
+      slide, launchAt,
       grounded: e => Boolean(groundedAt(e, e.at, size(e))),
       impulse(e, v) { const b = bodyOf(e), m = b.mass || 1; size(e); b.vel = v3(b.vel).map((x, i) => x + (v[i] ?? 0) / m); },
       velocity: e => { size(e); return bodyOf(e).vel.slice(); },
@@ -214,6 +246,7 @@ export default {
         const vz = b.vel[2], r = b.collide === false ? (setPos(e, e.at.map((v, i) => v + b.vel[i] * dt), rt, { carry: true }), { blocked: {}, grounded: false }) : slide(e, b.vel.map(v => v * dt), rt, { ghost: Boolean(obstacleOf(e)) });
         if (r.blocked.z || (r.grounded && vz < 0)) b.vel[2] = 0;
         if (r.grounded && !was) rt.emit('landed', { who: e.id, speed: -vz });
+        if (gs > 0 && b.collide !== false && r.grounded) { const up = launchAt(e, rt); if (up > 0) { b.vel[2] = up; b.grounded = false; } }
       }
       // The leader passes obstacles; obstacles left behind the window are culled.
       const l = leader(); if (!l || l.space !== sid) return;

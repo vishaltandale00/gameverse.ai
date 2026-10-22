@@ -47,13 +47,27 @@ export function gravityY(api, at) {
 }
 
 /**
+ * The space's up axis when it lies off a vehicle's xy plane (a track: [progress, lane] driven, height on z, gravity
+ * along it), else null. Only a space that slides bodies has one.
+ */
+export function offPlaneUp(api, plane, at) {
+  if (plane !== 'xy' || !Array.isArray(at) || at.length !== 3 || !has(api, 'gravityAt') || !has(api, 'slide')) return null;
+  const g = api.gravityAt(at);
+  return Math.abs(g?.[2] ?? 0) > 1e-9 ? 2 : null;
+}
+
+/**
  * Move a vehicle by its planar velocity plus vertical motion. In the xz plane
  * with a ground query it follows terrain: steps up to stepUp are climbed, a
  * drop beyond the ground slope makes it airborne (ramp jumps), landings are
- * reported. Collisions come from the space's slide() when it has one.
+ * reported. With `air`, a vehicle on a space whose up axis lies off its plane
+ * (offPlaneUp: a track) leaves the ground there: a launch body launches it
+ * (the space's launchAt), driving off a top it stood on drops it, and while
+ * airborne it flies under the space's gravity until it lands.
+ * Collisions come from the space's slide() when it has one.
  * Returns { blockedU, blockedW, landed, impactY, tookOff }.
  */
-export function moveVehicle(rt, v, api, plane, d, dt, { stepUp = 1.05, gravity = true, keepY = null } = {}) {
+export function moveVehicle(rt, v, api, plane, d, dt, { stepUp = 1.05, gravity = true, keepY = null, air = false } = {}) {
   const { f, l } = axes(d.heading);
   const du = (f[0] * d.vf + l[0] * d.vl) * dt, dw = (f[1] * d.vf + l[1] * d.vl) * dt;
   const at = v.at.slice(), out = { blockedU: false, blockedW: false, landed: false, impactY: 0, tookOff: false };
@@ -77,7 +91,16 @@ export function moveVehicle(rt, v, api, plane, d, dt, { stepUp = 1.05, gravity =
     }
   }
   const delta = fromPlane(plane, du, dw, dy, at.length);
-  if (has(api, 'slide')) {
+  const U = air && gravity ? offPlaneUp(api, plane, at) : null;
+  if (U !== null) {
+    if (d.airborne) { d.vy += api.gravityAt(at)[U] * dt; delta[U] = d.vy * dt; }
+    const res = api.slide(v, delta, rt);
+    out.blockedU = Boolean(res.blocked?.x); out.blockedW = Boolean(res.blocked?.y);
+    if (d.airborne && res.grounded && d.vy <= 0) { out.landed = true; out.impactY = -d.vy; d.vy = 0; d.airborne = false; }
+    else if (d.airborne && res.blocked?.z && d.vy > 0) d.vy = 0;
+    else if (!d.airborne && !res.grounded) { d.airborne = true; out.tookOff = true; d.vy = 0; }
+    if (!d.airborne && has(api, 'launchAt')) { const up = api.launchAt(v, rt); if (up > 0) { d.vy = up; d.airborne = true; out.tookOff = true; } }
+  } else if (has(api, 'slide')) {
     // Vertical first so climbing a step does not read as a wall.
     if (plane === 'xz' && dy) api.setPos(v, [at[0], r6(at[1] + dy), at[2]], rt);
     const flat = plane === 'xz' ? [delta[0], 0, delta[2]] : delta;
