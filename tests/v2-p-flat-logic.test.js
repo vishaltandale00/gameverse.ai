@@ -188,8 +188,10 @@ test('generated art picks roles from declarations and looks from a seed, never f
   assert.equal(propFor({ id: 'door', components: { lock: {} } }, 'prop', registry), 'door', 'gameplay.container presents a lock as a door');
   for (const k of PROPS.decor) assert.ok(paintProp(k).startsWith('<svg'), k);
   assert.ok(poseFor('run', 0.3).startsWith('run'));
-  assert.equal(themeFor({ title: 'Hollow Lantern', logline: 'a cave' }), 'meadow', 'the title and logline never pick scenery');
-  assert.equal(themeFor({}, { id: 'z', tags: ['cave'] }), 'cave', 'a zone declares its scenery by a theme tag');
+  // Scenery is the space's declared closed-set param (engine/spaces2d-scenery.js): never read from words, no default.
+  assert.equal(themeFor({ title: 'Hollow Lantern', logline: 'a cave', spaces: [{ id: 's', zones: [{ id: 'z', tags: ['cave'] }] }] }, 's'), null, 'the title, logline and zone tags never pick scenery');
+  assert.equal(themeFor({ spaces: [{ id: 's', with: { scenery: 'cave' } }] }, 's'), 'cave', 'a space declares its scenery');
+  assert.equal(themeFor({ spaces: [{ id: 's', with: { scenery: 'lava lake' } }] }, 's'), null, 'a look outside the closed set is none');
 });
 
 test('every vector preset and backdrop pattern draws on a canvas', () => {

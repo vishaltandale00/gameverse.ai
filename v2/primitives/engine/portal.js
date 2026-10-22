@@ -164,18 +164,13 @@ export default {
         if (ids.length) s.touching[e.id] = ids; else delete s.touching[e.id];
       }
     }, ID);
-    // Solver options: use any portal in reach; walk-and-use where the space can path there.
+    // Solver options: what a person does, pressing use_portal (its key sends a press, which uses the first portal in
+    // reach): offered when that portal is usable. Getting to a portal is the movement's (its declared travel, or the
+    // move axis), never a macro no control issues.
     rt.options(rt => {
       const e = rt.player(); if (!e) return [];
-      const out = [], here = reachable(e);
-      for (const x of here) if (usable(x.id, e, x).ok) out.push({ label: `use portal ${x.id}${x.reverse ? ' (back)' : ''}`, actions: { use_portal: x.id } });
-      for (const p of config.portals) {
-        if (here.some(x => x.id === p.id) || p.trigger !== 'use' && p.trigger !== 'touch') continue;
-        const sp = p.from.space ?? e.space; if (sp !== e.space || !isVec(p.from.at) || !isVec(e.at) || !usable(p.id, e).ok) continue;
-        const api = rt.space(sp); if (!api.canReach || !api.canReach(e.at, p.from.at, rt)) continue;
-        out.push({ label: `travel to portal ${p.id}`, actions: {}, apply(rt) { const pl = rt.player(); rt.space(pl.space).teleport(pl, { at: structuredClone(p.from.at) }, rt); use(p.id, pl); } });
-      }
-      return out;
+      const x = reachable(e)[0];
+      return x && usable(x.id, e, x).ok ? [{ label: `use portal ${x.id}${x.reverse ? ' (back)' : ''}`, actions: { use_portal: true } }] : [];
     });
   },
 };
