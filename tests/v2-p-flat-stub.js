@@ -96,7 +96,7 @@ export const mover = {
 
 const SPACE_WITH = {
   tilemap: { size: [32, 18], tile: 16, mode: 'side' },
-  grid: { size: [10, 8], layers: ['terrain'], rules: { wall: { pass: false } } },
+  grid: { size: [10, 8], layers: ['terrain'] },
   physics2d: { bounds: [20, 12], walls: [{ id: 'floor', kind: 'box', at: [10, 0.25], size: [20, 0.5] }] },
   arena2d: { size: [16, 9], solids: [[0, 0, 16, 1]], platforms: [{ x0: 4, x1: 8, y: 4 }] },
   track: { lanes: 3 },

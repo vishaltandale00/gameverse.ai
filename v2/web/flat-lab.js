@@ -124,7 +124,7 @@ function maze() {
   const W = 21, Hh = 15;
   return {
     hint: 'Arrows steer the chomper; pellets pop when eaten.',
-    record: doc('lab-maze', 'Neon Maze lab', [{ id: 'maze', use: 'engine.space.grid', with: { size: [W, Hh], yAxis: 'down', wrap: 'x', rules: { wall: { pass: false } } } }], {
+    record: doc('lab-maze', 'Neon Maze lab', [{ id: 'maze', use: 'engine.space.grid', with: { size: [W, Hh], yAxis: 'down', wrap: 'x' } }], {
       content: { blocks: [{ id: 'wall', color: '#2a3cff', solid: true }, { id: 'pellet', color: '#ffd8a0', solid: false, tile: 'pellet' }, { id: 'power_pellet', color: '#ffe0c0', solid: false, tile: 'power' }], models: { chomper: { kind: 'vector', preset: 'chomp', color: '#ffd23f' }, red: { kind: 'vector', preset: 'ghost', color: '#ff3b3b' }, pink: { kind: 'vector', preset: 'ghost', color: '#ff9ad8' }, cyan: { kind: 'vector', preset: 'ghost', color: '#3ae0ff' }, orange: { kind: 'vector', preset: 'ghost', color: '#ffa53a' } },
         archetypes: [{ id: 'chomper', kind: 'player', components: { model: 'chomper' } }, ...['red', 'pink', 'cyan', 'orange'].map(c => ({ id: `ghost_${c}`, kind: 'enemy', components: { model: c } }))] },
       graphics: [{ use: 'graphics.render.grid', with: { style: 'neon', wallColor: '#2a48ff', highlights: [] } }, { use: 'graphics.post', with: { bloom: 0.9, vignette: 0.4, scanlines: true } }],
@@ -156,7 +156,7 @@ function maze() {
 function tactics() {
   return {
     hint: 'Isometric board: hover cells, click units to select (move range shows for the player).',
-    record: doc('lab-tactics', 'Tactics lab', [{ id: 'board', use: 'engine.space.grid', with: { size: [10, 10], rules: { rock: { pass: false } } } }], {
+    record: doc('lab-tactics', 'Tactics lab', [{ id: 'board', use: 'engine.space.grid', with: { size: [10, 10] } }], {
       content: { blocks: [{ id: 'grass', color: '#6aa848', solid: false }, { id: 'water', color: '#3a7ac8', solid: false }, { id: 'rock', color: '#8a8478', solid: true }],
         archetypes: [{ id: 'knight', kind: 'player', components: { move: { range: 3 } } }, { id: 'archer', kind: 'npc', components: {} }, { id: 'orc_brute', kind: 'enemy', components: {} }, { id: 'goblin', kind: 'enemy', components: {} }] },
       graphics: [{ use: 'graphics.render.grid', with: { style: 'board', highlights: [{ source: 'hover', range: 'cell' }, { source: 'player', range: 'move' }, { source: 'selected', range: 'cell', color: '#ffd23f' }] } }, { use: 'graphics.camera.isometric', with: { angle: 30, rotatable: true } }],
