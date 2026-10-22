@@ -140,14 +140,17 @@ test('engine.portal: gates, keys, two-way, single use, touch, locks and transit 
   assert.equal(rt.service('portals').usable('door', p).reason, 'locked');
 });
 
-test('engine.portal: travels across spaces with moveToSpace and offers walk-and-use options', () => {
+test('engine.portal: travels across spaces with moveToSpace; its option is the use press, offered in reach', () => {
   const graph = { id: 'inside', use: 'engine.space.graph', zones: [{ id: 'lobby', exits: [] }] };
   const portals = [{ id: 'enter', from: { space: 'w', at: [12, 3, 0], r: 1 }, to: { space: 'inside', zone: 'lobby' } }, { id: 'leave', from: { space: 'inside', zone: 'lobby' }, to: { space: 'w', at: [12, 4, 0] } }];
   const { rt } = make([{ use: 'engine.portal', with: { portals } }], { spaces: [graph] });
   run(rt, 1);
-  const walk = rt.availableOptions().find(o => o.label === 'travel to portal enter');
-  assert.ok(walk, 'macro option where the space can path');
-  walk.apply(rt);
+  // Out of reach nothing is offered (getting there is the movement's); every option is a press a person's key sends.
+  assert.deepEqual(rt.availableOptions().filter(o => /portal/.test(o.label)).map(o => o.label), []);
+  rt.space('w').setPos(rt.player(), [12, 3, 0], rt);
+  const use = rt.availableOptions().find(o => o.label === 'use portal enter');
+  assert.deepEqual(use?.actions, { use_portal: true }, 'the use press, which uses the portal in reach');
+  rt.step({ actions: use.actions });
   assert.equal(rt.player().space, 'inside');
   assert.equal(rt.player().at, 'lobby');
   assert.equal(rt.state.counts.space_changed, 1);
