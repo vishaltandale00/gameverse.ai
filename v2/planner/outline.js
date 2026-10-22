@@ -209,7 +209,8 @@ export async function writeOutline({ writer = null, prompt, answers = [], decomp
   const gate = async doc => {
     // The publish gate: the game is the idea (core loop present, its content written, a win wired) and it runs without crashing.
     const coreProblems = coreLoopProblems(doc, selection?.mechanics, registry);
-    const v = await verifyDocument(doc, registry, logic, { playable: true });
+    // The outline reads the explorer's win (completion, below): it plays for one.
+    const v = await verifyDocument(doc, registry, logic, { playable: true, won: true });
     const problems = [...coreProblems, ...(v.viable ? [] : [{ code: 'not_playable', path: '$', message: v.viability ?? 'verification reported no viability', severity: 'error', hint: 'the game must run without crashing, the player must act, and the loop its primitives declare must happen from play' },
       ...(v.problems || []).filter(p => p.severity === 'error').slice(0, 8)])];
     return { viable: Boolean(v.viable) && !coreProblems.length, problems, v };

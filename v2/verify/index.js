@@ -147,9 +147,12 @@ export async function verify(doc, registry, logic, opts = {}) {
   if (opts.playtest !== false && !capped('playtest')) {
     // The explorer runs until it has shown what its caller asks it to (opts.playtest.prove: the loop, and progress toward
     // the win, which the bots' play counts toward: a bot's win, or how far it moved the win quantity), a win, or its budget.
-    const ran = report.strategies?.ran || [], moved = ran.map(b => Number(b.progress ?? NaN)).filter(Number.isFinite);
-    const prove = opts.playtest?.prove ? { ...opts.playtest.prove, won: ran.some(b => b.won === true), ...(moved.length ? { progress: Math.max(...moved) } : {}) } : undefined;
-    report.playtest = await time('playtest', () => guard('playtest', () => playtest(nd, registry, logic, { seed, maxRounds: B.playtestRounds, maxFrames: B.playtestFrames, ...(opts.playtest || {}), ...(prove ? { prove } : {}) })));
+    const ran = report.strategies?.ran || [], moved = ran.map(b => Number(b.progress ?? NaN)).filter(Number.isFinite), won = ran.some(b => b.won === true);
+    // The plot solver's exhaustive proof that no ending is reachable blocks unless a player wins (the gate's viability,
+    // planner/verify-adapter.js): with that proof and no bot's win, the gate reads the explorer's win, so it plays for one.
+    const needsWin = !won && (report.plot?.problems || []).some(p => p.code === 'plot_uncompletable' && p.severity === 'error');
+    const prove = opts.playtest?.prove && !needsWin ? { ...opts.playtest.prove, won, ...(moved.length ? { progress: Math.max(...moved) } : {}) } : undefined;
+    report.playtest = await time('playtest', () => guard('playtest', () => playtest(nd, registry, logic, { seed, maxRounds: B.playtestRounds, maxFrames: B.playtestFrames, ...(opts.playtest || {}), prove })));
     if (report.playtest) tag(report.playtest.problems, 'playtest');
   }
   // Feature checks (features.js): every primitive the document mixes in exists, is controllable and works when its

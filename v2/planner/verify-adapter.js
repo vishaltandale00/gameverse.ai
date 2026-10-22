@@ -142,11 +142,13 @@ export { winQuantity };
  * simulated frames per stage, never wall time). `playable`: the playability checks apply (the playtest agents' run:
  * the bots the loops name, the loop, progress toward the win). `budget` overrides stage budgets; `wallMs` caps total
  * wall time between stages (a stage it stops leaves the verdict budget_limited, never a different one).
+ * `won`: the caller reads the explorer's win (playtest.winnable: the outline's completion signal), so the explorer plays
+ * for one (a win or its budget) instead of stopping once it has shown what the gate reads.
  * @param {unknown} doc a document (preflighted here) @param {RegistryLike} registry @param {LogicLike} logic
- * @param {{ playable?: boolean, budget?: Record<string, number> | null, wallMs?: number | null }} [opts]
+ * @param {{ playable?: boolean, budget?: Record<string, number> | null, wallMs?: number | null, won?: boolean }} [opts]
  * @returns {Promise<Verification>}
  */
-export async function verifyDocument(doc, registry, logic, { playable = false, budget = null, wallMs = null } = {}) {
+export async function verifyDocument(doc, registry, logic, { playable = false, budget = null, wallMs = null, won = false } = {}) {
   const started = performance.now();
   // The gate verifies what the host mounts (ARCHITECTURE §6.3): the document with the host's default input and UI
   // (v2/web/host-doc.js, the same function the browser player mounts), so the controls the bots play through are the
@@ -169,9 +171,10 @@ export async function verifyDocument(doc, registry, logic, { playable = false, b
     try {
       // The playtest steers by, and reports progress on, the quantity the core loop's win reads. Checked for
       // playability, it is run to show what viability() reads from it (the loop, and progress unless a bot won) and
-      // stops once it has: the same document, seed and budgets still give the same play and verdict.
+      // stops once it has, unless the caller reads its win (`won`): the same document, seed and budgets still give the
+      // same play and verdict.
       const win = winQuantity(pre.doc, registry), loop = loopEvents(pre.doc, registry);
-      const explorer = { ...(win ? { win } : {}), ...(playable ? { prove: { loop } } : {}) };
+      const explorer = { ...(win ? { win } : {}), ...(playable && !won ? { prove: { loop } } : {}) };
       const r = await m.verify(pre.doc, registry, logic, { seed: pre.doc.seed, ...(budget ? { budget } : {}), ...(Number.isFinite(wallMs) ? { wallMs } : {}), ...(Object.keys(explorer).length ? { playtest: explorer } : {}) });
       const solved = r?.plot || r?.solve || r;
       // ok stays "the document is valid and runs"; verified is the layer's own verdict (no error-severity problem).
