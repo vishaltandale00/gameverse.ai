@@ -31,6 +31,7 @@ export default {
       pieces: { type: 'list', default: ['wall', 'floor'], of: { type: 'string', options: Object.keys(LIBRARY) }, effect: 'the library pieces offered' },
       custom: { type: 'list', default: [], of: { type: 'object', fields: {
         id: { type: 'string', pattern: ID_PATTERN, required: true, effect: 'its id (a library name overrides that library piece)' },
+        name: { type: 'string', display: true, effect: 'what a person reads for the piece (a build option names it)' },
         cells: { type: 'list', of: XYZ, min: 1, effect: 'the cells it fills, offsets from its anchor' }, size: { ...XYZ, effect: '[w, h, d]: a box of cells, when cells is not given' },
         block: { type: 'ref', to: 'block', effect: 'its block (default with.block)' },
         cost: { type: 'list', of: { type: 'object', fields: { item: { type: 'ref', to: 'item', required: true }, count: { type: 'integer', min: 1, required: true } } }, effect: 'items it costs (default costPerCell of its block item per cell)' },
@@ -53,7 +54,7 @@ export default {
     defines: [{ kind: 'piece', in: 'custom' }],
     rules: {
       piece_duplicate: { fields: ['pieces', 'custom[].id'], message: 'each piece is offered once: a library name is listed once and a custom id is not also in pieces', example: { pieces: ['wall', 'wall'] } },
-      piece_invalid: { fields: ['custom[].cells', 'custom[].size', 'custom[].block', 'block'], message: 'a custom piece gives cells or size (unless it overrides a library piece), and every piece has a block: its own, its library piece\'s or with.block' },
+      piece_invalid: { fields: ['custom[].cells', 'custom[].size', 'custom[].block', 'block'], message: 'a custom piece gives cells or size (unless it overrides a library piece), and every piece has a block: its own, its library piece\'s or with.block', example: { custom: [{ id: 'tower', name: 'Tower', size: null, block: 'pillar', lift: null }] } },
       piece_block_unknown: { fields: ['pieces', 'block'], message: 'the block a piece uses is a content.blocks id (when the document declares blocks)' },
       piece_unknown: { fields: ['slots[].piece', 'pieces', 'custom[].id'], message: 'a slot\'s piece is one of the pieces offered (pieces or custom ids)',
         example: { doc: { spaces: [{ id: 'yard', use: 'engine.space.grid', with: { size: [8, 8] }, zones: [{ id: 'lot', name: 'Lot', rect: [0, 0, 4, 4] }] }], systems: [{ use: 'gameplay.build.structure', with: { block: 'pillar', slots: [{ id: 'gate', zone: 'lot', piece: 'tower' }] } }] } } },

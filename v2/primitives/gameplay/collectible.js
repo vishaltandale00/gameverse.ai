@@ -71,7 +71,7 @@ export default {
     defines: [{ kind: 'counter', in: 'counters' }],
     rules: {
       counter_invalid: { fields: ['counters[].includes', 'counters[].spawnAtCount'], message: 'a counter never includes itself, and each spawnAtCount entry gives a count or a fraction',
-        example: { counters: [{ id: 'pellets', var: null, total: null, block: null, value: null, points: null, includes: ['pellets'], clearsLevel: null }] } },
+        example: { counters: [{ id: 'pellets', name: 'Pellets', var: null, total: null, block: null, value: null, points: null, includes: ['pellets'], clearsLevel: null }] } },
     },
   },
   logic(logic) {
