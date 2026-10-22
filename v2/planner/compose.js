@@ -202,17 +202,15 @@ function walker(w) {
     probe(def, p, '');
     try { def?.check?.(p, '', [], nest); } catch { /* preflight reports it */ }
   }
-  /** A component's declared shape (the card that owns it: card.components). @param {string} c */
-  const componentSpec = c => registry.cards().map(card => prop(card.components, c)).find(isObj) ?? null;
   return {
     /** @param {Record<string, any>} inst */
     instance(inst) { const card = registry.get(String(inst.use))?.card; if (card && isObj(inst.with)) fields(card.params || {}, inst.with); },
     /** A zone through the fields its space's card declares for zones (card.zoneFields). @param {Record<string, any>} space @param {Record<string, any>} z */
     zone(space, z) { const zf = registry.get(String(space.use))?.card?.zoneFields; if (isObj(zf)) fields(zf, z); },
-    /** @param {Record<string, any>} a */
-    archetype(a) { if (isObj(a.components)) for (const [c, v] of Object.entries(a.components)) { const spec = componentSpec(c); if (spec) a.components[c] = value(spec, v); } },
-    /** @param {string} root @param {string} key */
-    section(root, key) { const spec = declaredAt(registry, [root, key]); const v = w.doc[root]?.[key]; if (spec && v !== undefined) w.doc[root][key] = value(spec, v); },
+    /** An archetype through its section's entry shape in this document (its components from the cards owning them). @param {Record<string, any>} a */
+    archetype(a) { const spec = declaredAt(registry, w.doc, ['content', 'archetypes', 0]); if (spec) value(spec, a); },
+    /** A data section through its shape in this document (content.archetypes goes entry by entry: archetype). @param {string} root @param {string} key */
+    section(root, key) { if (root === 'content' && key === 'archetypes') return; const spec = declaredAt(registry, w.doc, [root, key]); const v = w.doc[root]?.[key]; if (spec && v !== undefined) w.doc[root][key] = value(spec, v); },
   };
 }
 

@@ -33,6 +33,8 @@ import { standable } from '../primitives/engine/runtime-lib.js';
 import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
 import { referenceIndexes } from '../kernel/document.js';
 import { sideDecl } from '../kernel/sides.js';
+import { sectionShape } from '../kernel/sections.js';
+import { usedPrimitives } from '../verify/util.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /**
@@ -517,18 +519,20 @@ export function sectionPaths(doc) {
 }
 
 /**
- * The declared shape at a document data path (plot/content), from the card that declares the section (card.data),
- * walked through list elements and object fields; null when no card declares it.
- * @param {RegistryLike} registry @param {Array<string | number>} keys a parsed path @returns {Record<string, unknown> | null}
+ * The declared shape at a document data path (plot/content) of this document: the section's shape as preflight checks
+ * it (kernel/sections.js sectionShape: the kernel's base merged with the card.data of every card the document uses,
+ * and an archetype's components from their owners), walked through list elements, object fields and the values of an
+ * open map; null when nothing declares it. Never one card's part alone: several cards may each declare the fields
+ * they read of one section (plot.characters by plot.character and gameplay.ai.schedule).
+ * @param {RegistryLike} registry @param {unknown} doc @param {Array<string | number>} keys a parsed path @returns {Record<string, unknown> | null}
  */
-export function declaredAt(registry, keys) {
+export function declaredAt(registry, doc, keys) {
   if ((keys[0] !== 'plot' && keys[0] !== 'content') || typeof keys[1] !== 'string') return null;
-  const section = `${keys[0]}.${keys[1]}`;
   /** @type {unknown} */
-  let spec = registry.cards().map(c => prop(c.data, section)).find(isObj);
+  let spec = sectionShape(registry, usedPrimitives(isObj(doc) ? doc : {}), `${keys[0]}.${keys[1]}`).shape;
   for (const k of keys.slice(2)) {
     if (!isObj(spec)) return null;
-    spec = typeof k === 'number' ? (spec.type === 'list' ? spec.of : null) : (spec.type === 'object' ? prop(spec.fields, k) : null);
+    spec = typeof k === 'number' ? (spec.type === 'list' ? spec.of : null) : (spec.type === 'object' ? prop(spec.fields, k) ?? spec.values : null);
   }
   return isObj(spec) ? spec : null;
 }

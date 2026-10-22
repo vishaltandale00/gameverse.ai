@@ -545,7 +545,7 @@ export function repairDocument(input, { registry, logic, rounds = 6, exclude = n
           // value is close to one; a required one is never dropped (that only turns "unknown id" into "missing field"):
           // its error, with the allowed ids, goes to the model.
           else if (!loc && /_unknown$/.test(e.code) && /^(plot|content)\./.test(e.path) && typeof last === 'string' && getAt(doc, keys) !== undefined && last !== 'id' && last !== 'kind') {
-            const declared = declaredAt(registry, keys);
+            const declared = declaredAt(registry, doc, keys);
             if (repointRef(doc, registry, keys, declared)) fix(`re-pointed to the document's ids (${e.code})`);
             else if (!required(declared)) { removals.push(keys); fix(`dropped field (${e.code})`); }
           }
@@ -595,7 +595,7 @@ function repointRef(doc, registry, keys, spec) {
  */
 function allowedAt(doc, registry, keys) {
   for (const k of typeof keys.at(-1) === 'number' ? [keys, keys.slice(0, -1)] : [keys]) {
-    const spec = declaredAt(registry, k) ?? locate(doc, registry, k)?.schema ?? componentAt(registry, k)?.schema;
+    const spec = declaredAt(registry, doc, k) ?? locate(doc, registry, k)?.schema ?? componentAt(registry, k)?.schema;
     const ref = referenceOf(registry, spec);
     const ids = ref ? [...new Set(idsAt(doc, ref))] : [];
     if (ref && ids.length) return { ref, ids };

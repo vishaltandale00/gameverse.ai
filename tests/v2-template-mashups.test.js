@@ -29,7 +29,8 @@ import { verifyDocument } from '../v2/planner/verify-adapter.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { composeTemplates, tuneTarget } from '../v2/planner/templates.js';
 import { composeNested, composeUnion, prefixDocument, definedIds, entryTriggers, innerLoops, prefixOf, COMPOSE_RULES } from '../v2/planner/compose.js';
-import { startProblems } from '../v2/planner/content.js';
+import { startProblems, declaredAt } from '../v2/planner/content.js';
+import { sectionShape } from '../v2/kernel/sections.js';
 import { playContext, SEEDS, GATE, BOT_STEPS } from '../v2/templates/contract.js';
 import { strategies, select, modeBots } from '../v2/verify/strategies/index.js';
 import { modesIn } from '../v2/primitives/gameplay/modes-lib-mode.js';
@@ -83,6 +84,20 @@ test('prefix: every template\'s world boots the same prefixed: the same entities
   };
   for (const t of TEMPLATES) assert.deepEqual(world(prefixDocument(t.doc, 'px_', cat).doc), world(t.doc), t.id);
   timings.prefixWorldMs = Math.round(performance.now() - t0);
+});
+
+// Several cards may each declare the fields they read of one data section (plot.characters: plot.character's home and
+// dialogue, gameplay.ai.schedule's schedule). The renames (and repair) read the section's shape as preflight checks it,
+// merged over the cards a document uses: one card's part alone leaves the others' references un-renamed.
+test('prefix: a data section several cards declare is walked through all their declarations (the shape preflight checks)', () => {
+  const owners = new Map();
+  for (const card of registry.cards()) for (const section of Object.keys(card.data || {})) owners.set(section, [...(owners.get(section) || []), card.id]);
+  const shared = [...owners].filter(([s, ids]) => ids.length > 1 && /^(content|plot)\./.test(s));
+  assert.ok(shared.some(([s]) => s === 'plot.characters'), 'plot.characters is declared by several cards');
+  for (const [section, ids] of shared) {
+    const doc = { systems: ids.map(use => ({ use })) };
+    assert.deepEqual(declaredAt(registry, doc, section.split('.')), sectionShape(registry, ids, section).shape, section);
+  }
 });
 
 test(`nested: every ordered pair with an entry event and an enterable inner loop (${NESTED.length} pairs) composes from declarations, or names why the documents cannot share an instance`, t => {
