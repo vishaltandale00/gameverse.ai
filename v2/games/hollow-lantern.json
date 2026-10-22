@@ -2204,7 +2204,7 @@
     "kind": "charm",
     "stack": 1,
     "desc": "Heal is faster and also pushes enemies back.",
-    "charm": {"cost":3,"mods":{},"fx":[{"do":"apply_status","who":"player","status":"heal_burst","sec":1}]}
+    "charm": {"cost":3,"mods":{}}
    },
    {
     "id": "c_gloam_ward",

@@ -2455,7 +2455,7 @@
     "tags": ["bow"],
     "value": 140,
     "weapon": {"damage":10,"reach":0,"arc":0,"speed":1,"stamina":12,"combo":1,"type":"phys","durability":120},
-    "ranged": {"projectile":"arrow","speed":55,"gravity":9.8,"spread":1.5,"ammo":"arrow","draw":0.8}
+    "ranged": {"speed":55,"gravity":9.8,"spread":1.5,"ammo":"arrow","draw":0.8}
    },
    {"id":"arrow","name":"Arrow","kind":"ammo","stack":99,"value":2,"desc":"Fletched ash."},
    {"id":"fire_arrow","name":"Fire Arrow","kind":"ammo","stack":99,"value":8,"tags":["fire"]},
@@ -2741,7 +2741,7 @@
     "tags": ["bomb","thrown"],
     "value": 70,
     "weapon": {"damage":40,"reach":0,"arc":0,"speed":1,"stamina":10,"combo":1,"type":"fire"},
-    "ranged": {"projectile":"bomb","speed":14,"gravity":9.8,"spread":0,"ammo":null,"draw":0.3}
+    "ranged": {"speed":14,"gravity":9.8,"spread":0,"ammo":null,"draw":0.3}
    },
    {"id":"wardens_seal_ring","name":"Warden's Seal Ring","kind":"key","stack":1,"desc":"Marks you as a Cinderwarden. Opens warden caches."},
    {"id":"lioren_letter","name":"Lioren's Letter","kind":"quest","stack":1},
