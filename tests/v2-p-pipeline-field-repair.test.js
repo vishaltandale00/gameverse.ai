@@ -134,9 +134,12 @@ test('the story form (wave 2) offers the cast wave 1 wrote as enums: beats, dial
   assert.deepEqual(any(props.dialogue.items.properties.speaker), ['ana', 'bo']);
   assert.deepEqual(any(props.dialogue.items.properties.nodes.items.properties.who), ['ana', 'bo']);
   assert.deepEqual(any(props.quests.items.properties.giver), ['ana', 'bo']);
-  const objective = props.quests.items.properties.objectives.items.properties;
-  assert.deepEqual(any(objective.item), ['net']);
-  assert.deepEqual(any(objective.archetype), ['gull']);
-  assert.ok(any(objective.zone)?.length, 'zones are the scaffold\'s');
+  // An objective's fields depend on its kind (plot.quest declares them as variants by kind): one strict branch per kind,
+  // and every branch naming an item, an archetype or a zone offers the ids wave 1 wrote.
+  const branches = props.quests.items.properties.objectives.items.anyOf.map(b => b.properties);
+  const offered = k => { const has = branches.filter(b => b[k]); assert.ok(has.length, `an objective kind names ${k}`); return [...new Set(has.flatMap(b => any(b[k]) ?? [null]))]; };
+  assert.deepEqual(offered('item'), ['net']);
+  assert.deepEqual(offered('archetype'), ['gull']);
+  assert.ok(offered('zone').length && !offered('zone').includes(null), 'zones are the scaffold\'s');
   assert.ok(props.acts, 'the story itself is asked when the collection reads plot.storyboard');
 });
