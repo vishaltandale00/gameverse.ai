@@ -63,7 +63,7 @@ incomplete.
 |---|---|---|---|
 | done | `gate-speed`, `cleanup` + `placement` (`cleanup-int`) | merged into v2-presets; worktrees and branches removed | |
 | done | `sides-controls` | declared side membership for wins that read opponents; every offered option issuable through a bound control (`option_uncontrolled` an error); travel options only where a card declares travel; `input_axis_key` | merged (b989eb16); 822/822 focused tests |
-| 4 | `polish` | no ids shown to a person (option `text` everywhere, declared names for sides, teams, stages, counters); 3D models and UI icons from declarations; `scenery` a declared closed-set param chosen through tune (cosmetic, proven by one frame per value); farming stage blocks only above on spaces with an up axis | 3 commits, last WIP. 368 focused tests pass. **Open:** tests/v2-templates.test.js gate fails `feature_inert` for falling-blocks (seeds 1–2) and launcher (1–3): cause unknown, may come from this branch. Also edited `templates.js` (union tune paths). |
+| done | `polish` | no ids shown to a person; 3D models and UI icons from declarations; declared `scenery`; farming stage blocks only above on spaces with an up axis | merged (6fc48693); 1061/1061 focused tests (its open `feature_inert` and platformer ∪ race failures pass on the merged code); template gate reports identical. Still open from it: the 3D world-object layer classifies generator objects by words (generators do not declare what they place) |
 | 5 | `tune-rules` | templates declare playable tune ranges proven at bounds; `card.rules` for validate codes; vocabulary codes declared with `logic.*(kind, { codes: [{ code, fields, example }] })`; `effect_invalid` a kernel code; rule examples `{ doc }` (each named top-level section replaces the card's minimal document's); `kernel/sections.js`; sampler conformance; no warnings phase (`DECLARATIONS_ENFORCED` on, not an off switch); themed text forms for every card-declared display field | 99 commits (the largest branch); check its last commit message for what is incomplete. Merge last: it touches forms, cards and every template's `tune:` (keep `polish`'s scenery entries). |
 
 **Work the stopped agents left uncommitted is now committed** (as found, unverified, on its own branch):
@@ -80,7 +80,7 @@ incomplete.
 
 1. **Gate speed**: done for the gate on its own (above: slowest 5.4 s idle, verdicts identical). Live
    `requestToFirstPlayableMs` (under 15 s for template ideas, ARCHITECTURE §1.6) not yet measured: item 3.
-2. **Merge the branches** in the table's order: `polish`, then `tune-rules`.
+2. **Merge the branches**: `tune-rules` remains (merge `E-refdefaults` into it first).
 3. **Live confirmation, done 2026-10-22** (4181 on 0847ed4d, every template's `IDEAS` idea, seeds 1–3, one job at a
    time, load 2.0–3.2): 53/57 published. requestToFirstPlayableMs max 10.9 s, median 3.4 s; 3 calls / 2 rounds except
    platformer seed 1 (6/4) and creature-battle seed 2 (5/3); pick 1.2–3.1 s, content 0.9–3.3 s. Gate: maze-chase
