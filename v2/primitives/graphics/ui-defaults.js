@@ -83,7 +83,7 @@ const titleCase = s => String(s).replace(/[_-]+/g, ' ').replace(/^./, c => c.toU
 /** The ending a document wins by testing an event count or a var, with its comparison target. */
 const wonEnding = (doc, test) => (doc.plot?.endings || []).find(e => (e.outcome ?? 'won') === 'won' && e.when && test(e.when));
 /**
- * HUD goals for a document: [{ end, use, var? | count? | component?, of? | bar?, max?, label? }], one per quantity, win first.
+ * HUD goals for a document: [{ end, use, var? | count? | component?, of? | bar?, max? | maxVar?, label? }], one per quantity, win first.
  * @param {any} doc @param {any} registry
  */
 export function hudGoals(doc, registry) {
@@ -102,9 +102,11 @@ export function hudGoals(doc, registry) {
       else list = [{ component: rd.component, of: rd.of || 'opponents' }];
     }
     for (const q of list) {
-      const max = q.max && typeof q.max === 'object' ? l.config[q.max.param] : q.max;
-      const g = { end, use: l.use, ...q, ...(max !== undefined ? { max } : {}) };
-      if (g.max === undefined) delete g.max;
+      // The target, as graphics.ui.hud declares a goal's: a number (given, or the instance's { param }) is max, a var
+      // name is maxVar.
+      const { max: given, ...rest } = q;
+      const max = given && typeof given === 'object' ? l.config[given.param] : given;
+      const g = { end, use: l.use, ...rest, ...(typeof max === 'number' ? { max } : typeof max === 'string' ? { maxVar: max } : {}) };
       const key = JSON.stringify([g.var, g.count, g.component, g.of, g.bar]);
       if (keys.has(key)) continue;
       keys.add(key); out.push(g);

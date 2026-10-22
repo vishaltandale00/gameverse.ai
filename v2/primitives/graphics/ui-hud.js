@@ -55,7 +55,7 @@ const card = {
       component: { type: 'string', effect: 'a component of entities, shown for the entities `of` names' },
       of: { type: 'string', options: ['opponents', 'player'], default: 'opponents' },
       bar: { type: 'string', options: ['boss'], effect: 'a bar widget that shows it (the boss bar)' },
-      max: { type: 'json', effect: 'the target: a number or a var name' },
+      max: { type: 'number', effect: 'a fixed target shown as value/max' }, maxVar: { type: 'string', effect: 'the var holding the target shown as value/max' },
       label: { type: 'string' }, pos: pos('top-right'),
     } }, effect: 'the quantities the loops\' win and lose read (ui-defaults.js hudGoals, from card.loop win/lose reads)' },
     prompt: { type: 'boolean', default: true, effect: 'contextual interact prompt with the device glyph' },
@@ -222,7 +222,8 @@ const deadOf = e => { const h = e.components?.health; return Boolean(h && (h.dea
 export function goalsFor(rt, config, out, bound = new Set(), local = {}) {
   const vars = rt.state.vars, res = [];
   const valueShown = v => bound.has(v) || out.score?.value !== undefined && (config.score?.var ?? 'score') === v || (out.lives && (config.lives?.var ?? 'lives') === v) || out.readouts.some(r => r.var === v);
-  const maxOf2 = m => (isNum(m) ? m : typeof m === 'string' && isNum(vars[m]) ? vars[m] : null);
+  /** A goal's target: its fixed max, else the value of its maxVar. */
+  const targetOf = g => (isNum(g.max) ? g.max : typeof g.maxVar === 'string' && isNum(vars[g.maxVar]) ? vars[g.maxVar] : null);
   for (const [i, g] of (config.goals || []).entries()) {
     const key = `g${i}`, pos = g.pos || 'top-right';
     if (g.var && g.var.endsWith('.*')) { res.push({ ...g, shown: Boolean(out.scoreboard) }); continue; }
@@ -231,7 +232,7 @@ export function goalsFor(rt, config, out, bound = new Set(), local = {}) {
       const v = g.var ? vars[g.var] ?? 0 : countOf(rt, g.count);
       if (g.var && valueShown(g.var)) { res.push({ ...g, shown: true }); continue; }
       if (!isNum(v)) { res.push({ ...g, shown: false }); continue; }
-      const max = maxOf2(g.max);
+      const max = targetOf(g);
       out.readouts.push({ key, var: g.var || `count:${g.count}`, label: g.label !== undefined ? g.label : titleCase(String(g.var || g.count).split('.').pop().replace(/:/g, ' ')), text: fmtInt(v) + (isNum(max) ? `/${fmtInt(max)}` : ''), pos, format: 'number', low: false });
       res.push({ ...g, shown: true }); continue;
     }
