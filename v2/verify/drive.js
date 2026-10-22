@@ -5,6 +5,7 @@
 import { createWorld } from '../kernel/world.js';
 import { touchDefeats } from '../primitives/gameplay/combat-lib.js';
 import { ControlsMissing } from './controls.js';
+import { onPlayerSide, opposed } from '../kernel/sides.js';
 
 /** A factory of fresh headless worlds for one normalized document. */
 export function maker(doc, registry, logic) {
@@ -48,8 +49,10 @@ export function applyOption(rt, option) {
     if (!verbs.length && typeof option.apply === 'function') throw new ControlsMissing([{ verb: option.label ?? 'option', why: 'the option is a macro (apply) and issues no action' }]);
     const n = option.steps || 1;
     hold(rt, { actions }, 1);
+    // Its presses stay held, and an input axis it names (a vector value: the move axis) stays pushed, for its steps.
     const held = Object.fromEntries(verbs.filter(v => actions[v] === true).map(v => [v, true]));
-    if (n > 1) hold(rt, Object.keys(held).length ? { held } : {}, n - 1);
+    const axial = Object.fromEntries(verbs.filter(v => Array.isArray(actions[v])).map(v => [v, actions[v]]));
+    if (n > 1) hold(rt, { ...(Object.keys(held).length ? { held } : {}), ...(Object.keys(axial).length ? { actions: axial } : {}) }, n - 1);
     return;
   }
   if (typeof option.apply === 'function') option.apply(rt);
@@ -119,8 +122,8 @@ export function threats(rt, e = rt.player()) {
 }
 /** Prey: touching it defeats it (combat-lib touchDefeats, the one definition the runtime uses). */
 export function isVulnerable(rt, o) { return touchDefeats(rt, o); }
-/** Non-player entities with health in the player's space (opponents, targets). */
-export const foes = (rt, e = rt.player()) => Object.values(rt.state.entities).filter(o => o !== e && o.space === e?.space && hpOf(o) !== null);
+/** Entities with health in `e`'s space that are not on its side (kernel/sides.js): the player's opponents and targets, never its own pieces. */
+export const foes = (rt, e = rt.player()) => Object.values(rt.state.entities).filter(o => o !== e && o.space === e?.space && hpOf(o) !== null && (e?.id === 'player' ? !onPlayerSide(rt, o) : opposed(rt, e, o) !== false));
 /** Entities the player gains by touching: collectible/pickup components. */
 export const collectibles = (rt, e = rt.player()) => Object.values(rt.state.entities).filter(o => o !== e && o.space === e?.space && (o.components.collectible || o.components.pickup));
 

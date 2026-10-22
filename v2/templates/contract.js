@@ -76,7 +76,7 @@ export const CODES = Object.freeze({
   loop: Object.freeze(['loop_problem']),
   presentation: Object.freeze(Object.values(PRESENTATION_CODES)),
   gate: Object.freeze(['gate_not_viable']),
-  controls: Object.freeze(['controls_missing', ...DIRECTION_CODES]),
+  controls: Object.freeze(['controls_missing', 'option_uncontrolled', ...DIRECTION_CODES]),
   features: Object.freeze([...new Set(Object.values(FEATURE_CODES).flat())]),
   bots: Object.freeze(['bot_unnamed', 'bot_selection_mismatch', 'bot_failed', 'bot_not_won', 'replay_mismatch']),
 });
@@ -167,6 +167,8 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
   const problems = [];
   const t = /** @type {any} */ (template);
   let checked = null, bare = null, gateFeatures = null;
+  /** @type {any[]} */
+  let gateOptions = [];
   const run = {
     format: () => formatProblems(t),
     tune: () => tuneProblems(t, registry),
@@ -185,6 +187,7 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
       const v = await verifyDocument(structuredClone(t.doc), registry, logic, { ...GATE });
       evidence.gate = { viable: Boolean(v.viable), viability: v.viability ?? null, ms: v.ms ?? null };
       gateFeatures = v.features ?? null;
+      gateOptions = (v.problems || []).filter(p => p.code === 'option_uncontrolled');
       return v.viable ? [] : [problem('gate_not_viable', `${v.viability} ${JSON.stringify((v.problems || []).filter(p => p.severity === 'error')).slice(0, 600)}`, { cause: v.viability ?? null })];
     },
     // The document a person plays gives a control for every verb its loops declare (in each interaction they are played
@@ -194,7 +197,9 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
       const out = documentUncontrolled(host, registry).map(m => problem('controls_missing', `${m.use}: no control a person has issues '${m.kind}'${m.interaction ? ` in ${m.interaction}` : ''}`, { verb: m.verb, use: m.use }));
       const d = directionProblems(host, registry, playContext(checked, registry, logic).make, SEEDS[0]);
       evidence.directions = d.evidence;
-      return [...out, ...d.problems.map(p => problem(p.code, p.message))];
+      // Every option the game offers is one a person can take (the gate's explorer: playtest option_uncontrolled).
+      const options = gateOptions.map(p => problem('option_uncontrolled', p.message, { missing: p.missing ?? null }));
+      return [...out, ...options, ...d.problems.map(p => problem(p.code, p.message))];
     },
     // Every primitive the document mixes in exists, is controllable and works (verify/features.js, run by the gate).
     features: () => {

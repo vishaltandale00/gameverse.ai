@@ -2,8 +2,8 @@
 // discovered templates: its worlds are the host document's controlled worlds (v2/verify/controls.js), every verb it
 // pressed has a control in that document (a key, an axis or a mounted UI), it never asked for one that has none
 // (controls_missing), and its winning path, when it found one, replays to the win on fresh controlled worlds. Options
-// the game offers that no control can take are never taken; they are reported (option_uncontrolled, a warning) and
-// listed here as a diagnostic.
+// the game offers that no control can take are never taken; they are reported (option_uncontrolled, an error that
+// blocks publishing) and no template offers one.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TEMPLATES } from '../v2/templates/registry.js';
@@ -13,7 +13,7 @@ import { hostPreflight, uncontrolledVerbs, controlsOf } from '../v2/verify/contr
 
 const { registry, logic } = buildCatalogue();
 
-for (const t of TEMPLATES) test(`explorer: ${t.id} is explored only through the controls a person has`, tc => {
+for (const t of TEMPLATES) test(`explorer: ${t.id} is explored only through the controls a person has`, () => {
   const host = hostPreflight(t.doc, registry, logic).doc, seed = host.seed ?? 1;
   const w = explorerWorlds(host, registry, logic, { seed });
   assert.ok(w.ok && w.make(seed).controls, 'controlled worlds of the host document');
@@ -24,5 +24,5 @@ for (const t of TEMPLATES) test(`explorer: ${t.id} is explored only through the 
   const listed = controlsOf(host, registry).ui.options.length > 0;
   assert.deepEqual(listed ? [] : uncontrolledVerbs(host, registry, Object.keys(r.verbsUsed)), [], `${t.id}: every verb the explorer pressed has a control`);
   if (r.win) assert.equal(r.win.replayed, true, `${t.id}: the win replays`);
-  for (const p of r.problems.filter(x => x.code === 'option_uncontrolled')) tc.diagnostic(p.message);
+  assert.deepEqual(r.problems.filter(x => x.code === 'option_uncontrolled').map(p => p.message), [], `${t.id}: every option it offers is one a person can take`);
 });

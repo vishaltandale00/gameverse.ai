@@ -18,6 +18,9 @@ export default {
     loop: { shows: ['entities', 'zones'], verbs: [], progress: ['checkpoint', 'lap', 'race_finished'],
       // As an encounter (engine.adapt.nested): finishing first beats the rivals; finishing below first, timing out or a DNF loses to them.
       outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onWin', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onLose', player: 'defeated', opponent: 'keeps' } } } },
+    // Whose side its entities are on, for every consumer: wins, bots, combat teams, AI, renderers (kernel/sides.js):
+    // every racer races for itself (each racers entry a side of its own).
+    sides: { param: 'racers', each: true },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "racers", "min": 3, "why": "a race needs rivals: racers lists the player and at least two other racer ids or archetypes", "example": ["player", "rival_1", "rival_2", "rival_3"]},

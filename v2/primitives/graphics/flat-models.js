@@ -14,7 +14,7 @@ import { pixelFrame, resolveAnim, animInfo, frameIndex } from './flat-pixel.js';
 import { drawVector, glow, PRESETS } from './flat-vector.js';
 import { drawFighter, paletteFor, fighterPose, fighterLook, faceFor, bonePose, drawBones, rigFrom, isFighterSpec, RIG_HEIGHT } from './flat-rig.js';
 import { roleOf, presentationOf, lookFor, propFor, characterImage, propImage, poseFor } from './flat-art.js';
-import { sideOf } from './allegiance.js';
+import { sideOf } from '../../kernel/sides.js';
 
 export const STATES = ['idle', 'run', 'walk', 'jump', 'fall', 'land', 'dash', 'attack', 'hurt', 'die', 'wallslide', 'crouch', 'block', 'win', 'dazed'];
 
@@ -36,7 +36,7 @@ export function lookOf(H, e, view = 'side') {
   const doc = H.rt.doc;
   const found = modelSpec(doc, e);
   const { key, arch } = found, spec = found.spec || H.vectorModels?.[e.archetype] || (H.cfg.rig?.archetypes?.[e.archetype] ? { kind: 'rig', rig: H.cfg.rig.archetypes[e.archetype] } : null);
-  // Whose side it is on (graphics/allegiance.js: card.sides): one archetype can fight for either side (rts workers).
+  // Whose side it is on (kernel/sides.js: card.sides): one archetype can fight for either side (rts workers).
   const side = e.id === 'player' ? null : sideOf(H.rt, e);
   const ck = `${key}|${view}|${e.id === 'player' ? 'p' : ''}|${side ? (side.mine ? 'mine' : 'theirs') : ''}`;
   H.looks ??= new Map();

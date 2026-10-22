@@ -7,6 +7,7 @@ import { hold, posOf, DIRS8 } from '../drive.js';
 import { stateHash } from '../util.js';
 import { modesIn } from '../../primitives/gameplay/modes-lib-mode.js';
 import { multiSeed, problem, pathOf, yieldToEncounter, seedBudgets } from './common.js';
+import { playerSides } from '../../kernel/sides.js';
 
 const SPORTS = 'gameplay.sports';
 const sub = (a, b) => a.map((v, i) => v - (b[i] ?? 0)), len = v => Math.hypot(...v);
@@ -14,7 +15,8 @@ const centreOf = (rt, e) => { const api = rt.space(e.space), at = posOf(rt, e); 
 
 /** Goal mouth (zone centre) the player's team scores in, or null. */
 export function goalFor(rt, doc, config) {
-  const team = config.teams.find(t => (t.members || []).some(m => m === 'player' || m === rt.player()?.archetype))?.id;
+  // The player's team: the kernel's reading of the sports card's side declaration (kernel/sides.js).
+  const team = playerSides(rt.doc, rt.registry, SPORTS).find(id => config.teams.some(t => t.id === id));
   const zone = config.goals.find(g => g.scores === team)?.zone;
   const z = (doc.spaces || []).flatMap(sp => sp.zones || []).find(x => x.id === zone);
   return Array.isArray(z?.rect) ? [(z.rect[0] + z.rect[2]) / 2, (z.rect[1] + z.rect[3]) / 2] : null;

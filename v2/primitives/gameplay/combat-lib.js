@@ -12,6 +12,7 @@
 // - Damage always goes through the `combat` service of gameplay.combat.health,
 //   so resistances, i-frames, blocks, shields and death rules apply once.
 import { bodyBox } from '../../kernel/testing.js';
+import { sideOf } from '../../kernel/sides.js';
 
 export const FPS = 60;
 export const DT = 1 / FPS;
@@ -147,11 +148,16 @@ export function hitShape(rt, e, spec, scale = 1) {
   return { kind: 'cone', at: c, r: reach, dir: f, angle: arc };
 }
 
-/** Team of an entity: explicit faction/team, else player, else archetype kind. */
+/**
+ * Team of an entity: explicit faction/team, else its declared side (kernel/sides.js: the player's side is the player's
+ * team, every other side its own), else player, else archetype kind.
+ */
 export function teamOf(rt, e) {
   const c = e?.components || {};
   const t = c.health?.team ?? (typeof c.faction === 'string' ? c.faction : c.faction?.id);
   if (t) return t;
+  const side = sideOf(rt, e);
+  if (side) return side.mine ? 'player' : `side:${side.side}`;
   if (e?.id === 'player') return 'player';
   const kind = rt.archetype(e?.archetype)?.kind;
   if (kind === 'enemy' || kind === 'boss') return 'enemy';

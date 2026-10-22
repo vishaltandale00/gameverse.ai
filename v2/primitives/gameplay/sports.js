@@ -17,7 +17,7 @@ export default {
   card: {
     // The archetype its `ball` param names reads as a ball on screen (graphics/flat-art.js; never its name).
     presents: { ball: { role: 'prop', vector: 'orb' } },
-    // Whose side its entities are on, as a person sees it (graphics/allegiance.js).
+    // Whose side its entities are on, for every consumer: wins, bots, combat teams, AI, renderers (kernel/sides.js).
     sides: { param: 'teams', members: 'members' },
     loop: { shows: ['entities', 'zones'], verbs: ['kick'], progress: ['goal', 'ball_touched', 'kick'] },
     // The player plays: it joins the first team when no team lists it.

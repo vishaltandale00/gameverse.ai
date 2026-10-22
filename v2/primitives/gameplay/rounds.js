@@ -17,6 +17,9 @@ export default {
     loop: { shows: ['entities'], verbs: [], progress: ['ko', 'round_end', 'match_end'],
       // As an encounter: the first fighter (the player's) wins or loses the match; a draw leaves both.
       outcome: { sides: ['player', 'opponent'], results: { won: { param: 'onWin', player: 'keeps', opponent: 'defeated' }, lost: { param: 'onLose', player: 'defeated', opponent: 'keeps' }, draw: { param: 'onDraw', player: 'keeps', opponent: 'keeps' } } } },
+    // Whose side its entities are on, for every consumer: wins, bots, combat teams, AI, renderers (kernel/sides.js):
+    // every fighter fights for itself (each fighters entry a side of its own).
+    sides: { param: 'fighters', each: true },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).
     content: [
       {"need": "param", "param": "fighters", "min": 2, "why": "a match needs the player and an opponent (entity ids or archetypes)", "example": ["player", "rival"]},

@@ -11,7 +11,7 @@ import { glyph } from './ui-input.js';
 import * as S from './ui-sources.js';
 import { spaceGeometry, heading, bearing } from './ui-spatial.js';
 import { entityPos } from './ui-cartography.js';
-import { sideOf } from './allegiance.js';
+import { onPlayerSide } from '../../kernel/sides.js';
 import { declaredDenials, deniesPlayer } from '../engine/runtime-lib-controls.js';
 
 export const POSITIONS = ['top-left', 'top-center', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom-center', 'bottom-right'];
@@ -234,8 +234,8 @@ export function goalsFor(rt, config, out, bound = new Set(), local = {}) {
         if (h && isNum(h.hp)) { out.meters.push({ key, id: g.component, label: g.label ?? 'Health', value: h.hp, max: h.max ?? h.hp, frac: clamp(h.hp / (h.max || h.hp || 1), 0, 1), color: DEFAULT_COLORS.hp, pos: 'top-left', style: 'bar', low: h.hp / (h.max || 1) <= 0.25 }); res.push({ ...g, shown: true }); continue; }
         res.push({ ...g, shown: false }); continue;
       }
-      // The opponents a win counts: entities carrying the component that are not the player's or on its side (allegiance.js).
-      const foes = Object.values(rt.state.entities).filter(e => e.id !== 'player' && e.components?.[g.component] !== undefined && !sideOf(rt, e)?.mine).sort((a, b) => (a.id < b.id ? -1 : 1));
+      // The opponents a win counts: entities carrying the component that are not the player's or on its side (kernel/sides.js).
+      const foes = Object.values(rt.state.entities).filter(e => e.components?.[g.component] !== undefined && !onPlayerSide(rt, e)).sort((a, b) => (a.id < b.id ? -1 : 1));
       const seen = (local.foes ??= new Set()); for (const e of foes) seen.add(e.id);
       const alive = foes.filter(e => !deadOf(e));
       if (g.component === 'health' && alive.length >= 1 && alive.length <= 3 && seen.size <= 3) for (const e of alive) {

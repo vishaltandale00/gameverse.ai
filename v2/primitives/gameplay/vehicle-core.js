@@ -281,13 +281,15 @@ export default {
     rt.options(rt => {
       const p = rt.player(); if (!p) return [];
       if (p.components.seat) {
-        // The driver's real controls as held macros, so solvers and playtesters can drive (the same `drive` action a pad sends).
+        // The driver's real controls as held macros, so solvers and playtesters can drive: the move axis it declares
+        // (card.actionSpace move: [steer, throttle]), held for the option's steps as a person holds the stick or keys.
         const driving = p.components.seat.seat === 0 ? [['drive', 0, 45], ['drive left', -1, 20], ['drive right', 1, 20], ['brake', 0, 15, -1]]
-          .map(([label, steer, steps, throttle = 1]) => ({ label, actions: { drive: { throttle, steer } }, steps })) : [];
+          .map(([label, steer, steps, throttle = 1]) => ({ label, actions: { move: [steer, throttle] }, steps })) : [];
         return [...driving, { label: 'exit vehicle', actions: { exit_vehicle: true } }];
       }
       const v = service.nearest(p, true);
-      return v ? [{ label: `enter ${v.id}`, actions: { enter_vehicle: v.id } }] : [];
+      // The enter key enters the nearest free vehicle (enter_vehicle true): the one this option names.
+      return v ? [{ label: `enter ${v.id}`, actions: { enter_vehicle: true } }] : [];
     });
   },
 };

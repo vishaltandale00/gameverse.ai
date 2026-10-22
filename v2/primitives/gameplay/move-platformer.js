@@ -167,9 +167,11 @@ export default {
       // Auto-run (endless runners) sets the horizontal speed itself: left and right change nothing, so the choices are
       // to run on, jump or dash ahead, and when: running on lasts half a cell of travel, so a jump can be timed to the cell.
       if (c.autoRun > 0) return [{ label: 'run on', actions: {}, steps: Math.max(1, Math.ceil(0.5 / (c.autoRun * rt.dt))) }, ...(lift ? [{ label: 'jump', actions: { jump: true }, steps: rise }] : []), ...(dashing ? [{ label: 'dash', actions: { dash: true }, steps: dashSteps }] : [])];
-      const out = [{ label: 'run right', actions: { right: true }, steps: 12 }, { label: 'run left', actions: { left: true }, steps: 12 }];
-      if (lift) out.push({ label: 'jump', actions: { jump: true }, steps: rise }, { label: 'jump right', actions: { jump: true, right: true }, steps: rise }, { label: 'jump left', actions: { jump: true, left: true }, steps: rise });
-      if (dashing) out.push({ label: 'dash right', actions: { dash: true, right: true }, steps: dashSteps }, { label: 'dash left', actions: { dash: true, left: true }, steps: dashSteps });
+      // Directions are the move axis it declares (provides.actions move), held for the option's steps, as a person holds it.
+      const R = [1, 0], L = [-1, 0];
+      const out = [{ label: 'run right', actions: { move: R }, steps: 12 }, { label: 'run left', actions: { move: L }, steps: 12 }];
+      if (lift) out.push({ label: 'jump', actions: { jump: true }, steps: rise }, { label: 'jump right', actions: { jump: true, move: R }, steps: rise }, { label: 'jump left', actions: { jump: true, move: L }, steps: rise });
+      if (dashing) out.push({ label: 'dash right', actions: { dash: true, move: R }, steps: dashSteps }, { label: 'dash left', actions: { dash: true, move: L }, steps: dashSteps });
       return out;
     });
   },
