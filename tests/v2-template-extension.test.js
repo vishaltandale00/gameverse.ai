@@ -26,7 +26,7 @@ const cat = { registry, logic };
 const ctx = { templates: TEMPLATES, registry };
 const compose = pick => composeTemplates(pick, { ...ctx, logic });
 const IDEA = 'sonic the hedgehog, but he has a gun and can drive fast cars';
-const GUN = { name: 'has a gun', verb: 'fire', importance: 'core' };
+const GUN = { name: 'has a gun', says: 'has a gun', verb: 'fire', importance: 'core' };
 /** The pick a model writes for the idea: Sonic the platformer, racing united with it; Sonic may also be the character. */
 const SONIC = {
   title: 'Sonic: Gun Kart', premise: 'Sonic races rivals through a level with a gun in hand. Reach the goal first.',
@@ -41,7 +41,7 @@ test('the pick form: strict readings and mechanics, the mechanic\'s verb a close
   const p = pickForm(TEMPLATES, registry).schema.properties;
   assert.deepEqual(Object.keys(p.readings.items.properties), ['name', 'kind', 'template', 'relation']);
   assert.deepEqual(p.readings.items.properties.relation.enum, ['none', 'nested', 'union']);
-  assert.deepEqual(Object.keys(p.mechanics.items.properties), ['name', 'verb', 'importance']);
+  assert.deepEqual(Object.keys(p.mechanics.items.properties), ['name', 'says', 'verb', 'importance']);
   assert.deepEqual(p.mechanics.items.properties.verb.enum, [...catalogueVerbs(registry), 'none']);
   assert.ok(catalogueVerbs(registry).includes('fire'));
   assert.deepEqual(p.mechanics.items.properties.importance.enum, ['core', 'extra']);
@@ -269,12 +269,12 @@ test('an extension question whose answers keep failing leaves the mechanic missi
 });
 
 test('an idea with no extension and no other reading asks nothing more: the pick, then the content round (at most 6 calls, 2 rounds)', async () => {
-  const pick = { ...SONIC, readings: [], mechanics: [{ name: 'jumps over pits', verb: 'jump', importance: 'core' }] };
+  const pick = { ...SONIC, readings: [], mechanics: [{ name: 'jumps over pits', says: 'jumps over pits', verb: 'jump', importance: 'core' }] };
   // The pick here, every other form as the Sonic writer answers it.
   const inner = sonicWriter();
   const w = { ...inner, calls: [], async complete(req) { w.calls.push(req); return req.schema.name === 'pick_templates' ? { text: JSON.stringify(pick), ms: 1, model: 'fake' } : inner.complete(req); } };
   const m = memoryCtx();
-  await createKernelPipeline({ catalogue: async () => cat, writers: { spec: w } })({ gameId: 'g', prompt: 'Sonic racing', kind: 'create', seed: 7 }, m.ctx);
+  await createKernelPipeline({ catalogue: async () => cat, writers: { spec: w } })({ gameId: 'g', prompt: 'Sonic the Hedgehog racing fast cars, he jumps over pits', kind: 'create', seed: 7 }, m.ctx);
   const report = m.versions[0].report;
   assert.deepEqual(report.mechanics.map(c => [c.by, c.primitives]), [['template', ['gameplay.move.platformer']]]);
   assert.equal(report.extensionCalls, 0);
@@ -302,6 +302,40 @@ test('the studio flow: the job asks, the failure record keeps the question, POST
   const { json: game } = await call('GET', `/api/v2/games/${created.gameId}`);
   assert.deepEqual(game.latest.report.mechanics.map(c => c.by), ['extension']);
   assert.deepEqual(game.latest.report.templates, ['platformer', 'race']);
+});
+
+test('an extension the gate proves does not work in the game is dropped and its step asked again: the content kept, only the new pick\'s params asked', async () => {
+  // A one-on-one fighter: lock-on targeting has no second target to cycle to (the gate's feature check: pressing
+  // `cycle` fires none of its events), so the pick is dropped and the step offered again without it.
+  const prompt = 'Street Fighter in a kitchen where you can lock on to a rival';
+  const PICK = { title: 'Kitchen Brawl', premise: 'Two chefs fight. Win the rounds.', primary: { name: 'Street Fighter', kind: 'game', template: 'fighting' }, games: [], themes: [{ name: 'kitchen', kind: 'setting' }], readings: [],
+    mechanics: [{ name: 'lock on to a rival', says: 'lock on to a rival', verb: 'cycle', importance: 'extra' }] };
+  const fighter = TEMPLATES.find(t => t.id === 'fighting').doc, asks = [];
+  const writer = fakeWriter([req => {
+    const name = req.schema.name, props = req.schema.schema.properties;
+    if (name === 'pick_templates') return JSON.stringify(PICK);
+    if (name === 'pick_primitive') { asks.push({ offered: props.pick.enum, user: req.user }); const pick = ['gameplay.combat.target', 'gameplay.move.dodge'].find(id => props.pick.enum.includes(id)) ?? 'none'; return JSON.stringify({ pick, why: 'it', spec: '' }); }
+    if (name === 'pick_category') return JSON.stringify({ pick: 'none', why: '', spec: '' });
+    if (name === 'frame_tune') return JSON.stringify(Object.fromEntries(Object.entries(props).map(([k, p]) => { if (k === 'logline') return [k, 'Chefs fight.']; const t = tuneTarget(fighter, String(p.description).split(':')[0], registry); return [k, t.instances[0].with?.[t.param] ?? t.spec.default]; })));
+    if (name.startsWith('params_')) return JSON.stringify(nulls(req.schema.schema));
+    const names = ps => Object.fromEntries(Object.entries(ps).map(([k, p]) => [k, p.type === 'object' ? names(p.properties) : `Chef ${k}`.slice(0, 40)]));
+    return JSON.stringify(names(props));
+  }]);
+  const m = memoryCtx();
+  const out = await createKernelPipeline({ catalogue: async () => cat, writers: { spec: writer } })({ gameId: 'g', prompt, kind: 'create', seed: 1 }, m.ctx).then(r => ({ r }), e => ({ e }));
+  assert.ok(out.r, out.e?.message);
+  const dropped = m.stages.filter(s => s.name === 'extension_dropped').flatMap(s => s.picks);
+  assert.deepEqual(dropped.map(d => [d.mechanic, d.id]), [['lock on to a rival', 'gameplay.combat.target']]);
+  assert.match(dropped[0].why, /^feature_inert: gameplay\.combat\.target: pressing 'cycle'/);
+  assert.equal(asks.length, 2);
+  assert.ok(asks[0].offered.includes('gameplay.combat.target') && !asks[1].offered.includes('gameplay.combat.target'), 'the dropped pick is not offered again');
+  assert.match(asks[1].user, /dropped, as they do not work in this game: gameplay\.combat\.target \(feature_inert/);
+  const report = m.versions[0].report;
+  assert.deepEqual(report.mechanics.map(c => [c.mechanic, c.by, c.option]), [['lock on to a rival', 'extension', 'gameplay.move.dodge']]);
+  // Retries redo only what changed: the frame and names forms once, the extension question and params per pick.
+  const forms = writer.calls.map(c => c.schema.name);
+  assert.deepEqual(forms, ['pick_templates', 'pick_primitive', 'frame_tune', 'names_fighting', 'params_gameplay__combat__target', 'pick_primitive', 'params_gameplay__move__dodge']);
+  assert.equal(report.verified, true);
 });
 
 test('extension rules are declared', () => { assert.deepEqual(Object.keys(EXTEND_RULES), ['extension_missing', 'extension_unengaged', 'extension_unusable', 'extension_params']); });

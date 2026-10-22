@@ -29,7 +29,7 @@ import { quality as measureQuality } from '../verify/quality.js';
 import { obj, prop, str, list, isObj } from '../kernel/guards.js';
 import { TEMPLATES } from '../templates/registry.js';
 import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offeredTemplates, instancesIn, narrowPick, checkPick, chooseReading, templateLoops } from './templates.js';
-import { EXTEND_VERSION, extendDocument, paramsForm, recordingWriter, unengaged } from './extend.js';
+import { EXTEND_VERSION, extendDocument, extensionFaults, paramsForm, recordingWriter, unengaged } from './extend.js';
 import { cardLoop } from './loop.js';
 import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
 
@@ -138,7 +138,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     /** @type {{ pick: import('./templates.js').Pick, stepPath: string[], calls: number }} */
     let picked;
     if (job.pick !== undefined) {
-      const pick = narrowPick(job.pick), checked = checkPick(pick, { templates, registry });
+      const pick = narrowPick(job.pick), checked = checkPick(pick, { templates, registry, prompt });
       if (checked.problems.length) throw fail('pick_resume_invalid', 'pick', checked.problems.map(p => ({ code: p.code, path: p.field, message: p.message })));
       picked = { pick, stepPath: checked.stepPath, calls: 0 };
     } else picked = await askPick({ writer, escalate, attempts: cfg.modelAttempts, prompt, templates, registry, calls, clock });
@@ -177,66 +177,93 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     if (!base.ok) throw fail(defect, 'preflight', base.errors);
     ctx.stage('templates_picked', { ms: timings.pickMs, path: 'template', templates: used, joins: composed.joins, themes: composed.themes.map(x => x.name), calls: calls.length });
     // The idea's mechanics the templates do not give, added onto the composed document one by one, each checked.
-    t = performance.now();
-    const before = calls.length;
+    // The publish gate plays what an extension adds (its feature checks: pressing its verbs does what they declare): a
+    // pick whose own primitive fails them does not work in this game, so it is dropped and its mechanic's step asked
+    // again without it (the step's convention), the content kept and only the new pick's params asked. The retries end
+    // when the step runs out of valid options (the build fails naming the mechanic) or the step path's time box.
     const interactions = [...new Set(templateLoops(composed.parts[0].template, registry).loops.flatMap(l => l.interactions))];
     // The extension steps are the step path's machinery: time-boxed (cfg.stepPathMs) and reported (stepPath).
-    const deadline = cfg.stepPathMs > 0 ? t + cfg.stepPathMs : null;
-    const ext = await extendDocument({ deadline, doc: composed.doc, mechanics: pick.mechanics, registry, logic, writer: recordingWriter(writer, calls), attempts: cfg.modelAttempts, interactions,
-      header: `Game idea: ${prompt}\nThe game: ${pick.title}: ${pick.premise}\nBuilt from the verified templates ${composed.parts.map(p => `'${p.template.id}' (${p.template.concept})`).join(' and ')}, played as ${interactions.join(' or ') || 'its loops are'}.`,
-      gaps: { mode: cfg.gaps, service: gapService, max: cfg.maxGapPrimitives }, catalogue, stage: (name, detail) => ctx.stage(name, detail) });
-    timings.extendMs = pick.mechanics.length ? ms(t) : null;
-    const extensionCalls = calls.length - before;
-    const stepUse = { used: ext.coverage.some(c => c.by !== 'template'), mechanics: ext.coverage.filter(c => c.by !== 'template').map(c => c.mechanic), budgetMs: cfg.stepPathMs || null, ms: timings.extendMs, calls: extensionCalls };
-    if (stepUse.used) ctx.stage('step_path', { during: 'extension', mechanics: stepUse.mechanics, budgetMs: stepUse.budgetMs, ms: stepUse.ms, calls: extensionCalls });
-    checkpoint('extensions', { coverage: ext.coverage, added: ext.added });
-    if (ext.missing.length) throw fail('extension_missing', 'extension', ext.missing.map(c => ({ code: 'extension_missing', path: `mechanics.${c.mechanic}`, message: `"${c.mechanic}" (${c.importance}${c.verb !== 'none' ? `, verb '${c.verb}'` : ''}) is still missing: ${c.why}` })));
-    ({ registry, logic } = ext);
-    const extended = ext.doc;
-    const extUses = new Set(ext.coverage.filter(c => c.by === 'extension' || c.by === 'gap').flatMap(c => c.primitives));
-    /** @type {NonNullable<ReturnType<typeof paramsForm>>[]} */
-    const paramForms = [];
-    for (const use of ext.added) { const f = paramsForm(extended, use, { registry, logic }); if (f) paramForms.push(f); }
-    t = performance.now();
-    const content = await writeContent({ writer, escalate, attempts: cfg.modelAttempts, template, doc: composed.doc, pick, themes: composed.themes, registry, logic, calls, clock, parts: composed.parts, onto: extended,
-      extra: paramForms.map(f => ({ ...f, mechanic: ext.coverage.find(c => c.primitives[0] === f.use)?.mechanic ?? f.use })) });
-    timings.contentMs = ms(t);
-    ctx.stage('content_written', { ms: timings.contentMs, forms: content.forms });
-    // Checks of the document that will be played: preflight, the loop check, first playable. A template is complete,
-    // so nothing of it is engaged, furnished or isolated here; an extension's primitives are engaged as their cards
-    // declare (engage.js `only`), and the player must get their verbs.
-    tc = performance.now();
-    /** @type {Record<string, any>} */
-    let played = content.doc;
-    if (extUses.size) {
-      const unfilled = unengaged(played, [...extUses], { registry, logic });
-      if (unfilled.length) throw fail('extension_unengaged', 'extension', unfilled.map(u => ({ code: 'extension_unengaged', path: u.use, message: u.message })));
-      const engaged = engageDocument(/** @type {Doc} */ (played), registry, logic, { only: extUses });
-      if (!engaged.ok) throw fail('extension_unengaged', 'extension', engaged.errors);
-      played = engaged.doc;
-      const unusable = ext.added.filter(use => { const card = registry.get(use)?.card; return (cardLoop(card)?.verbs ?? []).length > 0 && !instancesIn(played).some(i => i.use === use && instanceVerbs(card, i, played).length > 0); });
-      if (unusable.length) throw fail('extension_unusable', 'extension', unusable.map(use => ({ code: 'extension_unusable', path: use, message: `the player gets none of ${use}'s verbs` })));
+    const deadline = cfg.stepPathMs > 0 ? performance.now() + cfg.stepPathMs : null;
+    /** Per mechanic, the extension picks the gate proved do not work in the game. @type {Map<string, Array<{ id: string, why: string }>>} */
+    const dropped = new Map();
+    const header = `Game idea: ${prompt}\nThe game: ${pick.title}: ${pick.premise}\nBuilt from the verified templates ${composed.parts.map(p => `'${p.template.id}' (${p.template.concept})`).join(' and ')}, played as ${interactions.join(' or ') || 'its loops are'}.`;
+    const base0 = { registry, logic };
+    /** @type {Awaited<ReturnType<typeof extendDocument>>} */
+    let ext;
+    /** @type {Awaited<ReturnType<typeof writeContent>> | null} */
+    let content = null;
+    /** @type {Awaited<ReturnType<typeof gateVersion>>} */
+    let gate;
+    /** @type {ReturnType<typeof firstPlayable>} */
+    let fp;
+    let extensionCalls = 0, contentRounds = 0;
+    /** @type {Record<string, unknown>} */
+    let stepUse = {};
+    for (;;) {
+      ({ registry, logic } = base0);
+      t = performance.now();
+      const before = calls.length;
+      ext = await extendDocument({ deadline, doc: composed.doc, mechanics: pick.mechanics, registry, logic, writer: recordingWriter(writer, calls), attempts: cfg.modelAttempts, interactions,
+        header, gaps: { mode: cfg.gaps, service: gapService, max: cfg.maxGapPrimitives }, catalogue, stage: (name, detail) => ctx.stage(name, detail), dropped });
+      if (pick.mechanics.length) timings.extendMs = (timings.extendMs ?? 0) + ms(t);
+      else timings.extendMs = null;
+      extensionCalls += calls.length - before;
+      stepUse = { used: ext.coverage.some(c => c.by !== 'template'), mechanics: ext.coverage.filter(c => c.by !== 'template').map(c => c.mechanic), budgetMs: cfg.stepPathMs || null, ms: timings.extendMs, calls: extensionCalls };
+      if (stepUse.used) ctx.stage('step_path', { during: 'extension', mechanics: stepUse.mechanics, budgetMs: stepUse.budgetMs, ms: stepUse.ms, calls: extensionCalls });
+      checkpoint('extensions', { coverage: ext.coverage, added: ext.added, dropped: Object.fromEntries(dropped) });
+      if (ext.missing.length) throw fail('extension_missing', 'extension', ext.missing.map(c => ({ code: 'extension_missing', path: `mechanics.${c.mechanic}`, message: `"${c.mechanic}" (${c.importance}${c.verb !== 'none' ? `, verb '${c.verb}'` : ''}) is still missing: ${c.why}${dropped.has(c.mechanic) ? `; dropped as not working in the game: ${(dropped.get(c.mechanic) ?? []).map(d => `${d.id} (${d.why})`).join('; ')}` : ''}` })));
+      ({ registry, logic } = ext);
+      const extended = ext.doc;
+      const extUses = new Set(ext.coverage.filter(c => c.by === 'extension' || c.by === 'gap').flatMap(c => c.primitives));
+      /** @type {NonNullable<ReturnType<typeof paramsForm>>[]} */
+      const paramForms = [];
+      for (const use of ext.added) { const f = paramsForm(extended, use, { registry, logic }); if (f) paramForms.push(f); }
+      t = performance.now();
+      content = await writeContent({ writer, escalate, attempts: cfg.modelAttempts, template, doc: composed.doc, pick, themes: composed.themes, registry, logic, calls, clock, parts: composed.parts, onto: extended,
+        extra: paramForms.map(f => ({ ...f, mechanic: ext.coverage.find(c => c.primitives[0] === f.use)?.mechanic ?? f.use })), reuse: content?.answers ?? null });
+      timings.contentMs = (timings.contentMs ?? 0) + ms(t);
+      contentRounds += content.rounds;
+      ctx.stage('content_written', { ms: timings.contentMs, forms: content.forms });
+      // Checks of the document that will be played: preflight, the loop check, first playable. A template is complete,
+      // so nothing of it is engaged, furnished or isolated here; an extension's primitives are engaged as their cards
+      // declare (engage.js `only`), and the player must get their verbs.
+      tc = performance.now();
+      /** @type {Record<string, any>} */
+      let played = content.doc;
+      if (extUses.size) {
+        const unfilled = unengaged(played, [...extUses], { registry, logic });
+        if (unfilled.length) throw fail('extension_unengaged', 'extension', unfilled.map(u => ({ code: 'extension_unengaged', path: u.use, message: u.message })));
+        const engaged = engageDocument(/** @type {Doc} */ (played), registry, logic, { only: extUses });
+        if (!engaged.ok) throw fail('extension_unengaged', 'extension', engaged.errors);
+        played = engaged.doc;
+        const unusable = ext.added.filter(use => { const card = registry.get(use)?.card; return (cardLoop(card)?.verbs ?? []).length > 0 && !instancesIn(played).some(i => i.use === use && instanceVerbs(card, i, played).length > 0); });
+        if (unusable.length) throw fail('extension_unusable', 'extension', unusable.map(use => ({ code: 'extension_unusable', path: use, message: `the player gets none of ${use}'s verbs` })));
+      }
+      const pre = preflight(played, registry, logic);
+      if (!pre.ok) throw fail(defect, 'preflight', pre.errors);
+      const loop = loopProblems(pre.doc, registry, { logic });
+      if (loop.length) throw fail(defect, 'loop', loop);
+      fp = firstPlayable(pre.doc, registry, logic, { seed, protect: new Set(instancesIn(pre.doc).map(i => String(i.use))), maxIsolations: 0, furnish: false });
+      clock.codeMs += performance.now() - tc;
+      if (!fp.ok) throw fail(defect, 'first_playable', [...fp.errors, ...fp.problems]);
+      timings.composeMs = Math.round(clock.codeMs);
+      // The version gate every new version passes (version-gate.js): the same checks a revision of it will pass.
+      const tg = performance.now();
+      gate = await gateVersion(fp.doc, { registry, logic, playable: true, template });
+      timings.gateMs = (timings.gateMs ?? 0) + ms(tg);
+      if (gate.ok && gate.doc && gate.verification) break;
+      const faults = extensionFaults(gate.problems, ext.coverage);
+      if (!faults.length || (deadline !== null && performance.now() > deadline)) throw fail(gate.stage === 'gate' ? 'not_playable' : defect, gate.stage ?? 'gate', gate.problems);
+      for (const f of faults) dropped.set(f.mechanic, [...(dropped.get(f.mechanic) ?? []), { id: f.id, why: f.why }]);
+      ctx.stage('extension_dropped', { picks: faults });
     }
-    const pre = preflight(played, registry, logic);
-    if (!pre.ok) throw fail(defect, 'preflight', pre.errors);
-    const loop = loopProblems(pre.doc, registry, { logic });
-    if (loop.length) throw fail(defect, 'loop', loop);
-    const fp = firstPlayable(pre.doc, registry, logic, { seed, protect: new Set(instancesIn(pre.doc).map(i => String(i.use))), maxIsolations: 0, furnish: false });
-    clock.codeMs += performance.now() - tc;
-    if (!fp.ok) throw fail(defect, 'first_playable', [...fp.errors, ...fp.problems]);
-    timings.composeMs = Math.round(clock.codeMs);
-    // The version gate every new version passes (version-gate.js): the same checks a revision of it will pass.
-    const tg = performance.now();
-    const gate = await gateVersion(fp.doc, { registry, logic, playable: true, template });
-    timings.gateMs = ms(tg);
-    if (!gate.ok || !gate.doc || !gate.verification) throw fail(gate.stage === 'gate' ? 'not_playable' : defect, gate.stage ?? 'gate', gate.problems);
     const v = gate.verification;
     t = performance.now();
     const quality = qualityReport(v, registry, logic, { budgetMs: cfg.qualityMs });
     timings.qualityMs = quality ? ms(t) : null;
     timings.firstPlayableBuildMs = fp.ms;
     timings.requestToFirstPlayableMs = ms(t0);
-    const modelCalls = calls.length, modelRounds = picked.calls + extensionCalls + content.rounds;
+    const modelCalls = calls.length, modelRounds = picked.calls + extensionCalls + contentRounds;
     const doc = gate.doc;
     await ctx.store.updateMeta(job.gameId, { title: doc.title, kind: 'kernel' });
     const report = { kind: 'kernel', path: 'template', templates: used, joins: composed.joins, pick, themes: composed.themes, mechanics: ext.coverage, extensionCalls, stepPath: stepUse, content: content.forms, calls, modelCalls, modelRounds,

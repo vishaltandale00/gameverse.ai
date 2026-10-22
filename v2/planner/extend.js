@@ -61,7 +61,7 @@ import { isObj, isStr, prop, messageOf } from '../kernel/guards.js';
  * How one mechanic the idea names is covered: by the composed templates, by an extension step, or by the gap layer;
  * `primitives` what gives it (the step's bundle, or the primitives the gap layer wrote); a mechanic nothing covers has
  * `by` null and why. The step's record: the options offered (and the cards rejected, with why), the questions asked.
- * @typedef {{ mechanic: string, verb: string, importance: string, by: 'template' | 'extension' | 'gap' | null, primitives: string[], why: string,
+ * @typedef {{ mechanic: string, verb: string, importance: string, by: 'template' | 'extension' | 'gap' | null, option?: string, primitives: string[], why: string,
  *   offered?: string[], rejected?: Array<{ id: string, why: string }>, asks?: ExtensionAsk[], gap?: Record<string, unknown>, experiment?: unknown, ms?: number }} Coverage
  */
 
@@ -214,11 +214,13 @@ export function recordingWriter(writer, calls) {
  * mechanics nothing covers: the caller fails the build naming them) }
  * @param {{ doc: Record<string, any>, mechanics: readonly PickMechanic[], registry: RegistryLike, logic: LogicLike, writer: Writer, attempts: number, interactions: string[],
  *   header: string, gaps: { mode: string, service: GapService | null, max: number }, catalogue: (doc: unknown) => Promise<{ registry: RegistryLike, logic: LogicLike }>, stage?: (name: string, detail: Record<string, unknown>) => void,
- *   deadline?: number | null }} args
+ *   deadline?: number | null, dropped?: Map<string, Array<{ id: string, why: string }>> }} args
  *   deadline: the step path's time box (a performance.now() value): a step's question is not asked after it, and the
  *   mechanic is missing with why (build-steps.js makeAsk, step_path_timeout)
+ *   dropped: per mechanic (its name), the picks the publish gate proved do not work in the game (a feature check of the
+ *   pick's own primitive: pressing its verb did nothing); they are not offered again and the question says why
  */
-export async function extendDocument({ doc: input, mechanics, registry: reg, logic: lg, writer, attempts, interactions, header, gaps, catalogue, stage = () => {}, deadline = null }) {
+export async function extendDocument({ doc: input, mechanics, registry: reg, logic: lg, writer, attempts, interactions, header, gaps, catalogue, stage = () => {}, deadline = null, dropped = new Map() }) {
   let doc = structuredClone(input), registry = reg, logic = lg, calls = 0, written = 0;
   const ask = makeAsk({ writer, attempts, count: () => { calls++; }, deadline });
   const coverage = templateCoverage(mechanics, doc, registry);
@@ -232,9 +234,10 @@ export async function extendDocument({ doc: input, mechanics, registry: reg, log
     const found = extensionOptions({ doc, registry, logic, mechanic: m, interactions });
     Object.assign(c, { offered: found.options.map(o => o.id), rejected: found.rejected.slice(0, 12), asks: [] });
     const asks = /** @type {ExtensionAsk[]} */ (c.asks);
-    let open = [...found.options], spec = '';
+    const gone = dropped.get(m.name) ?? [];
+    let open = found.options.filter(o => !gone.some(d => d.id === o.id)), spec = '';
     /** @type {string | null} */
-    let problem = null;
+    let problem = gone.length ? `Already tried and dropped, as they do not work in this game: ${gone.map(d => `${d.id} (${d.why})`).join('; ')}. Pick another listed option, or "none".` : null;
     /** Why the step's own question failed (its answers kept failing), when it did. */
     let failed = '';
     const mechanic = /** @type {import('./decompose.js').Mechanic} */ ({ id: formKey(m.name).replace(/[^A-Za-z0-9_]/g, '_').slice(0, 40) || 'mechanic', verb: m.verb === 'none' ? '' : m.verb, description: m.name, from: '', importance: m.importance === 'core' ? 'core' : 'supporting' });
@@ -259,7 +262,7 @@ export async function extendDocument({ doc: input, mechanics, registry: reg, log
       asks[asks.length - 1].ok = true;
       doc = after;
       added.push(cand.id);
-      Object.assign(c, { by: 'extension', primitives: [...cand.members], why: a.why || `added ${cand.members.join(' + ')}` });
+      Object.assign(c, { by: 'extension', option: cand.id, primitives: [...cand.members], why: a.why || `added ${cand.members.join(' + ')}` });
       break;
     }
     if (!c.by && failed) c.why = failed;
@@ -290,6 +293,23 @@ export async function extendDocument({ doc: input, mechanics, registry: reg, log
     stage('extended', { mechanic: m.name, by: c.by, primitives: c.primitives, calls });
   }
   return { doc, registry, logic, coverage, added, calls, missing: coverage.filter(c => !c.by) };
+}
+
+/**
+ * The extension picks a publish gate's problems prove do not work in the game: a feature check (verify/features.js:
+ * exists, controllable, works) failing on a primitive an extension step added. -> one per mechanic: { mechanic, id (the
+ * option picked), why }. A gap layer's primitives are not picks (nothing to ask again), so they are not listed.
+ * @param {ReadonlyArray<{ code?: unknown, use?: unknown, message?: unknown, severity?: unknown }>} problems @param {readonly Coverage[]} coverage
+ */
+export function extensionFaults(problems, coverage) {
+  /** @type {Array<{ mechanic: string, id: string, why: string }>} */
+  const out = [];
+  for (const c of coverage) {
+    if (c.by !== 'extension' || !c.option) continue;
+    const p = problems.find(x => String(x.code ?? '').startsWith('feature_') && x.severity !== 'warning' && x.severity !== 'info' && c.primitives.includes(String(x.use ?? '')));
+    if (p) out.push({ mechanic: c.mechanic, id: c.option, why: `${String(p.code)}: ${String(p.message ?? '')}`.slice(0, 240) });
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------------------------------

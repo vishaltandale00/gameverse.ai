@@ -177,7 +177,17 @@ test('the pick form makes every structurally invalid pick inexpressible; every p
 test('checkPick: the form\'s schema (pick_form) and the catalogue rules, each with a declared stable code; a none game goes to the step path', () => {
   const ctx = { templates: TEMPLATES, registry };
   const codes = pick => checkPick(pick, ctx).problems.map(p => `${p.code}@${p.field}`);
-  assert.deepEqual(Object.keys(PICK_RULES), ['pick_form', 'pick_nested_no_entry', 'pick_nested_no_outcome', 'pick_reading_unknown', 'pick_reading_duplicate', 'pick_reading_invalid', 'pick_reading_no_primary', 'pick_reading_fails']);
+  assert.deepEqual(Object.keys(PICK_RULES), ['pick_form', 'pick_nested_no_entry', 'pick_nested_no_outcome', 'pick_reading_unknown', 'pick_reading_duplicate', 'pick_reading_invalid', 'pick_reading_no_primary', 'pick_reading_fails', 'pick_mechanic_unsaid', 'pick_mechanic_is_concept']);
+  // A mechanic is one the idea names (its words, copied exactly) and none of its words are a concept's: what a theme
+  // suggests the player does is never one (the live picks that built 'swim' for a sunken city, 'slide on ice' for penguins).
+  const said = (id, mechanics, prompt = IDEAS[id].idea) => checkPick({ ...pickOf(id), mechanics }, { templates: TEMPLATES, registry, prompt }).problems.map(p => `${p.code}@${p.field}`);
+  const m = (name, says, verb = 'none') => ({ name, says, verb, importance: 'extra' });
+  assert.deepEqual(said('tactics', [m('swim', 'swim')]), ['pick_mechanic_unsaid@mechanics[0].says']);
+  assert.deepEqual(said('launcher', [m('slide on ice', 'on an ice shelf')]), ['pick_mechanic_is_concept@mechanics[0].says']);
+  assert.deepEqual(said('fighting', [m('use kitchen utensils as weapons', 'with kitchen utensils')]), ['pick_mechanic_is_concept@mechanics[0].says']);
+  assert.deepEqual(said('falling-blocks', [m('arrange books', 'books')]), ['pick_mechanic_is_concept@mechanics[0].says']);
+  assert.deepEqual(said('race', [m('has a gun', 'has a GUN', 'fire')], 'Mario Kart with shopping carts where you  has a gun'), [], 'the idea\'s own words, case and spaces aside');
+  for (const id of Object.keys(IDEAS)) assert.deepEqual(said(id, []), [], `${id}: an idea naming no mechanic has none`);
   for (const id of Object.keys(IDEAS)) assert.deepEqual(codes(pickOf(id)), []);
   // A writer that does not enforce the schema is held to it: each finding names its field.
   assert.deepEqual(codes({ ...pickOf('race'), title: ' ', premise: '' }), ['pick_form@title', 'pick_form@premise']);
