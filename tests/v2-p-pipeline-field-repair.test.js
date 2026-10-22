@@ -24,15 +24,17 @@ async function chessWithCreatures() {
 /** The pack's species in the form's shape, with `types` replaced by what a model wrote. */
 const speciesForm = (scaffold, types, n = 3) => scaffold.content.species.slice(0, n).map((s, i) => ({ ...s, types: types(s, i), catchRate: s.catchRate ?? null, expYield: s.expYield ?? null, growth: s.growth ?? null, learnset: s.learnset ?? null, evolves: s.evolves ?? null }));
 const invented = (s, i) => [['knight', 'bishop', 'rook'][i % 3]];
-/** The types form themes the type names in parallel (as the live run did). */
-const themedTypes = ['flame', 'tide', 'leaf', 'normal'];
-const errorsOf = (form, filled) => repairDocument(form.toDoc({ section_content_types: themedTypes, ...filled }), { registry, logic }).errors.filter(e => /^content\.species\[\d\]\.types/.test(e.path));
+const errorsOf = (form, filled) => repairDocument(form.toDoc(filled), { registry, logic }).errors.filter(e => /^content\.species\[\d\]\.types/.test(e.path));
 
-test('the live failure: species keep the pack\'s type ids while the types form themes its own; the types they use stay defined', async () => {
+// content.types is the type chart (gameplay.creature.party: attacking type -> { defending type -> multiplier }, every
+// type a key): a map with free keys, which no strict form expresses, so no form asks it and the scaffold's chart stays
+// whole. The live failure (a types form theming its own names while species kept the pack's) has no form to come from.
+test('the live failure: species keep the pack\'s type ids; the chart no form asks stays whole, so the types they use stay defined', async () => {
   const { scaffold, form } = await chessWithCreatures();
-  const filled = { section_content_species: speciesForm(scaffold, s => s.types), section_content_types: themedTypes };
+  assert.equal(form.groups.find(g => g.id === 'section_content_types'), undefined, 'the chart is never asked');
+  const filled = { section_content_species: speciesForm(scaffold, s => s.types) };
   const doc = /** @type {any} */ (form.toDoc(filled));
-  assert.deepEqual(doc.content.types, [...themedTypes, 'fire', 'water'], 'the referenced scaffold types come back; unreferenced ones do not');
+  assert.deepEqual(doc.content.types, scaffold.content.types, 'the scaffold\'s chart stays whole: every type the species and moves name is a key');
   const r = repairDocument(doc, { registry, logic });
   assert.deepEqual(r.errors.filter(e => /^content\.species/.test(e.path)), [], 'no species_invalid ... types');
   assert.ok(r.doc.content.species.slice(0, 3).every(s => s.types.length === 1));
@@ -53,25 +55,27 @@ test('reference fields are enums of the document\'s own ids, from the card decla
 test('repair keeps a required reference field and reports it with the allowed ids (no "species needs at least one type")', async () => {
   const { scaffold, form } = await chessWithCreatures();
   const errors = errorsOf(form, { section_content_species: speciesForm(scaffold, invented) });
-  assert.ok(errors.length === 3 && errors.every(e => e.code === 'type_unknown'), JSON.stringify(errors));
-  assert.ok(errors.every(e => /use only the document's content\.types ids: flame, tide, leaf, normal/.test(e.hint)), errors[0].hint);
+  // Species types are declared references to the chart's keys (creature_type): the kernel's reference check reports
+  // each unknown one where it is, and repair never drops it below the list's minimum.
+  assert.ok(errors.length === 3 && errors.every(e => e.code === 'ref_unknown' && /^content\.species\[\d\]\.types\[0\]$/.test(e.path)), JSON.stringify(errors));
+  assert.ok(errors.every(e => /use only the document's content\.types ids: normal, fire, water, grass/.test(e.hint)), errors[0].hint);
   // Near misses are re-pointed by code; a list keeps its valid entries.
-  const near = errorsOf(form, { section_content_species: speciesForm(scaffold, (s, i) => [['Flame', 'tides', 'Leaf'][i], ...(i === 2 ? ['rook'] : [])]) });
+  const near = errorsOf(form, { section_content_species: speciesForm(scaffold, (s, i) => [['Fire', 'waters', 'Grass'][i], ...(i === 2 ? ['rook'] : [])]) });
   assert.deepEqual(near, []);
 });
 
 test('field-level repair: only the failing fields go back, as enums; the answer is written at exactly those paths', async () => {
   const { scaffold, form } = await chessWithCreatures();
-  const filled = { title: 'Pocket Gambit', section_content_species: speciesForm(scaffold, invented), section_content_types: themedTypes };
+  const filled = { title: 'Pocket Gambit', section_content_species: speciesForm(scaffold, invented) };
   const draft = form.toDoc(filled);
   const errors = errorsOf(form, filled);
   const fields = fieldForm(form.schema, errors.map(e => formPath(e.path, draft)));
-  assert.deepEqual(fields.slots.map(s => s.path), ['section_content_species[0].types', 'section_content_species[1].types', 'section_content_species[2].types']);
+  assert.deepEqual(fields.slots.map(s => s.path), ['section_content_species[0].types[0]', 'section_content_species[1].types[0]', 'section_content_species[2].types[0]']);
   assert.deepEqual(fields.unresolved, []);
   const props = fields.schema.schema.properties;
   assert.deepEqual(Object.keys(props), ['field_1', 'field_2', 'field_3']);
-  assert.ok(Object.values(props).every(p => p.type === 'array' && p.items.enum.join() === 'normal,fire,water,grass'));
-  const fixed = fields.apply(filled, { field_1: ['fire'], field_2: ['fire'], field_3: ['water'] });
+  assert.ok(Object.values(props).every(p => p.type === 'string' && p.enum.join() === 'normal,fire,water,grass'));
+  const fixed = fields.apply(filled, { field_1: 'fire', field_2: 'fire', field_3: 'water' });
   assert.deepEqual(fixed.section_content_species.map(s => s.types), [['fire'], ['fire'], ['water']]);
   assert.deepEqual(fixed.section_content_species.map(s => s.name), filled.section_content_species.map(s => s.name), 'other fields untouched');
   assert.deepEqual(filled.section_content_species[0].types, ['knight'], 'the input is not mutated');
@@ -90,14 +94,14 @@ test('chess with creatures: a model wrong once on species types is corrected by 
     const name = req.schema.name.replace('game_outline_', '');
     // A field-level re-ask: only the failing fields, each slot described by its form path (the allowed ids are its enum).
     if (name.endsWith('_fields')) return JSON.stringify(Object.fromEntries(Object.entries(req.schema.schema.properties).map(([k, p]) => {
-      const m = /^section_content_species\[(\d+)\]\.types/.exec(p.description || '');
-      return [k, m ? scaffold.content.species[Number(m[1])].types : null];
+      const m = /^section_content_species\[(\d+)\]\.types(?:\[(\d+)\])?/.exec(p.description || '');
+      const types = m ? scaffold.content.species[Number(m[1])].types : null;
+      return [k, m && m[2] !== undefined ? types[Number(m[2])] : types];
     })));
     if (name === 'frame') return JSON.stringify({ title: 'Pocket Gambit', logline: 'l', premise: 'p', spaces: {}, player: req.schema.schema.properties.player ? { archetype: req.schema.schema.properties.player.properties.archetype.enum?.[0] ?? 'hero', zone: req.schema.schema.properties.player.properties.zone.enum?.[0] ?? '' } : undefined, endings: [] });
     if (name === 'cast') return JSON.stringify({ archetypes: pack('archetypes').filter(a => a.kind !== 'player').map(a => ({ id: a.id, kind: a.kind, name: a.id, components: { other_json: JSON.stringify(a.components || {}) } })), spawns: [], items: [], characters: [] });
     if (name === 'section_content_species') return JSON.stringify({ section_content_species: speciesForm(scaffold, /use only the document's content\.types ids/.test(req.user) ? s => s.types : invented, 6) });
     if (name === 'section_content_moves') return JSON.stringify({ section_content_moves: pack('moves').map(m => ({ accuracy: null, priority: null, effect: null, ...m })) });
-    if (name === 'section_content_types') return JSON.stringify({ section_content_types: themedTypes });
     return JSON.stringify({ acts: [], dialogue: [], quests: [] });
   };
   const writer = fakeWriter([reply]), escalate = fakeWriter([reply], { model: 'stronger' });
@@ -107,9 +111,10 @@ test('chess with creatures: a model wrong once on species types is corrected by 
   assert.equal(speciesCalls.length, 2, `asked: ${asked.join(' ')}`);
   assert.match(speciesCalls[1].schema.name, /_fields$/, 'the re-ask is a field form: only the failing fields');
   assert.ok(Object.values(speciesCalls[1].schema.schema.properties).every(p => /^section_content_species\[\d\]\.types/.test(p.description)), 'only the species types');
-  assert.equal(asked.filter(n => n === 'section_content_types').length, 1, 'the other forms are not re-asked for the species problem');
-  assert.match(speciesCalls[1].user, /\[type_unknown\] content\.species\[0\]\.types \(form: section_content_species\[0\]\.types\)/);
-  assert.doesNotMatch(speciesCalls[1].user, /species_invalid/, 'the problem is the unknown type, not a dropped field');
+  assert.equal(asked.filter(n => n === 'section_content_moves').length, 1, 'the other forms are not re-asked for the species problem');
+  assert.equal(asked.filter(n => n === 'section_content_types').length, 0, 'the type chart is never asked (no strict form expresses its free keys)');
+  assert.match(speciesCalls[1].user, /\[ref_unknown\] content\.species\[0\]\.types\[0\] \(form: section_content_species\[0\]\.types\[0\]\)/);
+  assert.doesNotMatch(speciesCalls[1].user, /species_invalid|param_range/, 'the problem is the unknown type, not a dropped field');
   assert.ok(!escalate.calls.some(c => /section_content_species/.test(c.schema.name)), 'fixed before escalation');
   assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 4)));
   const types = new Set(idsAt(r.doc, 'content.types'));

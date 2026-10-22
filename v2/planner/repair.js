@@ -458,7 +458,14 @@ export function repairDocument(input, { registry, logic, rounds = 6, exclude = n
           if (at && CREATABLE.has(kind)) { addToCollection(at, kind, slug(bad)); if (slug(bad) !== bad) setAt(doc, pointer, slug(bad)); progressed = true; break; }
           // Not creatable (zones, beats, spaces...): drop the dangling element, else point at an existing id.
           const parentKeys = pointer.slice(0, -1), parent = getAt(doc, parentKeys), grand = getAt(doc, parentKeys.slice(0, -1));
-          if (Array.isArray(parent)) { removals.push(pointer); fix(`dropped reference to unknown ${kind}`); }
+          // A list of document data (the content the model writes) whose declaration needs entries (min) never loses a
+          // reference below that: dropping it would only turn "unknown id" into "too few entries"; its error, with the
+          // allowed ids, goes back to the model (as a required reference field below). Instance params are code's.
+          if (Array.isArray(parent)) {
+            const min = /^(plot|content)\./.test(e.path) ? Number(prop(specAt(doc, registry, parentKeys), 'min')) || 0 : 0;
+            const pending = removals.filter(r => r.length === pointer.length && JSON.stringify(r.slice(0, -1)) === JSON.stringify(parentKeys)).length;
+            if (parent.length - pending - 1 >= min) { removals.push(pointer); fix(`dropped reference to unknown ${kind}`); }
+          }
           else if (Array.isArray(grand) && typeof parentKeys.at(-1) === 'number' && !loc?.schema?.required) { removals.push(parentKeys); fix(`dropped element pointing at unknown ${kind}`); }
           else if (existing.length) { setAt(doc, pointer, existing[0]); fix(`pointed at ${kind} '${existing[0]}'`); }
           break;
@@ -589,13 +596,22 @@ function repointRef(doc, registry, keys, spec) {
 }
 
 /**
+ * A document field's declared shape: a data section's field (card.data), an instance param or an archetype component
+ * field. null when nothing declares it.
+ * @param {unknown} doc @param {RegistryLike} registry @param {Key[]} keys
+ */
+function specAt(doc, registry, keys) {
+  return declaredAt(registry, doc, keys) ?? locate(doc, registry, keys)?.schema ?? componentAt(registry, keys)?.schema ?? null;
+}
+
+/**
  * The ids a field's declaration says its values come from, in this document: a data section's field (card.data),
  * an instance param or an archetype component field; a list element refers through its list. -> { ref, ids } or null.
  * @param {unknown} doc @param {RegistryLike} registry @param {Key[]} keys
  */
 function allowedAt(doc, registry, keys) {
   for (const k of typeof keys.at(-1) === 'number' ? [keys, keys.slice(0, -1)] : [keys]) {
-    const spec = declaredAt(registry, doc, k) ?? locate(doc, registry, k)?.schema ?? componentAt(registry, k)?.schema;
+    const spec = specAt(doc, registry, k);
     const ref = referenceOf(registry, spec);
     const ids = ref ? [...new Set(idsAt(doc, ref))] : [];
     if (ref && ids.length) return { ref, ids };

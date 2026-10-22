@@ -763,11 +763,13 @@ export function formToDoc(form, { registry, skeleton, systems, sysCodecs, comps,
   if (content.dialogue) out.plot.dialogue = content.dialogue;
   if (content.quests) out.plot.quests = content.quests;
   for (const sec of sections) {
-    if (!sectionCodecs[sec]) continue;
-    const v = decode(f[`section_${sec.replace('.', '_')}`], sectionCodecs[sec]);
-    if (v === undefined || (Array.isArray(v) && !v.length) || (isObj(v) && !Object.keys(v).length)) continue;
     const [root, key] = sec.split('.');
     const target = root === 'plot' ? out.plot : root === 'content' ? out.content : null; // sections are plot.* or content.*
+    // A section no strict form asks (its declared shape has none: the type chart, a map with free keys) is not the
+    // model's to write: the scaffold's stays whole, as its pack gave it.
+    if (!sectionCodecs[sec]) { const kept = prop(prop(skeleton, root), key); if (target && kept !== undefined) target[key] = structuredClone(kept); continue; }
+    const v = decode(f[`section_${sec.replace('.', '_')}`], sectionCodecs[sec]);
+    if (v === undefined || (Array.isArray(v) && !v.length) || (isObj(v) && !Object.keys(v).length)) continue;
     if (target) target[key] = v;
   }
   const acts = listOf(f.acts).filter(isObj).map(a => ({ id: slug(a.id || a.title), title: String(a.title || a.id || ''), beats: listOf(a.beats).filter(isObj).map(b => {
