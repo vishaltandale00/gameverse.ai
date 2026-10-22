@@ -8,6 +8,7 @@
 // (spaces2d-tilenav.js) and powers path, reachable and canReach.
 import { cellStore, zoneIndex, zoneTracker, addZoneTo, inSpace, bodyOf, key2, unkey, mod, clamp, rectHas, rectArea, rectCenter, rectDist, boxAround, rectsOverlap, shapeHitsRect, rayRect, edgesParam, checkEdges, wrapDelta, BOUNDS_CAPS, zoneEditor, ownSpaces, obstacleOf, dynamicObstacle, obstaclesIn } from './spaces2d-lib.js';
 import { makeNav, DEFAULT_ABILITIES, navOptions } from './spaces2d-tilenav.js';
+import { SCENERY_PARAM } from './spaces2d-scenery.js';
 
 const EPS = 1e-4;
 const STICK = 0.5; // a rider stays on the entity it stands on if that entity rose at most this far (tiles) since the last slide
@@ -24,6 +25,7 @@ export default {
     frame: config => (config.mode === 'side' ? { up: 1, handed: 'right' } : { up: null, handed: 'right' }),
     needs: { content: ['cells'] },
     params: {
+      scenery: SCENERY_PARAM,
       tile: { type: 'integer', min: 8, max: 64, unit: 'px', default: 16, effect: 'pixels per tile (renderers)' },
       size: { type: 'list', of: { type: 'integer', min: 2, max: 4096 }, min: 2, max: 2, default: [64, 32], unit: 'tiles', scale: 'world', effect: 'map width and height' },
       mode: { type: 'string', options: ['side', 'topdown'], default: 'side', effect: 'side: gravity, platforms and slopes; topdown: walls, ledges and water' },

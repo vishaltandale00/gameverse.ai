@@ -4,6 +4,7 @@
 // slots: zones are slots such as hand, deck, table or office; e.at is the slot
 // an entity is in (or null). Order within a slot is entity insertion order.
 import { zoneIndex, zoneEditor, inSpace } from './spaces2d-lib.js';
+import { SCENERY_PARAM } from './spaces2d-scenery.js';
 
 export default {
   id: 'engine.space.none',
@@ -13,7 +14,7 @@ export default {
     // The coordinate frame (runtime-lib-frame.js): `up` the axis pointing up (null: a plane seen from above, the viewer
     // up), `handed` whether x, y, up (or x, y, toward the viewer) is a right- or left-handed frame.
     frame: null,
-    params: {},
+    params: { scenery: SCENERY_PARAM },
     provides: { capabilities: [], events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'zone_added', 'zone_removed', 'zone_moved'] },
     at: 'At = a slot (zone) id or null',
     zones: 'Zone = {id, name?, tags?} — a named slot',

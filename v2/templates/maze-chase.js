@@ -9,7 +9,7 @@ export default {
   concept: 'Maze chase: eat every pellet in a maze while hunters chase you; power pellets turn the hunters into prey.',
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'maze-chase', title: 'Maze Chase', seed: 3, views: { primary: 'td' },
-    spaces: [{ id: 'maze', use: 'engine.space.grid', with: { size: [28, 31], wrap: 'x', rules: { house_door: { pass: ['hunter'] } } },
+    spaces: [{ id: 'maze', use: 'engine.space.grid', with: { scenery: 'haunted', size: [28, 31], wrap: 'x', rules: { house_door: { pass: ['hunter'] } } },
       generators: [{ use: 'engine.generate.grid.maze', with: { size: 'classic', style: 'classic', density: 0.6 } }] }],
     systems: [
       { use: 'gameplay.move.grid', with: { mode: 'lane' } },
@@ -17,8 +17,8 @@ export default {
       { use: 'gameplay.ai.brain', with: { tick: 0.05, modeSchedule: { table: [[7, 20, 7, 20, 5, 20, 5, -1]] } } },
       { use: 'gameplay.death', with: { lives: 3, respawn: 'start', respawnSec: 1, invulnSec: 2, gameOver: lost } },
       { use: 'gameplay.collectible', with: { counters: [
-        { id: 'pellets', includes: ['power_pellets'], points: 10, clearsLevel: true, onComplete: won },
-        { id: 'power_pellets', points: 50, onCollect: HUNTERS.map(([archetype]) => ({ do: 'apply_status', status: 'frightened', archetype })) },
+        { id: 'pellets', name: 'Pellets', includes: ['power_pellets'], points: 10, clearsLevel: true, onComplete: won },
+        { id: 'power_pellets', name: 'Power pellets', points: 50, onCollect: HUNTERS.map(([archetype]) => ({ do: 'apply_status', status: 'frightened', archetype })) },
       ] } },
       { use: 'engine.spawner', with: { intervalSec: 0, rules: HUNTERS.map(([archetype, , at], i) => ({ id: `hunter_${i + 1}`, archetype, at, unique: true, activation: 'always', respawnSec: 0 })) } },
     ],
@@ -35,5 +35,5 @@ export default {
     },
     player: { archetype: 'hero' },
   },
-  tune: ['engine.generate.grid.maze.style', 'engine.generate.grid.maze.density', 'gameplay.death.lives'],
+  tune: ['engine.space.grid.scenery', 'engine.generate.grid.maze.style', 'engine.generate.grid.maze.density', 'gameplay.death.lives'],
 };

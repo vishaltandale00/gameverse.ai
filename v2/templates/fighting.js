@@ -16,7 +16,7 @@ export default {
     schema: 'gameverse.v2.game/0.2', id: 'fighting', title: 'Fighting', seed: 1,
     views: { primary: 'side' },
     // A two-screen stage on a floor slab (the kit's 920-unit standard width at 0.01 world units per fighting unit).
-    spaces: [{ id: 'stage', use: 'engine.space.arena2d', with: { size: [9.2, 6.5], solids: [[0, 0, 9.2, 0.5]] } }],
+    spaces: [{ id: 'stage', use: 'engine.space.arena2d', with: { scenery: 'city', size: [9.2, 6.5], solids: [[0, 0, 9.2, 0.5]] } }],
     systems: [
       { use: 'engine.input.motions', with: { buttons: ['attack', 'heavy'] } },
       { use: 'gameplay.combat.health', with: { iframes: 0, corpse: true, playerDeath: 'none' } },
@@ -46,5 +46,5 @@ export default {
     },
     player: { archetype: 'hero', at: [3, 1] },
   },
-  tune: ['gameplay.combat.versus.juggleMax', 'gameplay.combat.versus.counterHit', 'gameplay.combat.versus.chip'],
+  tune: ['engine.space.arena2d.scenery', 'gameplay.combat.versus.juggleMax', 'gameplay.combat.versus.counterHit', 'gameplay.combat.versus.chip'],
 };

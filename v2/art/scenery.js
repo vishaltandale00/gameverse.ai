@@ -18,6 +18,9 @@ const THEME_SKY = { cave: ['#0b0a12', '#1c1828', '#2a2438'], space: ['#04030c', 
 const FOLIAGE = { meadow: '#4a9e3a', forest: '#2a6a34', jungle: '#2a8a3a', snow: '#2a5a48', desert: '#5a9a4a', haunted: '#2a2238', volcano: '#2a1a1a', candy: '#ff6aa8', castle: '#3a6a3a' };
 const THEME_LAND = { meadow: '#4fae4a', forest: '#2f7a3a', desert: '#e0a85a', snow: '#e8f0fa', cave: '#3a3048', volcano: '#4a2420', city: '#3a4058', castle: '#5a6078', space: '#3a2a60', ocean: '#2a7ab8', jungle: '#2f8a3a', haunted: '#2a2440', factory: '#4a4a58', sky: '#ffffff', candy: '#ff7ab8' };
 
+/** The ground colour each theme's scenery paints (a top-down world's backdrop is its land, seen from above). */
+export const landOf = theme => THEME_LAND[theme] ?? null;
+
 /** A horizontal silhouette across the width: sum of seeded sine waves, optionally jagged. */
 function ridge(r, base, amp, { jag = false, freq = 1, step = 4 } = {}) {
   const waves = [0, 1, 2].map(i => ({ f: (0.012 + r() * 0.02) * (i + 1) * freq, a: amp / (i + 1.2), p: r() * 7 }));

@@ -26,7 +26,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'rts', title: 'RTS', seed: 1,
     views: { primary: 'td' },
-    spaces: [{ id: 'field', use: 'engine.space.grid', with: { size: [N, N] },
+    spaces: [{ id: 'field', use: 'engine.space.grid', with: { scenery: 'desert', size: [N, N] },
       generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', terrain: [{ block: 'rock', weight: 1, blocks: true }], density: 0.12, symmetry: 'rotate', teams: 2, deployDepth: 4 } }] }],
     systems: [
       { use: 'gameplay.combat.health', with: { iframes: 0 } },
@@ -45,5 +45,5 @@ export default {
       blocks: [{ id: 'rock', name: 'Rock', solid: true, tile: 'rock', color: '#8a8478' }],
     },
   },
-  tune: ['engine.generate.grid.board.symmetry'],
+  tune: ['engine.space.grid.scenery', 'engine.generate.grid.board.symmetry'],
 };

@@ -527,7 +527,7 @@ export default {
     rt.options(rt => {
       const s = st();
       if (config.steer !== 'player' || s.phase !== 'play' || !s.piece) return [];
-      return placements(s, B()).map(o => ({ label: `place ${types[s.piece.t].key} r${o.r} x${o.x}${o.ccw ? ' ccw' : ''}`, actions: { place: { r: o.r, x: o.x, ccw: o.ccw } } }));
+      return placements(s, B()).map(o => ({ label: `place ${types[s.piece.t].key} r${o.r} x${o.x}${o.ccw ? ' ccw' : ''}`, text: `Drop in column ${o.x + 1}${o.r ? `, turned ${o.r * 90}°` : ''}${o.ccw ? ' left' : ''}`, actions: { place: { r: o.r, x: o.x, ccw: o.ccw } } }));
     });
     function placements(s, b) {
       const out = [], seen = new Set(), p0 = s.piece;

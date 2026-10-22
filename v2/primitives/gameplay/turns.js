@@ -17,11 +17,12 @@
 import { ENTITY_KINDS } from '../../kernel/params.js';
 import { compare } from '../../kernel/logic.js';
 import { pushModal, popModal, withDefaults, alive, hpOf, matchesAny, sortedEntities, has, spaceOf, dist, clamp, err, runBound, cellKey, bindRoles } from './modes-lib-util.js';
+import { entityName, zoneName, listed, cellText } from '../engine/runtime-lib-names.js';
 
 const ID = 'gameplay.turns';
 const DEFAULT_SIDES = [{ id: 'player', control: 'player', members: ['player'] }, { id: 'enemy', control: 'ai', members: [] }];
 const ACTION_FIELDS = {
-  id: { type: 'string', required: true, reserved: ['move', 'overwatch', 'pass'] }, label: { type: 'string' }, cost: { type: 'integer', default: 1, min: 0, max: 99 },
+  id: { type: 'string', required: true, reserved: ['move', 'overwatch', 'pass'] }, label: { type: 'string', display: true, effect: 'what a person reads for the action' }, cost: { type: 'integer', default: 1, min: 0, max: 99 },
   range: { type: 'number', default: 1, min: 0, max: 1e6 }, minRange: { type: 'number', default: 0, min: 0, max: 1e6 },
   target: { type: 'string', options: ['unit', 'cell', 'self', 'none'], default: 'unit' }, hostile: { type: 'boolean', default: true },
   los: { type: 'boolean', default: true, effect: 'unit targets must be in line of sight when the space has los' },
@@ -34,8 +35,10 @@ const ACTION_FIELDS = {
   ai: { type: 'number', default: 1, min: 0, max: 100, effect: 'AI preference weight (0 = AI never uses it)' },
 };
 
-const SIDE_FIELDS = { id: { type: 'string', required: true }, control: { type: 'string', options: ['player', 'ai', 'external'], default: 'ai' }, members: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [] }, ai: { type: 'string', options: ['aggressive', 'random', 'pass'], default: 'aggressive' }, ap: { type: 'integer', min: 0, max: 99 } };
+const SIDE_FIELDS = { id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'what a person reads for the side (its turn, its win)' }, control: { type: 'string', options: ['player', 'ai', 'external'], default: 'ai' }, members: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [] }, ai: { type: 'string', options: ['aggressive', 'random', 'pass'], default: 'aggressive' }, ap: { type: 'integer', min: 0, max: 99 } };
 const TURN_VERBS = ['turn_act', 'turn_move', 'end_turn', 'next_phase', 'select_unit'];
+/** An option's text from a declared name (null: no text, the option-text test reports the missing name). */
+const said = (name, f) => { const t = name ? f(name) : null; return t ? { text: t } : {}; };
 /** Verbs other modes (cards...) add to the turn modal: registered at their install, read when a battle opens. */
 export const modalExtra = rt => [...(rt.caches['gameplay.turns:modal'] ??= new Set())];
 export const allowInTurnModal = (rt, verbs) => { const set = (rt.caches['gameplay.turns:modal'] ??= new Set()); for (const v of verbs) set.add(v); };
@@ -342,10 +345,11 @@ export default {
         if (a.when && !rt.test(bindRoles(a.when, { actor: id }), { self: id })) continue;
         const targets = targetsFor(s, id, a);
         if ((a.target === 'unit' || a.target === 'cell') && !targets.length) continue;
-        out.push({ id: a.id, label: a.label ?? a.id, cost: a.cost, target: a.target, targets, hit: a.target === 'unit' && a.hit ? Object.fromEntries(targets.map(t => [t, hitChance(id, t, a)])) : undefined });
+        // text: what a person reads for it (its declared label; null when it declares none).
+        out.push({ id: a.id, label: a.label ?? a.id, text: a.label ?? null, cost: a.cost, target: a.target, targets, hit: a.target === 'unit' && a.hit ? Object.fromEntries(targets.map(t => [t, hitChance(id, t, a)])) : undefined });
       }
-      if (config.movePerAp > 0 && u.ap > 0 && config.order !== 'simultaneous' && Array.isArray(rt.entity(id)?.at)) out.push({ id: 'move', label: 'move', cost: 1, target: 'cell', targets: [] });
-      if (config.overwatch && owAction && u.ap > 0 && !u.ow && config.order !== 'simultaneous') out.push({ id: 'overwatch', label: 'overwatch', cost: u.ap, target: 'none', targets: [] });
+      if (config.movePerAp > 0 && u.ap > 0 && config.order !== 'simultaneous' && Array.isArray(rt.entity(id)?.at)) out.push({ id: 'move', label: 'move', text: 'Move', cost: 1, target: 'cell', targets: [] });
+      if (config.overwatch && owAction && u.ap > 0 && !u.ow && config.order !== 'simultaneous') out.push({ id: 'overwatch', label: 'overwatch', text: 'Overwatch', cost: u.ap, target: 'none', targets: [] });
       return out;
     }
     const canAct = (s, id) => {
@@ -552,7 +556,7 @@ export default {
         const unit = s.current?.unit ?? s.selected ?? null;
         return { active: Boolean(s.active), mode: config.order, round: s.round, side: s.current?.side ?? null, unit, phase: config.phases[s.phase]?.id ?? null,
           ap: s.units[unit]?.ap ?? 0, apMax: s.units[unit]?.apMax ?? 0, winner: s.winner ?? null,
-          sides: config.sides.map(x => ({ id: x.id, control: x.control, units: Object.keys(s.units).sort().filter(id => s.units[id].side === x.id).map(id => ({ id, name: rt.entity(id)?.components.name ?? id, ap: s.units[id].ap, apMax: s.units[id].apMax, overwatch: s.units[id].ow, downed: s.units[id].downed, fallen: s.units[id].fallen })) })),
+          sides: config.sides.map(x => ({ id: x.id, name: x.name ?? null, control: x.control, units: Object.keys(s.units).sort().filter(id => s.units[id].side === x.id).map(id => ({ id, name: entityName(rt, id), ap: s.units[id].ap, apMax: s.units[id].apMax, overwatch: s.units[id].ow, downed: s.units[id].downed, fallen: s.units[id].fallen })) })),
           legal: unit && control(s.units[unit]?.side) === 'player' ? legal(s, unit) : [] };
       },
     };
@@ -606,9 +610,9 @@ export default {
               .map(q => ({ q, d: Math.min(...foes.map(f => dist(rt, { ...e, at: q }, f)), 1e9) })).sort((a, b) => a.d - b.d || cellKey(a.q).localeCompare(cellKey(b.q)));
             const cells = [];
             for (const x of near) { if (cells.length >= 8) break; if (!planMove(s, uid, x.q).reason) cells.push(x); }
-            for (const { q } of cells) moves[k].push({ label: `${uid} move ${cellKey(q)}`, actions: { turn_move: { unit: uid, to: q } } });
-          } else if (l.targets.length) for (const t of l.targets.slice(0, 8)) acts.push({ label: `${uid} ${l.id} ${Array.isArray(t) ? cellKey(t) : t}`, actions: { turn_act: { unit: uid, action: l.id, target: t } } });
-          else acts.push({ label: `${uid} ${l.id}`, actions: { turn_act: { unit: uid, action: l.id } } });
+            for (const { q } of cells) moves[k].push({ label: `${uid} move ${cellKey(q)}`, ...said(entityName(rt, uid), n => `Move ${n} to ${cellText(q)}`), actions: { turn_move: { unit: uid, to: q } } });
+          } else if (l.targets.length) for (const t of l.targets.slice(0, 8)) acts.push({ label: `${uid} ${l.id} ${Array.isArray(t) ? cellKey(t) : t}`, ...said(l.text && entityName(rt, uid), n => { const on = Array.isArray(t) ? cellText(t) : entityName(rt, t); return on ? `${n}: ${l.text} ${on}` : null; }), actions: { turn_act: { unit: uid, action: l.id, target: t } } });
+          else acts.push({ label: `${uid} ${l.id}`, ...said(l.text && entityName(rt, uid), n => `${n}: ${l.text}`), actions: { turn_act: { unit: uid, action: l.id } } });
         }
       });
       const out = [...acts, { label: 'end turn', text: 'End turn', actions: { end_turn: true } }];

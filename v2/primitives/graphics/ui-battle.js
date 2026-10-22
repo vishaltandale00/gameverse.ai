@@ -69,7 +69,10 @@ export default {
 
     rt.on('battle_message', e => say(e.text));
     rt.on('battle_log', e => { if (e.text) say(e.text); });
-    rt.on('turn_start', e => { if (view?.source === 'turns') say(e.side && view.sides.find(s => s.id === e.side)?.player ? 'Your turn.' : `${titleCase(e.side || e.who || 'Enemy')}'s turn.`); });
+    // A side's turn by its declared name (turns sides[].name); a side with none is 'Their turn.' (never its id).
+    // A status by its declared name (content.statuses), else the battle's own word for it (a creature battle's status kinds).
+    const statusName = x => { const d = rt.doc.content?.statuses?.find?.(y => y.id === x); return d ? d.name || '' : titleCase(x); };
+    rt.on('turn_start', e => { if (view?.source !== 'turns') return; const side = view.sides.find(s => s.id === e.side); say(side?.player ? 'Your turn.' : side?.name ? `${side.name}: their turn.` : 'Their turn.'); });
     rt.on('battle_end', e => say(e.outcome === 'won' || e.outcome === 'win' ? 'You won the battle!' : e.outcome === 'lost' ? 'You were defeated…' : 'The battle is over.'));
     rt.on('damaged', e => { const n = unitNodes.get(e.who); if (n) pulse(n, 'is-hit'); });
     function say(text) { if (!text) return; messages.push(String(text)); if (!machine.open || machine.phase === 'waiting') nextMessage(); }
@@ -108,7 +111,7 @@ export default {
       if (!mine) { fill(menu, el('p.gv-dim', { text: view?.turn && view.turn !== 'player' ? 'Waiting…' : '' })); items = []; return; }
       if (cats.length === 1 && !cats[0].direct) { level = 'items'; cat = cats[0].id; }
       if (level === 'root') items = cats.map(c => btn(c.label, () => (c.direct ? choose(c.items[0]) : (level = 'items', cat = c.id, lastMenuSig = '', index = 0, paintMenu()))));
-      else items = (cats.find(c => c.id === cat)?.items || []).map(it => btn(it.text || it.label || titleCase(it.id), () => choose(it), { disabled: it.enabled === false, type: it.type, sub: [isNum(it.pp) ? `PP ${it.pp}/${it.ppMax ?? it.pp}` : '', isNum(it.cost) && it.cost ? `${it.cost} AP` : '', isNum(it.count) ? `×${it.count}` : '', it.hit ? `${Math.round(Object.values(it.hit)[0])}% hit` : ''].filter(Boolean).join(' · ') }));
+      else items = (cats.find(c => c.id === cat)?.items || []).map(it => btn(it.text || it.label || '', () => choose(it), { disabled: it.enabled === false, type: it.type, sub: [isNum(it.pp) ? `PP ${it.pp}/${it.ppMax ?? it.pp}` : '', isNum(it.cost) && it.cost ? `${it.cost} AP` : '', isNum(it.count) ? `×${it.count}` : '', it.hit ? `${Math.round(Object.values(it.hit)[0])}% hit` : ''].filter(Boolean).join(' · ') }));
       if (S.canAct(rt, 'end_turn') && view.source === 'turns') items.push(btn('End turn', () => { rt.view.act({ end_turn: true }); host.sound('confirm'); }));
       index = clamp(index, 0, items.length - 1);
       fill(menu, ...items); focusMenu();
@@ -129,7 +132,7 @@ export default {
       for (const s of view.sides) for (const u of s.units) {
         const n = unitNodes.get(u.id); if (!n) continue;
         const frac = clamp((u.hp ?? 0) / (u.hpMax || 1), 0, 1);
-        setText(n.querySelector('.gv-bname'), u.name || titleCase(u.id));
+        setText(n.querySelector('.gv-bname'), u.name || '');
         setText(n.querySelector('.gv-bcard-lv'), config.showLevels && isNum(u.level) ? `Lv ${u.level}` : isNum(u.ap) ? `AP ${u.ap}/${u.apMax ?? u.ap}` : '');
         const fillEl = n.querySelector('.gv-meter-fill'), chip = n.querySelector('.gv-meter-chip');
         setStyle(fillEl, 'transform', `scaleX(${frac.toFixed(4)})`); setStyle(chip, 'transform', `scaleX(${frac.toFixed(4)})`);
@@ -137,7 +140,7 @@ export default {
         setText(n.querySelector('.gv-meter-value'), `${fmtInt(u.hp)}/${fmtInt(u.hpMax)}`);
         const st = n.querySelector('.gv-bcard-status');
         const statusList = u.status || S.statuses(rt, rt.entity(u.id)).map(x => x.id);
-        if (st.getAttribute('data-sig') !== String(statusList)) { st.setAttribute('data-sig', String(statusList)); fill(st, ...statusList.map(x => el('span.gv-type', { text: String(x).slice(0, 3), title: titleCase(x), style: { '--t': TYPE_COLOR[x] || '#c8b0ff' } }))); }
+        if (st.getAttribute('data-sig') !== String(statusList)) { st.setAttribute('data-sig', String(statusList)); fill(st, ...statusList.map(x => el('span.gv-type', { text: statusName(x).slice(0, 3), title: statusName(x), style: { '--t': TYPE_COLOR[x] || '#c8b0ff' } }))); }
         setClass(n, 'is-active', Boolean(u.active)); setClass(n, 'is-down', Boolean(u.down) || (u.hp ?? 1) <= 0);
       }
     }

@@ -7,6 +7,7 @@
 // cover and opacity (tactics). settle() is column gravity for falling and
 // match puzzles. Tactics, puzzle, maze and ARC-style games all live here.
 import { cellStore, zoneIndex, zoneTracker, zoneEditor, ownSpaces, obstacleOf, dynamicObstacle, inSpace, key2, unkey, mod, astar, Heap, shapeHitsRect, BOUNDS_CAPS } from './spaces2d-lib.js';
+import { SCENERY_PARAM } from './spaces2d-scenery.js';
 
 const SQ = { up: [0, 1], down: [0, -1], left: [-1, 0], right: [1, 0], 'up-left': [-1, 1], 'up-right': [1, 1], 'down-left': [-1, -1], 'down-right': [1, -1] };
 // odd-r hex neighbours: [dc, dr] for even and odd rows; names assume +row is "north".
@@ -26,6 +27,7 @@ export default {
     frame: config => ({ up: null, handed: config.yAxis === 'down' ? 'left' : 'right' }),
     needs: { content: ['cells'] },
     params: {
+      scenery: SCENERY_PARAM,
       topology: { type: 'string', options: ['square', 'hex', 'iso'], default: 'square', effect: 'square, hex (odd-r offset rows) or iso (square logic, diamond projection)' },
       size: { type: 'list', of: { type: 'integer', min: 1, max: 512 }, min: 2, max: 2, default: [8, 8], unit: 'cells', scale: 'world', effect: 'columns and rows' },
       diagonals: { type: 'boolean', default: false, effect: 'square/iso: 8-way moves (no corner cutting past impassable cells)' },

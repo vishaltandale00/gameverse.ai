@@ -11,7 +11,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'match-board', title: 'Match Board', seed: 5,
     views: { primary: 'board' },
-    spaces: [{ id: 'board', use: 'engine.space.grid', with: { size: [8, 8] },
+    spaces: [{ id: 'board', use: 'engine.space.grid', with: { scenery: 'candy', size: [8, 8] },
       generators: [{ use: 'engine.generate.grid.board', with: { kind: 'match', fill: GEMS.map(([piece]) => ({ piece })), fillNoMatch: true, matchLength: 3, ensureMove: true } }] }],
     systems: [
       { use: 'gameplay.match', with: { board: { name: 'gems', at: [0, 0], size: [8, 8], axes: [0, 1], fall: -1 }, rule: 'line', min: 3, colors: GEMS.map(([c]) => c), specials: true, scoring: 'match3', moves: 20, onOutOfMoves: [{ do: 'end_game', outcome: 'lost' }] } },
@@ -23,5 +23,5 @@ export default {
     },
     plot: { endings: [{ id: 'target_score', title: 'Target reached', epilogue: 'The board sparkles: target score reached.', outcome: 'won', when: { var: 'score', gte: 15000 } }] },
   },
-  tune: ['gameplay.match.swapFrames'],
+  tune: ['engine.space.grid.scenery', 'gameplay.match.swapFrames'],
 };

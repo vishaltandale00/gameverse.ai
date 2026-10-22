@@ -9,6 +9,7 @@
 import { uiHost, fill, setClass, setText, titleCase } from './ui-lib.js';
 import { unclaimedChoices, verbInstances, actionSpaceOf, declaredDenials, deniesPlayer, uiControls } from '../engine/runtime-lib-controls.js';
 import { INTERACTIONS } from '../gameplay/modes-lib-mode.js';
+import { entityName, listed } from '../engine/runtime-lib-names.js';
 
 /** The choice verbs this primitive issues in a document: the loops' choice verbs no other mounted UI names. */
 export const servedVerbs = (doc, registry) => unclaimedChoices(doc, registry);
@@ -44,24 +45,27 @@ export function choiceEntries(options, served, pick = {}) {
   return out;
 }
 
-/** The text an option shows: its label, else its verbs and scalar values. */
-export const entryLabel = o => o.text || o.label || Object.entries(o.actions || {}).map(([v, x]) => `${titleCase(v)}${typeof x === 'object' ? '' : ` ${x}`}`).join(' ');
+/** The text an option shows: the text its primitive writes with the document's names (never its label, the solvers' key). */
+export const entryLabel = o => o.text || '';
 
 /**
  * The rows the panel shows for the options offered now, with `group` open (null: the top level): a row per group (the
  * units that have moves, the pieces that can be built) and per ungrouped option at the top level, and inside a group
- * Back then the group's options. Pure, for tests.
+ * Back then the group's options. A group row reads as what its value names (nameOf: the units' names). Pure, for tests.
  * @returns {Array<{ text: string, kind: 'group' | 'option' | 'back', group?: string, field?: string | null, value?: unknown, actions?: Record<string, unknown> }>}
  */
-export function panelRows(options, served, pick, group = null, { wholeOptions = true } = {}) {
+export function panelRows(options, served, pick, group = null, { wholeOptions = true, nameOf = String } = {}) {
   const entries = choiceEntries(options, served, pick);
   const groups = [...new Map(entries.filter(e => e.group !== null).map(e => [e.group, e])).entries()];
   if (group !== null && !groups.some(([g]) => g === group)) group = null;
   return group === null
-    ? [...groups.map(([g, e]) => ({ text: titleCase(g), kind: /** @type {const} */ ('group'), group: g, field: e.field, value: e.value })),
+    ? [...groups.map(([g, e]) => ({ text: nameOf(e.value), kind: /** @type {const} */ ('group'), group: g, field: e.field, value: e.value })),
       ...entries.filter(e => e.group === null && wholeOptions).map(e => ({ text: entryLabel(e.option), kind: /** @type {const} */ ('option'), actions: e.option.actions }))]
     : [{ text: '‹ Back', kind: /** @type {const} */ ('back') }, ...entries.filter(e => e.group === group).map(e => ({ text: entryLabel(e.option), kind: /** @type {const} */ ('option'), actions: e.option.actions }))];
 }
+
+/** What a group (a choice's pick value: a unit, a set of units) reads as: the declared names of the entities it names. @param {any} rt */
+export const groupNameOf = rt => v => listed((Array.isArray(v) ? v : [v]).map(x => entityName(rt, String(x))).filter(Boolean));
 
 /** The rows of one page of at most `max` buttons: when they do not fit, the last button pages on (More, wrapping). */
 export function pageOf(rows, page, max) {
@@ -95,7 +99,10 @@ export default {
     let refused = null;
     for (const ev of declaredDenials(rt.doc, rt.registry)) rt.on(ev, e => { if (deniesPlayer(rt, e)) { refused = { text: `${titleCase(ev)}${e.reason ? `: ${titleCase(e.reason)}` : ''}`, until: host.now() + 3 }; sig = ''; } });
     host.layer('hud').append(root);
-    let group = null, page = 0, shown = [], sig = '';
+    let group = null, groupValue = null, page = 0, shown = [], sig = '';
+    // What a group (the value of a choice's declared pick field: a unit, a set of units) reads as: the names the
+    // document declares for the entities it names (never their ids).
+    const groupName = groupNameOf(rt);
     const bound = rt.hasService?.('input') ? Object.values(rt.service('input').bindings()).flat() : [];
     const digitsFree = !bound.some(k => /^[1-9]$/.test(k) || /^\d-\d$/.test(k));
     const reset = () => { sig = ''; };
@@ -110,7 +117,7 @@ export default {
     const listedElsewhere = uiControls(rt.doc, rt.registry).options.some(u => u !== 'graphics.ui.choices');
     // Choosing a group (a unit) also issues the verb that selects it, when the document has one (card.actionSpace selects).
     const run = r => {
-      if (r.kind === 'group') { group = r.group; page = 0; if (selects[r.field] && served.includes(selects[r.field])) rt.view.act({ [selects[r.field]]: r.value }); }
+      if (r.kind === 'group') { group = r.group; groupValue = r.value; page = 0; if (selects[r.field] && served.includes(selects[r.field])) rt.view.act({ [selects[r.field]]: r.value }); }
       else if (r.kind === 'back') { group = null; page = 0; }
       else if (r.kind === 'more') page++;
       else { rt.view.act(r.actions); group = null; page = 0; }
@@ -118,14 +125,14 @@ export default {
     };
     function paint() {
       const options = rt.state.status === 'playing' ? rt.availableOptions() : [];
-      const all = panelRows(options, served, pick, group, { wholeOptions: !listedElsewhere });
+      const all = panelRows(options, served, pick, group, { wholeOptions: !listedElsewhere, nameOf: groupName });
       if (group !== null && all[0]?.kind !== 'back') group = null; // the open group has nothing left to choose
       const { rows, page: p } = pageOf(all, page, config.max); page = p;
       if (refused && host.now() > refused.until) refused = null;
       setClass(root, 'gv-hide', !rows.length && !refused);
       const key = JSON.stringify([group, page, rows.map(r => r.text), refused?.text ?? null]);
       if (key === sig) return; sig = key;
-      setText(head, group === null ? 'Choose' : titleCase(group));
+      setText(head, group === null ? 'Choose' : groupName(groupValue ?? group));
       setText(note, refused?.text ?? ''); setClass(note, 'gv-hide', !refused);
       shown = rows.map((r, i) => {
         const b = el('button.gv-btn', { attrs: { type: 'button' }, text: `${digitsFree && i < 9 ? `${i + 1}. ` : ''}${r.text}` });

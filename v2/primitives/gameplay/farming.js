@@ -166,8 +166,9 @@ export default {
       const out = [];
       for (const plot of Object.values(st().plots).sort((a, b) => (a.at.join() < b.at.join() ? -1 : 1))) {
         if (plot.space !== rt.player()?.space) continue;
-        if (plot.ripe) out.push({ label: `harvest ${plot.crop} at ${plot.at.join(',')}`, actions: { harvest: { cell: plot.at } } });
-        else if (!plot.watered && byItem.get(plot.crop).water) out.push({ label: `water ${plot.crop} at ${plot.at.join(',')}`, actions: { water: { cell: plot.at } } });
+        const crop = itemDef(rt, plot.crop)?.name, at = plot.at.slice(0, 2).join(', ');
+        if (plot.ripe) out.push({ label: `harvest ${plot.crop} at ${plot.at.join(',')}`, ...(crop ? { text: `Harvest the ${crop} at ${at}` } : {}), actions: { harvest: { cell: plot.at } } });
+        else if (!plot.watered && byItem.get(plot.crop).water) out.push({ label: `water ${plot.crop} at ${plot.at.join(',')}`, ...(crop ? { text: `Water the ${crop} at ${at}` } : {}), actions: { water: { cell: plot.at } } });
       }
       return out.slice(0, 8);
     });

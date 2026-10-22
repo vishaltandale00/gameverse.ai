@@ -1,6 +1,7 @@
 // Locations and connections as a graph: adventure, narrative, board and
 // management games, world maps, or the "macro" layer above other spaces.
 // Zones are nodes; exits are edges, optionally gated by a predicate.
+import { SCENERY_PARAM } from './spaces2d-scenery.js';
 export default {
   id: 'engine.space.graph',
   card: {
@@ -16,7 +17,7 @@ export default {
       name: { type: 'string' }, description: { type: 'string' }, tags: { type: 'list', of: { type: 'string' } },
       exits: { type: 'list', of: { type: 'object', fields: { to: { type: 'ref', to: 'zone', required: true }, gate: { type: 'predicate' } } } },
     },
-    params: {},
+    params: { scenery: SCENERY_PARAM },
     provides: { capabilities: ['position', 'distance', 'navigate', 'reachable'], events: ['enter_zone', 'leave_zone', 'enter_zone:*', 'leave_zone:*', 'blocked'], actions: ['go'] },
     reads: [],
   },

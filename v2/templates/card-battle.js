@@ -5,7 +5,7 @@
 // before it acts. Hit points carry over from battle to battle, and each won battle offers a choice of one of three new
 // cards for the deck. Losing all hit points loses; beating the boss wins.
 const won = [{ do: 'end_game', outcome: 'won' }], lost = [{ do: 'end_game', outcome: 'lost' }];
-const STAGES = [['first_fight', 'slime'], ['second_fight', 'cultist'], ['boss_fight', 'guardian']];
+const STAGES = [['first_fight', 'slime', 'First fight'], ['second_fight', 'cultist', 'Second fight'], ['boss_fight', 'guardian', 'Boss fight']];
 const FOES = STAGES.map(([, archetype]) => archetype);
 const card = (id, name, type, cost, target, effects) => ({ id, name, type, cost, target, effects });
 
@@ -15,15 +15,15 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'card-battle', title: 'Card Battle', seed: 1,
     views: { primary: 'ui' },
-    spaces: [{ id: 'table', use: 'engine.space.none', zones: [{ id: 'hand', name: 'Hand' }, { id: 'arena', name: 'Arena' }] }],
+    spaces: [{ id: 'table', use: 'engine.space.none', with: { scenery: 'castle' }, zones: [{ id: 'hand', name: 'Hand' }, { id: 'arena', name: 'Arena' }] }],
     systems: [
       { use: 'gameplay.combat.health', with: { iframes: 0 } },
       // Each stage puts its foe in the arena (removing the last one) and starts a battle; a won battle clears the stage.
-      { use: 'gameplay.stage.sequence', with: { introSec: 1, clearSec: 1, stages: STAGES.map(([id, archetype], i) => ({
-        id, spawn: [{ archetype, id: archetype, zone: 'arena' }], clearOut: FOES.filter((_, k) => k < i),
+      { use: 'gameplay.stage.sequence', with: { introSec: 1, clearSec: 1, stages: STAGES.map(([id, archetype, name], i) => ({
+        id, name, spawn: [{ archetype, id: archetype, zone: 'arena' }], clearOut: FOES.filter((_, k) => k < i),
         onStart: [{ do: 'start_turns' }], clear: { turn: true, state: 'over', winner: 'player' } })), onComplete: won } },
       { use: 'gameplay.turns', with: { actions: [], overwatch: false, movePerAp: 0, autoStart: false,
-        sides: [{ id: 'player', control: 'player', members: ['player'] }, { id: 'foes', control: 'external', members: FOES }], onDefeat: lost } },
+        sides: [{ id: 'player', name: 'You', control: 'player', members: ['player'] }, { id: 'foes', name: 'Foes', control: 'external', members: FOES }], onDefeat: lost } },
       { use: 'gameplay.cards', with: { format: 'roguelike', energy: 3, handSize: 5,
         deck: ['strike', 'strike', 'strike', 'strike', 'strike', 'defend', 'defend', 'defend', 'defend', 'bash'],
         rewards: { choices: 3, pool: ['heavy_blow', 'cleave', 'shrug', 'inflame', 'quick_slash'] } } },
@@ -48,5 +48,5 @@ export default {
     },
     player: { archetype: 'hero', at: 'hand' },
   },
-  tune: ['gameplay.stage.sequence.introSec', 'gameplay.stage.sequence.clearSec'],
+  tune: ['engine.space.none.scenery', 'gameplay.stage.sequence.introSec', 'gameplay.stage.sequence.clearSec'],
 };

@@ -147,9 +147,9 @@ export default {
       const out = [], n = 9;
       for (let i = 0; i < n; i++) {
         const aim = config.aim[0] + (config.aim[1] - config.aim[0]) * i / (n - 1);
-        if (config.mode !== 'sling') { out.push({ label: `fire aim ${aim.toFixed(2)}`, actions: { aim, fire: true } }); continue; }
+        if (config.mode !== 'sling') { out.push({ label: `fire aim ${aim.toFixed(2)}`, text: `Fire at ${Math.round(aim * 180 / Math.PI)}°`, actions: { aim, fire: true } }); continue; }
         const dir = rotate(config.forward, aim);
-        for (const power of [0.6, 0.8, 1]) out.push({ label: `pull aim ${aim.toFixed(2)} power ${power}`, actions: { pull: [-dir[0] * power * config.maxPull, -dir[1] * power * config.maxPull], fire: true } });
+        for (const power of [0.6, 0.8, 1]) out.push({ label: `pull aim ${aim.toFixed(2)} power ${power}`, text: `Launch at ${Math.round(aim * 180 / Math.PI)}°, ${Math.round(power * 100)}% power`, actions: { pull: [-dir[0] * power * config.maxPull, -dir[1] * power * config.maxPull], fire: true } });
       }
       return out;
     });

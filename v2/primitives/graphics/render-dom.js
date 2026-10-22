@@ -57,7 +57,7 @@ export default {
       // auto: the time of day the zone declares (its `time`, or a tag naming one), never words in its name or text.
       const time = config.time !== 'auto' ? config.time : [zone?.time, ...(zone?.tags || [])].find(t => TIMES.includes(t)) || 'day';
       const paint = (z, a) => {
-        const img = sceneryImage({ theme: themeFor(F.doc, z), time }, false, `${F.doc.id}|${z?.id || ''}`);
+        const img = themeFor(F.doc, space) && sceneryImage({ theme: themeFor(F.doc, space), time }, false, `${F.doc.id}|${z?.id || ''}`);
         if (!img) { g.fillStyle = '#1a1622'; g.fillRect(0, 0, F.w, F.h); return; }
         const s = Math.max(F.w / 384, F.h / 256), w = 384 * s, h = 256 * s, drift = Math.sin(F.t * 0.05) * 6;
         g.globalAlpha = a; g.drawImage(img.img, (F.w - w) / 2 + drift, (F.h - h) / 2, w, h); g.globalAlpha = 1;

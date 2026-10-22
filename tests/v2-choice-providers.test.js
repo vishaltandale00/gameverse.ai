@@ -15,7 +15,7 @@ import { TEMPLATES } from '../v2/templates/registry.js';
 import { hostPreflight, controlledMaker } from '../v2/verify/controls.js';
 import { createWorld, KERNEL_EVENTS } from '../v2/kernel/world.js';
 import { choiceDeclarationProblems, choiceValues, instanceVerbs, verbInstances, actionSpaceOf, specControl } from '../v2/primitives/engine/runtime-lib-controls.js';
-import { panelRows, pageOf, picksOf, servedVerbs } from '../v2/primitives/graphics/ui-choices.js';
+import { panelRows, pageOf, picksOf, servedVerbs, groupNameOf } from '../v2/primitives/graphics/ui-choices.js';
 import { createDocument } from './v2-p-ui-dom.js';
 import { FIXTURES } from './v2-choice-fixtures.js';
 
@@ -104,13 +104,13 @@ function viaPanel(card, verb, c, host, idled) {
   const want = choiceValues(rt, verb, 1)[0]; if (!want) return { ok: false, why: 'no value in the mounted world' };
   const buttons = () => container.querySelectorAll('.gv-choice-panel .gv-btn');
   // The rows on screen, as the panel builds them: open the value's group first, then page until its row shows.
-  const rows = panelRows(rt.availableOptions(), served, pick, null);
-  const target = rows.find(r => r.kind === 'option' && r.actions?.[verb] !== undefined) ?? rows.find(r => r.kind === 'group' && (same(want.actions[verb], r.value) || panelRows(rt.availableOptions(), served, pick, r.group).some(x => x.actions?.[verb] !== undefined)));
+  const nameOf = groupNameOf(rt), rows = panelRows(rt.availableOptions(), served, pick, null, { nameOf });
+  const target = rows.find(r => r.kind === 'option' && r.actions?.[verb] !== undefined) ?? rows.find(r => r.kind === 'group' && (same(want.actions[verb], r.value) || panelRows(rt.availableOptions(), served, pick, r.group, { nameOf }).some(x => x.actions?.[verb] !== undefined)));
   if (!target) return { ok: false, why: 'the panel lists no row for it' };
   const click = text => { for (let k = 0; k < 20; k++) { const b = buttons().find(x => x.textContent.endsWith(text)); if (b) { b.click(); paint(); return true; } const more = buttons().find(x => x.textContent.includes('More ›')); if (!more) return false; more.click(); paint(); } return false; };
   if (!click(target.text)) return { ok: false, why: `no button '${target.text}' on any page` };
   if (target.kind === 'group' && !pending.some(a => a[verb] !== undefined)) {
-    const inner = panelRows(rt.availableOptions(), served, pick, target.group).find(r => r.kind === 'option' && r.actions?.[verb] !== undefined);
+    const inner = panelRows(rt.availableOptions(), served, pick, target.group, { nameOf }).find(r => r.kind === 'option' && r.actions?.[verb] !== undefined);
     if (!inner || !click(inner.text)) return { ok: false, why: `group '${target.group}' shows no button for it` };
   }
   if (!pending.some(a => a[verb] !== undefined)) return { ok: false, why: 'clicking sent no value for it' };

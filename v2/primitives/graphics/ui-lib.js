@@ -176,9 +176,12 @@ function injectStyles(doc) {
 export const docCharacter = (doc, id) => doc.plot?.characters?.find(c => c.id === id);
 export const docItem = (doc, id) => doc.content?.items?.find(i => i.id === id);
 export const docZone = (doc, id) => { for (const s of doc.spaces || []) { const z = (s.zones || []).find(x => x.id === id); if (z) return { ...z, space: s.id }; } return null; };
-export const charName = (doc, id) => id === 'player' ? (docCharacter(doc, doc.player?.archetype)?.name || 'You') : (docCharacter(doc, id)?.name || titleCase(id));
-export const itemName = (doc, id) => docItem(doc, id)?.name || titleCase(id);
-export const zoneName = (doc, id) => docZone(doc, id)?.name || titleCase(id);
+// What a person reads for an entry: the name the document declares for it, '' when it declares none (never its id,
+// title-cased or not: tests/v2-option-text.test.js). The player is 'You' unless its character or archetype is named.
+const archName = (doc, id) => doc.content?.archetypes?.find(a => a.id === id)?.name || '';
+export const charName = (doc, id) => id === 'player' ? (docCharacter(doc, doc.player?.archetype)?.name || archName(doc, doc.player?.archetype) || 'You') : (docCharacter(doc, id)?.name || archName(doc, id));
+export const itemName = (doc, id) => docItem(doc, id)?.name || '';
+export const zoneName = (doc, id) => docZone(doc, id)?.name || '';
 /**
  * What the document's primitives tell a person as their events fire (card.tells, declared by the event's owner):
  * [{ use, event, label, entry?: { at, by }, detail? }], one per instance's card, in document order.
@@ -197,7 +200,7 @@ export function tellWords(doc, tell, data) {
   if (!tell.entry) return { label: tell.label, title: '', detail: '' };
   const id = data?.[tell.entry.by], list = tell.entry.at.split('.').reduce((o, k) => o?.[k], doc);
   const e = Array.isArray(list) ? list.find(x => x?.id === id) : null;
-  return { label: tell.label, title: e?.title || e?.name || titleCase(id), detail: tell.detail && typeof e?.[tell.detail] === 'string' ? e[tell.detail] : '' };
+  return { label: tell.label, title: e?.title || e?.name || '', detail: tell.detail && typeof e?.[tell.detail] === 'string' ? e[tell.detail] : '' };
 }
 /** The document instance of a system primitive (first match), for reading its configuration. */
 export const docSystem = (doc, use) => (doc.systems || []).find(s => s.use === use || s.use.startsWith(use + '.'));

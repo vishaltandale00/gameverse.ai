@@ -50,6 +50,9 @@ export function curves(seed, { curvature = 1, hills = 1, period = 0 } = {}) {
 }
 const mod = (a, n) => ((a % n) + n) % n;
 
+/** The roadside dressing (this renderer's `scenery` values) of every scenery theme a space can declare. */
+export const ROADSIDE = Object.freeze({ meadow: 'forest', forest: 'forest', jungle: 'forest', desert: 'desert', snow: 'snow', cave: 'none', volcano: 'desert', city: 'city', castle: 'city', space: 'space', ocean: 'none', haunted: 'forest', factory: 'city', sky: 'none', candy: 'forest' });
+
 export default {
   id: 'graphics.render.track',
   card: {
@@ -86,7 +89,10 @@ export default {
     // cam.lap: whole laps added to the leader's progress so the camera runs on across the start line (looped tracks).
     const cam = { x: null, h: null, last: null, lap: 0 };
     let view = null;
-    const themeName = () => (config.scenery !== 'auto' ? config.scenery : (() => { const t = themeFor(rt.doc); return ['city', 'factory'].includes(t) ? 'city' : ['forest', 'jungle', 'meadow'].includes(t) ? 'forest' : ['desert'].includes(t) ? 'desert' : ['space'].includes(t) ? 'space' : ['snow'].includes(t) ? 'snow' : 'city'; })());
+    // The roadside dressing each declared scenery theme (the track space's `scenery`, engine/spaces2d-scenery.js) is
+    // drawn with; a track that declares none is dressed with nothing. config.scenery other than 'auto' overrides it.
+    const sky = () => themeFor(rt.doc, space);
+    const themeName = () => (config.scenery !== 'auto' ? config.scenery : ROADSIDE[sky()] || 'none');
     S.renderer = {
       camera() {},
       transform(F, shake) {
@@ -142,7 +148,7 @@ export default {
       const haze = scen === 'space' ? '#1a1440' : night ? '#2a3058' : scen === 'desert' ? '#f0d0a0' : scen === 'snow' ? '#e8f0f8' : '#c8dcf0';
       const ground = config.groundColor ? col(config.groundColor) : { city: '#6a6a70', forest: '#4a8a3a', desert: '#d8a860', space: '#2a2440', snow: '#e8eef6', none: '#5a5a60' }[scen] || '#5a7a4a';
       // Sky: painted scenery slid by the heading, or a gradient.
-      const img = sceneryImage({ theme: scen === 'none' ? 'meadow' : scen === 'forest' ? 'forest' : scen, time: night ? 'night' : 'day' }, F.style === 'pixel', rt.doc.id);
+      const painted = sky(), img = painted && sceneryImage({ theme: painted, time: night ? 'night' : 'day' }, F.style === 'pixel', rt.doc.id);
       const hz = v.proj(0, 0, v.zc + FAR)?.[1] ?? v.horizon;
       if (img) { const ih = hz + F.h * 0.12, iw = ih * 1.5, off = ((-v.heading * 900 + v.zc * 0.4) % iw + iw) % iw; for (let x = -off; x < F.w; x += iw) g.drawImage(img.img, x, hz + F.h * 0.06 - ih, iw, ih); }
       else if (g.createLinearGradient) { const gr = g.createLinearGradient(0, 0, 0, hz); gr.addColorStop(0, night ? '#0a0c24' : '#4a8ae0'); gr.addColorStop(1, haze); g.fillStyle = gr; g.fillRect(0, 0, F.w, hz + 2); }

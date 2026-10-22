@@ -8,6 +8,7 @@
 // edits in before each step and results out after, and reports contacts.
 import { createWorld, addBody, addArc, addChain, removeBody, wake, bodyIndex, applyImpulse, addDistanceJoint, addRevoluteJoint, stepWorld, raycastWorld, queryShape, depenetrate, containsPoint, aabbOf } from './spaces2d-rigid.js';
 import { zoneIndex, zoneTracker, zoneEditor, obstacleOf, inSpace, bodyOf, rectHas, rectArea, rectCenter, rectDist, edgesParam, checkEdges, wrapDelta, mod, BOUNDS_CAPS } from './spaces2d-lib.js';
+import { SCENERY_PARAM } from './spaces2d-scenery.js';
 
 const SHAPES = ['circle', 'box', 'poly', 'seg'];
 const WALL_KINDS = ['box', 'circle', 'poly', 'seg', 'arc', 'chain'];
@@ -28,6 +29,7 @@ export default {
     frame: config => { const g = config.gravity || [0, 0], i = Math.abs(g[1] ?? 0) >= Math.abs(g[0] ?? 0) ? 1 : 0; return g[i] ? { up: i, handed: 'right' } : { up: null, handed: 'right' }; },
     needs: { content: ['structures'] },
     params: {
+      scenery: SCENERY_PARAM,
       gravity: { type: 'list', of: { type: 'number' }, min: 2, max: 2, default: [0, -9.8], unit: 'm/s²', effect: 'gravity vector (y up)' },
       bounds: { type: 'list', of: { type: 'number', min: 1, max: 100000 }, min: 2, max: 2, default: [20, 12], unit: 'm', scale: 'world', effect: 'world width and height from the origin' },
       edges: edgesParam('solid'),

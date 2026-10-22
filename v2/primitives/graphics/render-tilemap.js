@@ -102,7 +102,7 @@ export default {
       },
       snap: config.pixelSnap,
     };
-    H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, (apiOf()?.config?.mode || 'side') === 'side' ? 'side' : 'td'); drawBackdrop(F, S.defaultLayers); }, { space, name: 'tilemap.backdrop' });
+    H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, (apiOf()?.config?.mode || 'side') === 'side' ? 'side' : 'td', space); drawBackdrop(F, S.defaultLayers); }, { space, name: 'tilemap.backdrop' });
     H.layer(ORDER.world - 1, F => drawZones(F, apiOf()), { space, name: 'tilemap.zones' });
     H.layer(ORDER.world, F => draw(F), { space, name: 'render.tilemap' });
 

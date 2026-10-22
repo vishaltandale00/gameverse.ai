@@ -491,8 +491,9 @@ export function composeTemplates(pick, { templates, registry, logic = logicOf(re
   if (problems.length) return { doc: null, template: outer, parts, themes, stepPath, problems, joins };
   doc.title = pick.title;
   doc.plot = { ...(isObj(doc.plot) ? doc.plot : {}), premise: pick.premise };
-  // The composed tune: every part's paths that still name one declared param of one instance (shared instances are one).
-  const tune = [...new Set(parts.flatMap(p => p.template.tune))];
+  // The composed tune: every part's paths that still name one declared param of one instance (shared instances are one;
+  // a path whose instance the composition no longer has, the joined template's own space in a union, is gone with it).
+  const tune = [...new Set(parts.flatMap(p => p.template.tune))].filter(p => (tuneTarget(doc, p, registry)?.instances.length ?? 0) > 0);
   return { doc, template: parts.length > 1 ? { ...outer, tune } : outer, parts, themes, stepPath, problems, joins };
 }
 

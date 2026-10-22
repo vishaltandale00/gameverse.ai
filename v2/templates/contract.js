@@ -10,7 +10,10 @@
 //   composition  the static composition check (card declarations only) finds no failure
 //   loop         the loop check finds no problem
 //   presentation the document a person plays (the host's renderers added) draws everything its loops need a person to
-//                see (card.loop.shows against the renderers' card.draws: graphics/presentation.js)
+//                see (card.loop.shows against the renderers' card.draws: graphics/presentation.js); every look its
+//                instances' cards declare (a param with `cosmetic: true`, such as a space's scenery) is set and tuned,
+//                and each value the form allows for it preflights and plays its first frame exactly as the template's
+//                own value does (a look is proven by drawing, never by a bot run: the simulation does not read it)
 //   gate         the publish gate (verifyDocument with the playtest agents' budget) finds it viable
 //   controls     the document a person plays (the host's input and UI added) gives a control for every verb its loops
 //                declare, and each direction pressed through the controls moves the player the way the view shows it
@@ -26,7 +29,7 @@ import { preflight } from '../kernel/document.js';
 import { checkComposition } from '../planner/compose-check.js';
 import { loopProblems } from '../planner/loop-check.js';
 import { verifyDocument } from '../planner/verify-adapter.js';
-import { tuneTarget } from '../planner/templates.js';
+import { tuneTarget, instancesWithPaths } from '../planner/templates.js';
 import { controlledMaker, hostPreflight } from '../verify/controls.js';
 import { usedPrimitives } from '../verify/util.js';
 import { strategies, select, modeBots } from '../verify/strategies/index.js';
@@ -36,6 +39,8 @@ import { FEATURE_CODES } from '../verify/features.js';
 import { presentationProblems, PRESENTATION_CODES } from '../primitives/graphics/presentation.js';
 
 export const CONTRACT_VERSION = 'template-contract/0.1';
+/** The look checks' codes (lookProblems). */
+export const LOOK_CODES = Object.freeze(['look_undeclared', 'look_untuned', 'look_value_invalid', 'look_not_cosmetic']);
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
 /** The world seeds every named bot must win on (and replay). */
 export const SEEDS = Object.freeze([1, 2, 3]);
@@ -58,7 +63,7 @@ export const CODES = Object.freeze({
   preflight: Object.freeze(['preflight_failed']),
   composition: Object.freeze(['composition_failed']),
   loop: Object.freeze(['loop_problem']),
-  presentation: Object.freeze(Object.values(PRESENTATION_CODES)),
+  presentation: Object.freeze([...Object.values(PRESENTATION_CODES), ...LOOK_CODES]),
   gate: Object.freeze(['gate_not_viable']),
   controls: Object.freeze(['controls_missing', ...DIRECTION_CODES]),
   features: Object.freeze([...new Set(Object.values(FEATURE_CODES).flat())]),
@@ -91,6 +96,38 @@ export function tuneProblems(t, registry) {
     if (!target) { out.push(problem('tune_unknown', `tune '${path}' names no param a card declares on an instance in the document`, { path })); continue; }
     if (!SCALAR_TYPES.includes(target.spec.type)) out.push(problem('tune_not_scalar', `tune '${path}' is a ${target.spec.type}; a tune param is one of ${SCALAR_TYPES.join(', ')}`, { path }));
     if (target.instances.length !== 1) out.push(problem('tune_ambiguous', `tune '${path}' names ${target.instances.length} instances of ${target.use}; it must name exactly one`, { path }));
+  }
+  return out;
+}
+
+/**
+ * The look checks: every param a card of the document's instances declares `cosmetic: true` (what a person sees, which
+ * the simulation never reads: a space's scenery) has a value on the instance (look_undeclared: no default stands in
+ * for the choice) and is in the template's tune (look_untuned: the idea chooses it, through the frame_tune form). Each
+ * value its closed set allows preflights as the document a person plays (look_value_invalid), and its first frame
+ * leaves the same state as the template's own value (look_not_cosmetic). One frame per value: a look is shown, not played.
+ */
+export function lookProblems(t, registry, logic) {
+  const out = [], tuned = new Set(t.tune);
+  const firstFrame = doc => { const h = hostPreflight(doc, registry, logic); if (!h.ok) return { errors: h.errors }; const rt = controlledMaker(h.doc, registry, logic)(SEEDS[0]); rt.step({}); return { state: rt.snapshot() }; };
+  let base = null;
+  for (const { inst, path } of instancesWithPaths(t.doc)) {
+    const params = registry.get(inst.use)?.card?.params || {};
+    for (const [param, spec] of Object.entries(params)) {
+      if (!spec?.cosmetic) continue;
+      const at = `${path}.with.${param}`, tunePath = `${inst.use}.${param}`;
+      if (inst.with?.[param] === undefined) { out.push(problem('look_undeclared', `${inst.use} declares the look '${param}' (one of ${(spec.options || []).join(', ')}); the template sets it for its own concept`, { path: at })); continue; }
+      if (!tuned.has(tunePath)) { out.push(problem('look_untuned', `the look '${tunePath}' is not in tune: the idea's theme chooses it`, { path: at })); continue; }
+      base ??= firstFrame(t.doc);
+      for (const value of spec.options || []) {
+        if (value === inst.with[param]) continue;
+        const d = structuredClone(t.doc), target = instancesWithPaths(d).find(x => x.path === path).inst;
+        target.with = { ...target.with, [param]: value };
+        const r = firstFrame(d);
+        if (r.errors) out.push(problem('look_value_invalid', `${tunePath} = ${JSON.stringify(value)} does not preflight: ${r.errors.slice(0, 2).map(e => `${e.code} ${e.path}`).join('; ')}`, { path: at, cause: r.errors[0]?.code ?? null }));
+        else if (!isDeepStrictEqual(r.state, base.state)) out.push(problem('look_not_cosmetic', `${tunePath} = ${JSON.stringify(value)} changes the first frame's state: the simulation reads a param its card declares cosmetic`, { path: at }));
+      }
+    }
   }
   return out;
 }
@@ -162,7 +199,7 @@ export async function checkTemplate(template, { registry, logic }, opts = {}) {
     },
     composition: () => checkComposition(bare.doc, registry, { logic }).failures.map(f => problem('composition_failed', `${f.check}: ${f.message}`, { cause: f.check })),
     loop: () => loopProblems(bare.doc, registry, { logic }).map(p => problem('loop_problem', p.message, { path: p.path, cause: p.code })),
-    presentation: () => presentationProblems(checked.doc, registry).map(p => problem(p.code, p.message, { path: p.path, use: p.use, ...(p.space ? { space: p.space } : {}), missing: p.missing })),
+    presentation: () => [...presentationProblems(checked.doc, registry).map(p => problem(p.code, p.message, { path: p.path, use: p.use, ...(p.space ? { space: p.space } : {}), missing: p.missing })), ...lookProblems(t, registry, logic)],
     gate: async () => {
       const v = await verifyDocument(structuredClone(t.doc), registry, logic, { ...GATE });
       evidence.gate = { viable: Boolean(v.viable), viability: v.viability ?? null, ms: v.ms ?? null };

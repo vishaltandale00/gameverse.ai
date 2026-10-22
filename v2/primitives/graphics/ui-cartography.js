@@ -60,9 +60,9 @@ export function mapModel(rt, opts = {}) {
         if (o.state === 'done' || o.hidden) continue;
         const zid = o.zone || (o.kind === 'talk' && rt.entity(o.character)?.zone) || null;
         const z = zid && zones.find(x => x.id === zid);
-        if (z) { pins.push({ zone: z.id, pos: z.center, kind: 'objective', label: o.text || titleCase(o.id), quest: q.id, tracked: q === tracked }); break; }
+        if (z) { pins.push({ zone: z.id, pos: z.center, kind: 'objective', label: o.text || '', quest: q.id, tracked: q === tracked }); break; }
       }
-      if (q.state === 'available' && q.zone) { const z = zones.find(x => x.id === q.zone); if (z) pins.push({ zone: z.id, pos: z.center, kind: 'available', label: q.title || titleCase(q.id), quest: q.id, tracked: false }); }
+      if (q.state === 'available' && q.zone) { const z = zones.find(x => x.id === q.zone); if (z) pins.push({ zone: z.id, pos: z.center, kind: 'available', label: q.title || '', quest: q.id, tracked: false }); }
     }
   }
   return { space: space.id, plane: geo.plane, graph, zones, edges: geo.edges, player: here ? { pos: here, heading: graph ? null : heading(p, geo.plane) } : null, markers, pins, bounds: geo.bounds, currentZone };

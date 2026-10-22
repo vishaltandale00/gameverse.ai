@@ -97,7 +97,7 @@ export default {
         if (F.proj.kind === 'iso') { cam.x = (W - 1) / 2; cam.y = (Hh - 1) / 2; cam.zoom = Math.min(config.maxCell, F.w / ((W + Hh) * 0.5 + 1), F.h / ((W + Hh) * 0.5 * F.proj.ratio + 1.5)); }
       },
     };
-    H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, 'td'); drawBackdrop(F, S.defaultLayers, { base: config.style === 'neon' ? '#05040e' : null }); }, { space, name: 'grid.backdrop' });
+    H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, 'td', space); drawBackdrop(F, S.defaultLayers, { base: config.style === 'neon' ? '#05040e' : null }); }, { space, name: 'grid.backdrop' });
     H.layer(ORDER.world, F => draw(F), { space, name: 'render.grid' });
 
     function cellTile(theme, mask, T = 16) {

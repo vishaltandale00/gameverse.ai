@@ -14,7 +14,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'platformer', title: 'Platformer', seed: 1,
     views: { primary: 'side', alternates: [] },
-    spaces: [{ id: 'level', use: 'engine.space.tilemap', with: { size: [W * ROOMS.length, H], mode: 'side', gravity: -60 },
+    spaces: [{ id: 'level', use: 'engine.space.tilemap', with: { scenery: 'meadow', size: [W * ROOMS.length, H], mode: 'side', gravity: -60 },
       zones: ROOMS.map(([id, name], i) => ({ id, name, rect: rect(i) })),
       generators: [{ use: 'engine.generate.tilemap.rooms', with: {
         mode: 'side',
@@ -58,5 +58,5 @@ export default {
     },
     player: { archetype: 'hero', at: [3, 3] },
   },
-  tune: ['gameplay.death.lives', 'gameplay.move.platformer.feel'],
+  tune: ['engine.space.tilemap.scenery', 'gameplay.death.lives', 'gameplay.move.platformer.feel'],
 };

@@ -77,7 +77,7 @@ export default {
         } else driveFit(F, cam, [0, 0, W, Hh], config.maxScale, 0.3);
       },
     };
-    H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, 'side'); drawBackdrop(F, S.defaultLayers); }, { space, name: 'physics2d.backdrop' });
+    H.layer(ORDER.background, F => { if (H.cfg.backgrounds?.has(space)) return; S.defaultLayers ??= defaultLayers(F.doc, 'side', space); drawBackdrop(F, S.defaultLayers); }, { space, name: 'physics2d.backdrop' });
     H.layer(ORDER.world - 1, F => drawZones(F, apiOf()), { space, name: 'physics2d.zones' });
     H.layer(ORDER.world, F => draw(F), { space, name: 'render.physics2d' });
 

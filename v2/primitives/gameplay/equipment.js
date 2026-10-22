@@ -178,15 +178,17 @@ export default {
     }, KEY);
     rt.action('equip', (v, rt) => { const { item, slot } = parse(v); equip('player', item, slot); });
     rt.action('unequip', (v, rt) => unequip('player', typeof v === 'object' ? v.slot ?? v.item : v));
+    // An option's text from an item's declared name (none when it declares no name: never its id).
+    const said = (id, f) => { const n = itemDef(rt, id)?.name; return n ? { text: f(n) } : {}; };
     rt.options(rt => {
       const out = [];
       for (const id of Object.keys(bag(rt, 'player')).sort()) {
         const def = itemDef(rt, id); if (!def || wornCount('player', id) >= count(rt, 'player', id)) continue;
         const slot = slotsFor('player').find(s => matches(def, s.accepts) && (wornRead('player')[s.id]?.length ?? 0) < s.max && (!costed(s.id) || used('player') + costOf(id) <= capacity()));
-        if (slot) out.push({ label: `equip ${id}`, actions: { equip: id } });
+        if (slot) out.push({ label: `equip ${id}`, ...said(id, n => `Equip ${n}`), actions: { equip: id } });
       }
       const worn = wornRead('player'), off = [];
-      for (const slot of Object.keys(worn).sort()) for (const id of new Set(worn[slot])) off.push({ label: `unequip ${id}`, actions: { unequip: id } });
+      for (const slot of Object.keys(worn).sort()) for (const id of new Set(worn[slot])) off.push({ label: `unequip ${id}`, ...said(id, n => `Take off ${n}`), actions: { unequip: id } });
       return [...out.slice(0, 8), ...off];
     });
     rt.provide('equipment', {

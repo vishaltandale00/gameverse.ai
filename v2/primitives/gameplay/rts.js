@@ -10,7 +10,10 @@
 // target acquisition, fog of war through the space's line of sight, a simple
 // opponent AI, and faction defeat/victory.
 import { alive, matchesAny, sortedEntities, has, spaceOf, dist, err, runBound, r6, r6v, v3, sub, len, cellKey } from './modes-lib-util.js';
+import { entityName, listed } from '../engine/runtime-lib-names.js';
 
+/** An option's text from declared names (none when one is undeclared: tests/v2-option-text.test.js reports it). */
+const named = (names, f) => (names.every(Boolean) ? { text: f(names) } : {});
 const ID = 'gameplay.rts';
 const ORDERS = ['move', 'attack', 'attack_move', 'gather', 'build', 'stop', 'hold', 'patrol'];
 
@@ -400,22 +403,22 @@ export default {
       const s = st(), fac = playerFaction(); if (!fac) return [];
       const out = [], mine = units(fac);
       const idle = mine.filter(e => R(e).worker && !s.orders[e.id]);
-      if (idle.length) out.push({ label: `rts gather ${idle.length} idle`, actions: { order: { kind: 'gather', who: idle.map(e => e.id) } } });
-      for (const b of mine) for (const p of R(b).produces || []) if (afford(s, fac, p.cost)) out.push({ label: `rts ${b.id} produce ${p.archetype}`, actions: { produce: { building: b.id, archetype: p.archetype } } });
+      if (idle.length) out.push({ label: `rts gather ${idle.length} idle`, text: `Send ${idle.length} idle to gather`, actions: { order: { kind: 'gather', who: idle.map(e => e.id) } } });
+      for (const b of mine) for (const p of R(b).produces || []) if (afford(s, fac, p.cost)) out.push({ label: `rts ${b.id} produce ${p.archetype}`, ...named([entityName(rt, b.id), entityName(rt, p.archetype)], ([at, what]) => `${at}: train ${what}`), actions: { produce: { building: b.id, archetype: p.archetype } } });
       // A building that trains workers and has no rally point can send them to gather at a resource node it sees.
       const nodes = sortedEntities(rt).filter(e => R(e)?.node && visible(fac, e.at, e.space));
       const trainsWorkers = b => (R(b).produces || []).some(p => rt.archetype(p.archetype)?.components?.rts?.worker);
-      for (const b of mine) if (trainsWorkers(b) && !s.rally[b.id]) for (const n of nodes) out.push({ label: `rts ${b.id} rally ${n.id}`, actions: { rally: { building: b.id, node: n.id, at: structuredClone(n.at) } } });
+      for (const b of mine) if (trainsWorkers(b) && !s.rally[b.id]) for (const n of nodes) out.push({ label: `rts ${b.id} rally ${n.id}`, ...named([entityName(rt, b.id), entityName(rt, n.id)], ([at, to]) => `${at}: gather at ${to}`), actions: { rally: { building: b.id, node: n.id, at: structuredClone(n.at) } } });
       const army = mine.filter(e => R(e).attack && !R(e).worker && !isBuilding(e) && !s.orders[e.id]);
       const target = units().find(e => factionOf(e) && factionOf(e) !== fac && visible(fac, e.at, e.space));
-      if (army.length && target) out.push({ label: `rts attack ${target.id}`, actions: { order: { kind: 'attack_move', at: structuredClone(target.at), who: army.map(e => e.id) } } });
+      if (army.length && target) out.push({ label: `rts attack ${target.id}`, ...named([entityName(rt, target.id)], ([t]) => `Attack ${t}`), actions: { order: { kind: 'attack_move', at: structuredClone(target.at), who: army.map(e => e.id) } } });
       else if (army.length && config.fog && Array.isArray(army[0].at) && Array.isArray(api(army[0])?.size)) {
         // No enemy in sight: scout (attack-move) toward the nearest unexplored point of a 3x3 lattice over the space.
         const size = api(army[0]).size, at0 = army[0].at, pts = [];
         for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) pts.push(at0.map((v, k) => (k < 2 ? Math.floor((size[k] * ((k ? j : i) + 0.5)) / 3) : v)));
         const c = army.reduce((m, e) => m.map((x, k) => x + v3(e.at)[k] / army.length), [0, 0, 0]);
         const open = pts.filter(p => !service.explored(fac, p)).sort((a, b) => len(sub(v3(a), c)) - len(sub(v3(b), c)) || cellKey(a).localeCompare(cellKey(b)));
-        if (open[0]) out.push({ label: `rts scout ${cellKey(open[0])}`, actions: { order: { kind: 'attack_move', at: open[0], who: army.map(e => e.id) } } });
+        if (open[0]) out.push({ label: `rts scout ${cellKey(open[0])}`, text: `Scout toward ${open[0].slice(0, 2).join(', ')}`, actions: { order: { kind: 'attack_move', at: open[0], who: army.map(e => e.id) } } });
       }
       return out;
     });

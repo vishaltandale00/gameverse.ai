@@ -10,7 +10,7 @@ export default {
   concept: 'Farming: till soil, plant seeds, water the crops every day and harvest them as they ripen; harvest enough crops to win.',
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'farm', title: 'Farm', seed: 5, views: { primary: 'td' },
-    spaces: [{ id: 'field', use: 'engine.space.grid', with: { size: [12, 10] },
+    spaces: [{ id: 'field', use: 'engine.space.grid', with: { scenery: 'meadow', size: [12, 10] },
       generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', ground: 'grass', terrain: [{ block: 'rock', weight: 1, blocks: true }], density: 0.15, symmetry: 'none', teams: 1, deployDepth: 2 } }] }],
     systems: [
       { use: 'gameplay.move.grid', with: { mode: 'step' } },
@@ -32,5 +32,5 @@ export default {
     plot: { endings: [{ id: 'victory', title: 'Victory', epilogue: 'The harvest is in.', outcome: 'won', when: { count: 'harvested', gte: 8 } }] },
     player: { archetype: 'farmer', at: [1, 0] },
   },
-  tune: ['gameplay.farming.daySec', 'engine.generate.grid.board.density'],
+  tune: ['engine.space.grid.scenery', 'gameplay.farming.daySec', 'engine.generate.grid.board.density'],
 };

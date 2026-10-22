@@ -27,7 +27,7 @@ export default {
     ],
     // Collect mode (only when a counter clears the level): gather every pickup while threats chase. Touch and use
     // collect whatever moves the collector (box overlap, radius, the cell it is on), so it is played stepping or in real time.
-    mode: { loop: 'collect', applies: { param: 'counters', field: 'clearsLevel', is: true }, interaction: ['avatar-grid', 'avatar-realtime'], opponent: 'hazards', space: ['engine.space.grid', 'engine.space.tilemap', ['navigate']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'counters.onComplete', shown: { each: { param: 'counters', where: { clearsLevel: true } }, var: 'collected.$id', max: 'collected.$id.total', label: '$id' }, reads: { event: 'collected', by: { effects: ['collect'], events: ['interacted'], movement: true } } }, lose: { param: null }, bot: 'danger-field' },
+    mode: { loop: 'collect', applies: { param: 'counters', field: 'clearsLevel', is: true }, interaction: ['avatar-grid', 'avatar-realtime'], opponent: 'hazards', space: ['engine.space.grid', 'engine.space.tilemap', ['navigate']], needs: { content: ['content.archetypes'], participants: null }, win: { param: 'counters.onComplete', shown: { each: { param: 'counters', where: { clearsLevel: true } }, var: 'collected.$id', max: 'collected.$id.total', label: '$name' }, reads: { event: 'collected', by: { effects: ['collect'], events: ['interacted'], movement: true } } }, lose: { param: null }, bot: 'danger-field' },
     intent: 'Pickups and counters (coins, shards, pages, pellets): touch or use to collect, magnet pull, per-zone totals, a var per counter, level clear when a counter completes, and timed bonus prizes spawned at chosen counts.',
     views: ['any'],
     params: {
@@ -36,7 +36,7 @@ export default {
       radius: { type: 'number', default: 0.25, min: 0, max: 20, unit: 'space units', effect: 'centre distance that also counts as touching' },
       collectors: { type: 'list', default: ['player'], of: { type: 'string', selects: ENTITY_KINDS }, effect: 'entity ids or archetypes that collect by touch' },
       counters: { type: 'list', default: [], of: { type: 'object', fields: {
-        id: { type: 'string', required: true },
+        id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'what a person reads for the count (the HUD)' },
         var: { type: 'string', effect: "var holding the count (default 'collected.<id>')" },
         total: { type: 'integer', min: 0, effect: 'pickups needed to complete; default = pickups present at start (+ included counters)' },
         zone: { type: 'ref', to: 'zone', effect: 'only pickups in this zone count toward the total' },

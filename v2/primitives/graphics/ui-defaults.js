@@ -117,15 +117,16 @@ const NUM = ['gt', 'gte', 'lt', 'lte', 'eq'];
 const applies = (a, config) => !a || NUM.every(k => a[k] === undefined || ({ gt: (x, y) => x > y, gte: (x, y) => x >= y, lt: (x, y) => x < y, lte: (x, y) => x <= y, eq: (x, y) => x === y })[k](Number(config[a.param]), a[k]));
 /**
  * The entries a declared `shown` stands for on an instance: itself, or one per entry of a list param (`each: { param,
- * where? }`, the entry's fields matching `where`) with `$id` in its strings replaced by that entry's id. Data only.
+ * where? }`, the entry's fields matching `where`) with `$id` in its strings replaced by that entry's id and `$name` by its
+ * declared name (display text; '' when it declares none). Data only.
  */
 function shownEntries(q, config) {
   if (!q || typeof q !== 'object' || !applies(q.applies, config)) return [];
   const { each, applies: _, ...rest } = q;
   if (!each) return [rest];
-  const sub = (v, id) => (typeof v === 'string' ? v.replaceAll('$id', id) : v);
+  const sub = (v, x) => (typeof v === 'string' ? v.replaceAll('$id', String(x.id)).replaceAll('$name', typeof x.name === 'string' ? x.name : '') : v);
   return (Array.isArray(config[each.param]) ? config[each.param] : []).filter(x => x && Object.entries(each.where || {}).every(([k, v]) => x[k] === v))
-    .map(x => Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, sub(v, String(x.id))])));
+    .map(x => Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, sub(v, x)])));
 }
 /** Does a UI card's `displays` cover a goal (ui-battle shows every side's units' health). */
 const displays = (card, g) => (card?.displays || []).some(d => (d.component && d.component === g.component && (d.of ?? g.of) === g.of) || (d.var && d.var === g.var) || (d.count && d.count === g.count));
@@ -141,8 +142,8 @@ export function defaultHud(doc, registry = null, goals = hudGoals(doc, registry)
   }
   const pools = sysOf(doc, 'gameplay.resource')?.with?.pools?.map(p => p.id) || Object.keys(player.resources || {});
   for (const id of pools) meters.push({ pool: id, pos: 'top-left' });
-  for (const c of sysOf(doc, 'gameplay.economy')?.with?.currencies || []) counters.push({ var: c.var || `money.${c.id}`, icon: c.icon || c.id, label: c.name, pos: 'top-right' });
-  for (const c of sysOf(doc, 'gameplay.collectible')?.with?.counters || []) if (c.var) counters.push({ var: c.var, icon: c.icon || c.id, label: c.name || c.id, pos: 'top-right' });
+  for (const c of sysOf(doc, 'gameplay.economy')?.with?.currencies || []) counters.push({ var: c.var || `money.${c.id}`, icon: c.icon || 'coin', label: c.name || '', pos: 'top-right' });
+  for (const c of sysOf(doc, 'gameplay.collectible')?.with?.counters || []) if (c.var) counters.push({ var: c.var, icon: c.icon || null, label: c.name || '', pos: 'top-right' });
   const v = doc.views?.primary;
   return {
     meters, counters,

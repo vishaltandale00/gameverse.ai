@@ -97,8 +97,8 @@ export default {
       cardNodes.length = 0;
       fill(hand, ...view.hand.map((c, i) => {
         const def = cardDef(rt.doc, c.card) || {}, type = c.type || def.type || 'skill', t = TYPE[type] || TYPE.skill;
-        const node = el(`div.gv-card${c.playable ? '.is-playable' : '.is-unplayable'}`, { role: 'button', aria: { label: `${c.name || def.name || titleCase(c.card)}, cost ${c.cost ?? def.cost ?? 0}` }, style: { '--x': `${lay[i].x}px`, '--y': `${lay[i].y}px`, '--rot': `${lay[i].rot}deg`, '--ct': t.color, '--art': cardArt(c.card, type), 'animation-delay': `${i * 35}ms`, 'z-index': i } },
-          el('div.gv-card-cost', { text: c.cost ?? def.cost ?? 0 }), el('div.gv-card-name', { text: c.name || def.name || titleCase(c.card) }),
+        const node = el(`div.gv-card${c.playable ? '.is-playable' : '.is-unplayable'}`, { role: 'button', aria: { label: `${c.name || def.name || ''}, cost ${c.cost ?? def.cost ?? 0}` }, style: { '--x': `${lay[i].x}px`, '--y': `${lay[i].y}px`, '--rot': `${lay[i].rot}deg`, '--ct': t.color, '--art': cardArt(c.card, type), 'animation-delay': `${i * 35}ms`, 'z-index': i } },
+          el('div.gv-card-cost', { text: c.cost ?? def.cost ?? 0 }), el('div.gv-card-name', { text: c.name || def.name || '' }),
           el('div.gv-card-art', { style: { display: 'grid', 'place-items': 'center' } }, icon(t.icon, { color: '#ffffff' })),
           el('div.gv-card-type', { text: titleCase(type) }), el('div.gv-card-text', { text: c.text || def.text || '' }));
         node._run = () => choose(c);

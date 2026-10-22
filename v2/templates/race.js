@@ -18,7 +18,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'race', title: 'Race', seed: 9,
     views: { primary: '3p' },
-    spaces: [{ id: 'circuit', use: 'engine.space.track', with: { lanes: LANES, laneWidth: 1, length: LENGTH, loop: true },
+    spaces: [{ id: 'circuit', use: 'engine.space.track', with: { scenery: 'city', lanes: LANES, laneWidth: 1, length: LENGTH, loop: true },
       zones: CHECKPOINTS.map(([id, name], i) => ({ id, name, range: [i * LENGTH / CHECKPOINTS.length, i * LENGTH / CHECKPOINTS.length + 6] })),
       // The course: cones on the outer lanes, every chunk leaving the racing line free (origin: lane j is the centre of
       // a cone's cell, whose generator anchors entities at cell + size / 2).
@@ -48,5 +48,5 @@ export default {
     },
     player: { archetype: 'hero', at: PLAYER },
   },
-  tune: ['gameplay.race.laps', 'gameplay.ai.seek.speed'],
+  tune: ['engine.space.track.scenery', 'gameplay.race.laps', 'gameplay.ai.seek.speed'],
 };

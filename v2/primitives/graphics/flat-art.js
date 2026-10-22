@@ -174,10 +174,13 @@ export function poseFor(state, t, speed = 1) {
   }
 }
 /**
- * The scenery theme for a document or zone: one it declares (a zone's `theme`, or a zone tag naming a theme), never
- * guessed from words in the title, logline or names; otherwise the meadow.
+ * The scenery theme of a space: the one its instance declares (`scenery`, engine/spaces2d-scenery.js: chosen for the
+ * idea's theme by the content form), never guessed from words in the title, logline, names or tags, and never a
+ * default; null when it declares none (the renderers then paint no scenery).
+ * @param {any} doc @param {string | null | undefined} spaceId
+ * @returns {string | null}
  */
-export function themeFor(doc, zone = null) {
-  const declared = [zone?.theme, ...(zone?.tags || [])].find(t => THEMES.includes(t));
-  return declared || 'meadow';
+export function themeFor(doc, spaceId) {
+  const s = (doc?.spaces || []).find(x => x.id === spaceId), t = s?.with?.scenery;
+  return THEMES.includes(t) ? t : null;
 }

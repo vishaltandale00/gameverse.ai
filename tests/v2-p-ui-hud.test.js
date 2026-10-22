@@ -66,7 +66,9 @@ test('hud: readouts for timers, laps, positions and team scores, configured or a
   run(rt, 1, setVars({ 'moves.left': 12, 'round.timer': 8, 'race.position': 2, 'race.lap': 1, 'race.laps': 3, 'score.red': 2, 'score.blue': 1, 'match.clock': 754 }));
   const vm = hudModel(rt, checked.doc.graphics[0].with);
   assert.deepEqual(vm.readouts.map(r => [r.label, r.text, r.low]), [['Moves', '12', false], ['Time', '0:08', true], ['Pos', '2nd', false], ['Lap', '1/3', false]]);
-  assert.deepEqual([vm.scoreboard.teams.map(t => [t.name, t.value]), vm.scoreboard.clock], [[['Red', 2], ['Blue', 1]], '12:34']);
+  // (Corrected expectation: team names were the title-cased team ids; a team is called what gameplay.sports declares,
+  // and this document declares no teams, so the scoreboard names none.)
+  assert.deepEqual([vm.scoreboard.teams.map(t => [t.name, t.value]), vm.scoreboard.clock], [[['', 2], ['', 1]], '12:34']);
 });
 
 test('hud: renders in the browser host, animates changes and never touches simulation state', () => {

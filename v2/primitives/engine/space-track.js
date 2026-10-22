@@ -6,6 +6,7 @@
 // culls passed obstacles and reports `passed` (near-miss and combo scoring);
 // looped tracks wrap progress and count laps.
 import { zoneIndex, zoneTracker, zoneEditor, ownSpaces, inSpace, bodyOf, clamp, mod, wrapDelta, BOUNDS_CAPS, obstacleOf, obstaclesIn } from './spaces2d-lib.js';
+import { SCENERY_PARAM } from './spaces2d-scenery.js';
 
 const EPS = 1e-6;
 const STICK = 0.5; // a rider stays on the body it stands on if that body rose at most this far since its last slide
@@ -21,6 +22,7 @@ export default {
     frame: { up: 2, handed: 'left' },
     needs: { content: ['course'] },
     params: {
+      scenery: SCENERY_PARAM,
       lanes: { type: 'integer', min: 1, max: 16, default: 3, effect: 'number of lanes (lane index 0..lanes-1; positions may be fractional mid-switch)' },
       laneWidth: { type: 'number', min: 0.1, max: 100, default: 1, unit: 'u', effect: 'lane spacing in track units (distance and rendering)' },
       length: { type: 'number', min: 0, default: 0, unit: 'u', scale: 'world', effect: 'track length; 0 = endless' },

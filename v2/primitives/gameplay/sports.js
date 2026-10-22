@@ -31,7 +31,7 @@ export default {
       ball: { type: 'ref', to: 'archetype', required: true, effect: 'the ball archetype' },
       ballId: { type: 'string', default: 'ball' },
       ballAt: { type: 'json', required: true, effect: 'kickoff spot of the ball' },
-      teams: { type: 'list', min: 2, required: true, of: { type: 'object', fields: { id: { type: 'string', required: true }, members: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [] }, kickoff: { type: 'list', of: { type: 'json' }, default: [] } } } },
+      teams: { type: 'list', min: 2, required: true, of: { type: 'object', fields: { id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'what a person reads for the team (the scoreboard)' }, members: { type: 'list', of: { type: 'string', selects: ENTITY_KINDS }, default: [] }, kickoff: { type: 'list', of: { type: 'json' }, default: [] } } } },
       goals: { type: 'list', min: 1, required: true, of: { type: 'object', fields: { zone: { type: 'ref', to: 'zone', required: true }, scores: { type: 'string', required: true, effect: 'team awarded when the ball enters' } } } },
       periodSec: { type: 'number', default: 180, min: 1, max: 7200, unit: 's' },
       periods: { type: 'integer', default: 2, min: 1, max: 9 },

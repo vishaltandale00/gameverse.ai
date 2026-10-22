@@ -14,7 +14,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'shmup', title: 'Shmup', seed: 3,
     views: { primary: 'td' },
-    spaces: [{ id: 'field', use: 'engine.space.arena2d', with: { size: [300, 400], edges: { left: 'open', right: 'open', bottom: 'open', top: 'open' }, cull: ['projectile'], solids: [[0, 150, 18, 190], [282, 220, 300, 260]] } }],
+    spaces: [{ id: 'field', use: 'engine.space.arena2d', with: { scenery: 'space', size: [300, 400], edges: { left: 'open', right: 'open', bottom: 'open', top: 'open' }, cull: ['projectile'], solids: [[0, 150, 18, 190], [282, 220, 300, 260]] } }],
     systems: [
       { use: 'gameplay.move.ship', with: { mode: 'eightway', speed: 190, heading: 90, margin: 10 } },
       { use: 'gameplay.combat.health', with: { iframes: 0.2 } },
@@ -48,5 +48,5 @@ export default {
     },
     player: { archetype: 'ship', at: [150, 40] },
   },
-  tune: ['gameplay.death.lives', 'gameplay.ai.attacks.difficulty'],
+  tune: ['engine.space.arena2d.scenery', 'gameplay.death.lives', 'gameplay.ai.attacks.difficulty'],
 };

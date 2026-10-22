@@ -34,10 +34,10 @@ export function journalModel(rt, config) {
       const list = S.quests(rt);
       const tracked = S.trackedQuest(list);
       const entry = q => {
-        const objectives = (q.objectives || []).filter(o => !o.hidden || o.state === 'done').map(o => ({ id: o.id, text: o.text || titleCase(o.id), state: q.state === 'failed' && o.state !== 'done' ? 'failed' : o.state, optional: Boolean(o.optional), progress: isNum(o.progress) && o.count > 1 ? Math.min(o.progress, o.count) / o.count : null, label: S.objectiveProgress(o).trim() }));
+        const objectives = (q.objectives || []).filter(o => !o.hidden || o.state === 'done').map(o => ({ id: o.id, text: o.text || '', state: q.state === 'failed' && o.state !== 'done' ? 'failed' : o.state, optional: Boolean(o.optional), progress: isNum(o.progress) && o.count > 1 ? Math.min(o.progress, o.count) / o.count : null, label: S.objectiveProgress(o).trim() }));
         const done = objectives.filter(o => o.state === 'done').length;
-        return { key: `q:${q.id}`, id: q.id, title: q.title || titleCase(q.id), sub: q.state === 'active' ? `${done}/${objectives.length}` : '', state: q.state, main: q.kind === 'main',
-          detail: { kicker: KIND[q.kind] || 'Quest', title: q.title || titleCase(q.id), text: q.summary || '', meta: [q.giver && `From ${charName(doc, q.giver)}`, q.zone && zoneName(doc, q.zone)].filter(Boolean), objectives, rewards: rewardsText(doc, q.rewards), tracked: q === tracked, trackable: q.state === 'active' } };
+        return { key: `q:${q.id}`, id: q.id, title: q.title || '', sub: q.state === 'active' ? `${done}/${objectives.length}` : '', state: q.state, main: q.kind === 'main',
+          detail: { kicker: KIND[q.kind] || 'Quest', title: q.title || '', text: q.summary || '', meta: [q.giver && `From ${charName(doc, q.giver)}`, q.zone && zoneName(doc, q.zone)].filter(Boolean), objectives, rewards: rewardsText(doc, q.rewards), tracked: q === tracked, trackable: q.state === 'active' } };
       };
       const by = s => list.filter(q => q.state === s).sort((a, b) => (b.kind === 'main') - (a.kind === 'main'));
       if (tracked) sections.push({ id: 'tracked', title: 'Tracking', entries: [entry(tracked)] });
@@ -48,12 +48,12 @@ export function journalModel(rt, config) {
     } else if (id === 'clues') {
       // The case so far (plot.investigation): the clues found and the conclusions drawn, read from its service and state.
       const found = new Set(S.svc(rt, 'investigation', 'clues') || []), deduced = rt.state.prim['plot.investigation']?.deduced || {};
-      sections.push({ id: 'found', title: 'Found', entries: (doc.plot?.clues || []).filter(c => found.has(c.id)).map(c => ({ key: `k:${c.id}`, title: c.title || titleCase(c.id), sub: '', detail: { kicker: 'Clue', title: c.title || titleCase(c.id), text: c.text || '' } })) });
-      sections.push({ id: 'concluded', title: 'Concluded', entries: (doc.plot?.deductions || []).filter(d => deduced[d.id]).map(d => ({ key: `d:${d.id}`, title: d.title || titleCase(d.id), sub: d.wrong ? 'wrong' : '', state: d.wrong ? 'failed' : 'complete', detail: { kicker: d.wrong ? 'A wrong theory' : 'Conclusion', title: d.title || titleCase(d.id), text: d.conclusion || '' } })) });
+      sections.push({ id: 'found', title: 'Found', entries: (doc.plot?.clues || []).filter(c => found.has(c.id)).map(c => ({ key: `k:${c.id}`, title: c.title || '', sub: '', detail: { kicker: 'Clue', title: c.title || '', text: c.text || '' } })) });
+      sections.push({ id: 'concluded', title: 'Concluded', entries: (doc.plot?.deductions || []).filter(d => deduced[d.id]).map(d => ({ key: `d:${d.id}`, title: d.title || '', sub: d.wrong ? 'wrong' : '', state: d.wrong ? 'failed' : 'complete', detail: { kicker: d.wrong ? 'A wrong theory' : 'Conclusion', title: d.title || '', text: d.conclusion || '' } })) });
     } else if (id === 'lore' || id === 'notes') {
       const known = (doc.plot?.entries || []).filter(e => entryTab(e) === id && S.known(rt, e));
       const groups = new Map();
-      for (const e of known) { const g = e.tag || id; if (!groups.has(g)) groups.set(g, []); groups.get(g).push({ key: `e:${e.id}`, title: e.title || titleCase(e.id), sub: '', detail: { kicker: titleCase(g), title: e.title || titleCase(e.id), text: e.text || '' } }); }
+      for (const e of known) { const g = e.tag || id; if (!groups.has(g)) groups.set(g, []); groups.get(g).push({ key: `e:${e.id}`, title: e.title || '', sub: '', detail: { kicker: titleCase(g), title: e.title || '', text: e.text || '' } }); }
       for (const [g, entries] of groups) sections.push({ id: g, title: titleCase(g), entries });
     } else if (id === 'bestiary') {
       const entries = [];
@@ -63,15 +63,15 @@ export function journalModel(rt, config) {
         const seen = defeated > 0 || (lore && S.known(rt, lore)) || S.count(rt, `seen:${a.id}`) > 0;
         if (!seen) continue;
         const hp = a.components?.health?.max;
-        entries.push({ key: `b:${a.id}`, title: a.name || titleCase(a.id), sub: defeated ? `×${defeated}` : '', state: a.kind, model: a.id,
-          detail: { kicker: titleCase(a.kind), title: a.name || titleCase(a.id), text: lore?.text || '', portrait: a.id, stats: [['Defeated', fmtInt(defeated)], ...(hp ? [['Health', fmtInt(hp)]] : []), ...(a.components?.melee?.damage || a.components?.touch?.damage ? [['Damage', fmtInt(a.components.melee?.damage ?? a.components.touch.damage)]] : [])] } });
+        entries.push({ key: `b:${a.id}`, title: a.name || '', sub: defeated ? `×${defeated}` : '', state: a.kind, model: a.id,
+          detail: { kicker: titleCase(a.kind), title: a.name || '', text: lore?.text || '', portrait: a.id, stats: [['Defeated', fmtInt(defeated)], ...(hp ? [['Health', fmtInt(hp)]] : []), ...(a.components?.melee?.damage || a.components?.touch?.damage ? [['Damage', fmtInt(a.components.melee?.damage ?? a.components.touch.damage)]] : [])] } });
       }
       sections.push({ id: 'creatures', title: 'Creatures', entries: entries.sort((x, y) => (x.state === 'boss') - (y.state === 'boss') || x.title.localeCompare(y.title)) });
     } else if (id === 'characters') {
       const entries = (doc.plot?.characters || []).filter(c => c.id !== doc.player?.archetype && c.archetype !== doc.player?.archetype && S.met(rt, c.id)).map(c => {
         const aff = rt.state.vars[`affinity.${c.id}`];
-        return { key: `c:${c.id}`, title: c.name || titleCase(c.id), sub: '', model: c.id,
-          detail: { kicker: c.role ? titleCase(String(c.role).split(/[;,]/)[0]) : 'Character', title: c.name || titleCase(c.id), text: c.bio || '', portrait: c.id, stats: [...(c.home ? [['Home', zoneName(doc, c.home)]] : []), ...(c.faction ? [['Faction', titleCase(c.faction)]] : []), ...(isNum(aff) ? [['Affinity', fmtInt(aff)]] : [])] } };
+        return { key: `c:${c.id}`, title: c.name || '', sub: '', model: c.id,
+          detail: { kicker: c.role ? titleCase(String(c.role).split(/[;,]/)[0]) : 'Character', title: c.name || '', text: c.bio || '', portrait: c.id, stats: [...(c.home ? [['Home', zoneName(doc, c.home)]] : []), ...(c.faction ? [['Faction', titleCase(c.faction)]] : []), ...(isNum(aff) ? [['Affinity', fmtInt(aff)]] : [])] } };
       });
       sections.push({ id: 'met', title: 'Met', entries });
     }

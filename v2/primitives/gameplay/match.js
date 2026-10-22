@@ -464,7 +464,7 @@ export default {
       const s = st();
       if (s.phase !== 'idle' || !config.trigger.includes('swap') || (config.moves && s.moves <= 0)) return [];
       const { m } = M();
-      return m.allMoves().map(([i, j]) => { const a = m.xy(i), b = m.xy(j); return { label: `swap ${a} ${b}`, actions: { swap: { a, b } } }; });
+      return m.allMoves().map(([i, j]) => { const a = m.xy(i), b = m.xy(j); return { label: `swap ${a} ${b}`, text: `Swap ${a.join(', ')} with ${b.join(', ')}`, actions: { swap: { a, b } } }; });
     });
   },
 };

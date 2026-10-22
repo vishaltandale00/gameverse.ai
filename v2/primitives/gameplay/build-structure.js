@@ -68,6 +68,8 @@ export default {
       const base = typeof p === 'string' ? { id: p, ...LIBRARY[p] } : { ...LIBRARY[p.id], ...p };
       return [base.id, { ...base, cells: base.cells ?? box(...v3(base.size)), block: base.block ?? config.block }];
     }));
+    // What a person reads for a piece: its declared name, or the library's word for one of its own pieces (a wall).
+    const pieceName = id => { const p = pieces.get(id); return p?.name ?? (LIBRARY[id] ? `a ${id}` : null); };
     const placer = blk => [...allItems(rt).values()].find(i => i.block === blk)?.id;
     const costOf = p => p.cost ?? (placer(p.block) && config.costPerCell ? [{ item: placer(p.block), count: p.cells.length * config.costPerCell }] : []);
     const snap = at => v3(at).map(v => Math.round(v / config.grid) * config.grid);
@@ -131,9 +133,9 @@ export default {
       const ring = flat ? [[2, 0, 0], [-2, 0, 0], [0, 2, 0], [0, -2, 0]] : [[2, 0, 0], [-2, 0, 0], [0, 0, 2], [0, 0, -2]];
       for (const id of pieces.keys()) for (const d of ring) {
         const at = add(here, d).map(Math.round), v = { piece: id, at };
-        if (!plan('player', v).reason) out.push({ label: `build ${id} at ${at.join(',')}`, actions: { build: v } });
+        if (!plan('player', v).reason) out.push({ label: `build ${id} at ${at.join(',')}`, ...(pieceName(id) ? { text: `Build ${pieceName(id)} at ${at.slice(0, flat ? 2 : 3).join(', ')}` } : {}), actions: { build: v } });
       }
-      for (const b of Object.values(st().built)) if (b.owner === 'player') out.push({ label: `demolish ${b.piece} ${b.id}`, actions: { demolish: b.id } });
+      for (const b of Object.values(st().built)) if (b.owner === 'player') out.push({ label: `demolish ${b.piece} ${b.id}`, ...(pieceName(b.piece) ? { text: `Demolish ${pieceName(b.piece)}${Array.isArray(b.at) ? ` at ${b.at.slice(0, flat ? 2 : 3).join(', ')}` : ''}` } : {}), actions: { demolish: b.id } });
       return out;
     });
     rt.provide('structures', { list: () => structuredClone(Object.values(st().built)), pieces: () => [...pieces.keys()], cost: id => costOf(pieces.get(id)) });

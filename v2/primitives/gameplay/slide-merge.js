@@ -141,7 +141,7 @@ export default {
     rt.options(rt => {
       const s = st(); if (s.phase !== 'play' || s.anim > 0) return [];
       const b = B(), vals = readVals(b);
-      return DIRS.filter(d => slideGrid(vals, b.W, b.H, d).moved).map(d => ({ label: `slide ${d}`, actions: { slide: d } }));
+      return DIRS.filter(d => slideGrid(vals, b.W, b.H, d).moved).map(d => ({ label: `slide ${d}`, text: `Slide ${d}`, actions: { slide: d } }));
     });
   },
 };

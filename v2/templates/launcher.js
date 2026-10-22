@@ -13,7 +13,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'launcher', title: 'Launcher', seed: 6,
     views: { primary: 'side' },
-    spaces: [{ id: 'field', use: 'engine.space.physics2d', with: { gravity: [0, -10], bounds: [44, 18] },
+    spaces: [{ id: 'field', use: 'engine.space.physics2d', with: { scenery: 'meadow', gravity: [0, -10], bounds: [44, 18] },
       generators: [{ use: 'engine.generate.layout.shapes', with: { groups: [
         { id: 'tower', shape: 'tower', archetype: 'wood_beam', material: 'wood', x: 26, y: 0, count: 2, size: 3, pieceSize: [0.6, 2.2] },
         { id: 'panes', shape: 'stack', archetype: 'glass_pane', material: 'glass', x: 32, y: 0, count: 3, pieceSize: [1, 1] },
@@ -41,5 +41,5 @@ export default {
     },
     plot: { endings: [{ id: 'guards_down', title: 'Guards down', epilogue: 'Every guard is down.', outcome: 'won', when: { count: 'destroyed:target', gte: 4 } }] },
   },
-  tune: ['gameplay.launcher.aimSpeed', 'gameplay.launcher.quietSec'],
+  tune: ['engine.space.physics2d.scenery', 'gameplay.launcher.aimSpeed', 'gameplay.launcher.quietSec'],
 };

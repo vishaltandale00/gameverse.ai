@@ -22,7 +22,7 @@ export default {
   doc: {
     schema: 'gameverse.v2.game/0.2', id: 'runner', title: 'Runner', seed: 6,
     views: { primary: 'side' },
-    spaces: [{ id: 'course', use: 'engine.space.tilemap', with: { size: [4096, 10], mode: 'side' },
+    spaces: [{ id: 'course', use: 'engine.space.tilemap', with: { scenery: 'forest', size: [4096, 10], mode: 'side' },
       generators: [{ use: 'engine.generate.chunks', with: {
         chunks: CHUNKS, along: 'columns', axis: 'x', cross: 'y', origin: [0, 0], firstAt: 12,
         legend: { '.': {}, '#': { block: 'crate', blocks: true }, '^': { block: 'spikes', hazard: true }, '~': { block: 'pit', hazard: true }, o: { archetype: 'coin' } },
@@ -46,5 +46,5 @@ export default {
     },
     player: { archetype: 'runner', at: [2, 0.55] },
   },
-  tune: ['engine.generate.chunks.goal', 'engine.generate.chunks.density', 'gameplay.death.lives'],
+  tune: ['engine.space.tilemap.scenery', 'engine.generate.chunks.goal', 'engine.generate.chunks.density', 'gameplay.death.lives'],
 };

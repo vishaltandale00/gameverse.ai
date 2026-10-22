@@ -72,7 +72,7 @@ export default {
     rt.on('blocked', () => push('note', 'That way is closed to you, for now.'));
     rt.on('gate_blocked', e => push('note', e.hint || 'Something bars the way.'));
     rt.on('beat', e => { const b = doc().plot?.storyboard?.acts?.flatMap(a => a.beats || []).find(x => x.id === e.beat); if (b?.title) push('beat', b.title); });
-    rt.on('act_start', e => { const a = doc().plot?.storyboard?.acts?.find(x => x.id === e.act); push('act', a?.title || titleCase(e.act)); });
+    rt.on('act_start', e => { const a = doc().plot?.storyboard?.acts?.find(x => x.id === e.act); if (a?.title) push('act', a.title); });
     // What the document's primitives declare they tell a person (card.tells): clues, conclusions, tasks, notes.
     // An event naming who it happened to (`who`) is told only when that is the player.
     for (const t of tellsOf(rt.doc, rt.registry)) rt.on(t.event, e => { if (e?.who !== undefined && e.who !== 'player') return; const w = tellWords(doc(), t, e); push('note', w.title ? `${w.label}: ` : w.label, ...(w.title ? [el('b', { text: w.title })] : []), ...(w.detail ? [` ${w.detail}`] : [])); });

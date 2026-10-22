@@ -161,7 +161,7 @@ export default {
     // Experimenting (discover 'experiment'): the sets of held items a person can put together: the items each recipe
     // workable here would take (known or not), and every pair of distinct held items (failItem makes a wrong pair
     // something too).
-    const name = id => itemDef(rt, id)?.name ?? id;
+    const name = id => itemDef(rt, id)?.name ?? null; // display text; null when the item declares no name (never its id)
     function combinations(who) {
       const at = stationsAt(who), out = [], seen = new Set();
       const push = list => { const k = JSON.stringify(list); if (!seen.has(k)) { seen.add(k); out.push(list); } };
@@ -171,8 +171,8 @@ export default {
       return out;
     }
     rt.options(rt => [
-      ...craftable('player').slice(0, 12).map(id => { const r = recipes().get(id); return { label: `craft ${id}`, actions: { craft: id }, steps: r.time > 0 ? Math.round(r.time / rt.dt) + 1 : 1 }; }),
-      ...(config.discover === 'experiment' ? combinations('player').map(list => ({ label: `combine ${list.map(x => `${x.count > 1 ? `${x.count} ` : ''}${name(x.item)}`).join(' + ')}`, actions: { combine: list } })) : []),
+      ...craftable('player').slice(0, 12).map(id => { const r = recipes().get(id); const out = r.output?.item && name(r.output.item); return { label: `craft ${id}`, ...(out ? { text: `Craft ${out}` } : {}), actions: { craft: id }, steps: r.time > 0 ? Math.round(r.time / rt.dt) + 1 : 1 }; }),
+      ...(config.discover === 'experiment' ? combinations('player').map(list => ({ label: `combine ${list.map(x => `${x.count > 1 ? `${x.count} ` : ''}${x.item}`).join(' + ')}`, ...(list.every(x => name(x.item)) ? { text: `Combine ${list.map(x => `${x.count > 1 ? `${x.count} ` : ''}${name(x.item)}`).join(' + ')}` } : {}), actions: { combine: list } })) : []),
     ]);
     rt.provide('crafting', {
       station: (who = 'player') => { const at = [...stationsAt(who)].sort()[0]; const s = config.stations.find(x => x.id === at); return s ? { id: s.id, name: s.name ?? s.id, tags: s.tags } : null; },

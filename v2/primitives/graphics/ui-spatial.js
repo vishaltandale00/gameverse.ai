@@ -89,13 +89,13 @@ export function spaceGeometry(space, start) {
   const zones = space?.zones || [];
   if (isGraph(space)) {
     const pos = graphLayout(zones, start);
-    const out = zones.map(z => ({ id: z.id, name: z.name || titleCase(z.id), tags: z.tags || [], shape: { kind: 'circle', c: pos[z.id], r: 2.2 }, center: pos[z.id], exits: z.exits || [] }));
+    const out = zones.map(z => ({ id: z.id, name: z.name || '', tags: z.tags || [], shape: { kind: 'circle', c: pos[z.id], r: 2.2 }, center: pos[z.id], exits: z.exits || [] }));
     const edges = []; const seen = new Set();
     for (const z of zones) for (const e of z.exits || []) { const to = e.to ?? e, k = [z.id, to].sort().join('>'); if (pos[to] && !seen.has(k)) { seen.add(k); edges.push([z.id, to, Boolean(e.gate)]); } }
     return { plane: 'graph', graph: true, zones: out, edges, bounds: shapeBounds(out.map(z => z.shape)) };
   }
   const plane = planeOf(space);
-  const out = zones.map(z => { const shape = zoneShape(z, plane); return { id: z.id, name: z.name || titleCase(z.id), tags: z.tags || [], shape, center: shapeCenter(shape) }; }).filter(z => z.shape);
+  const out = zones.map(z => { const shape = zoneShape(z, plane); return { id: z.id, name: z.name || '', tags: z.tags || [], shape, center: shapeCenter(shape) }; }).filter(z => z.shape);
   return { plane, graph: false, zones: out, edges: [], bounds: shapeBounds(out.map(z => z.shape)) };
 }
 

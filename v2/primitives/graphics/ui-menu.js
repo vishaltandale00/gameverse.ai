@@ -56,12 +56,13 @@ export function controlRows(doc, registryHas = () => true, registry = null) {
 
 /** Selectable options for a select screen: [{ id, name, desc, model?, tags? }] */
 export function selectOptions(doc, sel) {
-  if (sel.options?.length) return sel.options.map(o => ({ ...o, name: o.name || titleCase(o.id) }));
+  // Each entry by its declared name ('' when it declares none: never its id); a stage without one by its number.
+  if (sel.options?.length) return sel.options.map(o => ({ ...o, name: o.name || '' }));
   const from = sel.from || (sel.kind === 'stage' ? 'zones' : 'archetypes');
-  if (from === 'archetypes') return (doc.content?.archetypes || []).filter(a => a.kind === 'player' || (a.tags || []).includes('selectable')).map(a => ({ id: a.id, name: a.name || doc.plot?.characters?.find(c => c.archetype === a.id || c.id === a.id)?.name || titleCase(a.id), desc: a.desc || '', model: a.id }));
-  if (from === 'characters') return (doc.plot?.characters || []).filter(c => (c.tags || []).includes('playable') || /player|playable/.test(c.role || '')).map(c => ({ id: c.id, name: c.name || titleCase(c.id), desc: c.bio || '', model: c.id }));
-  if (from === 'stages') return (docSystem(doc, 'gameplay.stage.sequence')?.with?.stages || []).map(s => ({ id: s.id, name: s.name || s.title || titleCase(s.id), desc: s.desc || '' }));
-  return (doc.spaces || []).flatMap(s => s.zones || []).filter(z => !sel.tag || (z.tags || []).includes(sel.tag)).map(z => ({ id: z.id, name: z.name || titleCase(z.id), desc: z.description || '', tags: z.tags }));
+  if (from === 'archetypes') return (doc.content?.archetypes || []).filter(a => a.kind === 'player' || (a.tags || []).includes('selectable')).map(a => ({ id: a.id, name: a.name || doc.plot?.characters?.find(c => c.archetype === a.id || c.id === a.id)?.name || '', desc: a.desc || '', model: a.id }));
+  if (from === 'characters') return (doc.plot?.characters || []).filter(c => (c.tags || []).includes('playable') || /player|playable/.test(c.role || '')).map(c => ({ id: c.id, name: c.name || '', desc: c.bio || '', model: c.id }));
+  if (from === 'stages') return (docSystem(doc, 'gameplay.stage.sequence')?.with?.stages || []).map((s, i) => ({ id: s.id, name: s.name || s.title || `Stage ${i + 1}`, desc: s.desc || '' }));
+  return (doc.spaces || []).flatMap(s => s.zones || []).filter(z => !sel.tag || (z.tags || []).includes(sel.tag)).map(z => ({ id: z.id, name: z.name || '', desc: z.description || '', tags: z.tags }));
 }
 
 /** Results summary for game_end: { won, title, text, stats: [[label, value]] } */
@@ -245,7 +246,7 @@ export default {
       },
       vs(fighters) {
         open('vs', () => {
-          const [a, b] = fighters, side = (id, cls) => el(`div.gv-vs-side.${cls}`, { style: { '--who': portraitColor(rt.doc, id) } }, el('div.gv-bsprite', {}, portrait(rt.doc, id, { mode: 'full', flip: cls === 'is-right' })), el('b', { text: rt.entity(id)?.components?.name || rt.doc.plot?.characters?.find(c => c.id === id)?.name || titleCase(rt.entity(id)?.archetype || id) }));
+          const [a, b] = fighters, side = (id, cls) => el(`div.gv-vs-side.${cls}`, { style: { '--who': portraitColor(rt.doc, id) } }, el('div.gv-bsprite', {}, portrait(rt.doc, id, { mode: 'full', flip: cls === 'is-right' })), el('b', { text: S.entityName(rt, id) }));
           root.append(el('section.gv-vs', { aria: { label: 'Versus' } }, side(a, 'is-left'), el('div.gv-vs-mark', { text: 'VS' }), side(b, 'is-right')));
           setItems([], { back: null });
           later(() => { if (stack.at(-1) === 'vs') closeAll(); }, 2400);
@@ -300,8 +301,9 @@ export default {
     if (config.vs) rt.on('match_start', e => { const f = e.fighters || e.sides; if (f?.length >= 2) SCREENS.vs(f); });
     rt.on('round_start', e => showBanner(`Round ${e.round}`));
     rt.on('fight', () => showBanner('Fight!'));
-    rt.on('round_end', e => showBanner(e.how === 'ko' ? 'K.O.' : e.how === 'time' ? 'Time' : e.how === 'perfect' ? 'Perfect' : e.winner ? `${titleCase(e.winner)} wins` : 'Draw'));
-    rt.on('stage_intro', e => showBanner(e.name || e.title || (isNum(rt.state.vars['stage.number']) ? `Stage ${rt.state.vars['stage.number']}` : 'Get ready'), 'Stage'));
+    rt.on('round_end', e => showBanner(e.how === 'ko' ? 'K.O.' : e.how === 'time' ? 'Time' : e.how === 'perfect' ? 'Perfect' : e.winner ? (S.entityName(rt, e.winner) ? `${S.entityName(rt, e.winner)} wins` : e.winner === 'player' ? 'You win' : 'You lose') : 'Draw'));
+    // A stage by its declared name (stage_intro `title`), else its number: never its id.
+    rt.on('stage_intro', e => showBanner(e.title || (isNum(rt.state.vars['stage.number']) ? `Stage ${rt.state.vars['stage.number']}` : 'Get ready'), 'Stage'));
     rt.on('stage_clear', () => showBanner('Stage clear'));
     rt.on('wave_start', e => showBanner(`Wave ${e.wave ?? e.index ?? ''}`.trim()));
     let resultsAt = null, endEvent = null;

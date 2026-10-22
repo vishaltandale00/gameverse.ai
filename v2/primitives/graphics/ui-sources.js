@@ -22,6 +22,7 @@
 //   save       service save.slots(); actions save_game/load_game                  (runtime)
 import { docSystem, titleCase } from './ui-lib.js';
 import { uiControls } from '../engine/runtime-lib-controls.js';
+import { entityName as declaredEntityName } from '../engine/runtime-lib-names.js';
 
 /**
  * The options a UI listing whole options (card.controls.options) shows: those whose verbs not every one is issued by
@@ -35,15 +36,12 @@ export function unownedOptions(rt, self, options) {
 }
 
 /**
- * What an entity is called on screen: its character's declared name (plot.characters), else its archetype's
- * (content.archetypes): the names the content forms theme. A view's own name for it (a primitive's fallback to the
- * entity id) and the title-cased archetype id come only after the declarations.
+ * What an entity is called on screen: its character's declared name (plot.characters), its own components.name, else
+ * its archetype's (content.archetypes): the names the content forms theme (engine/runtime-lib-names.js). A view's own
+ * name for it comes after the declarations, unless it is the entity's id; '' when nothing names it (never the id).
  */
 export function entityName(rt, id, viewName = null) {
-  const e = rt.entity(id), doc = rt.doc || {};
-  const declared = (doc.plot?.characters || []).find(c => c.id === id)?.name || (doc.content?.archetypes || []).find(a => a.id === e?.archetype)?.name;
-  if (declared) return declared;
-  return viewName && viewName !== id ? viewName : titleCase(e?.archetype || id);
+  return declaredEntityName(rt, id) || (viewName && viewName !== id && viewName !== rt.entity(id)?.archetype ? viewName : '');
 }
 
 export const vars = (rt, name) => rt.state.vars[name];
@@ -94,7 +92,7 @@ export function craftable(rt, who = 'player') { const list = svc(rt, 'crafting',
 export function money(rt) {
   const cfg = docSystem(rt.doc, 'gameplay.economy')?.with;
   const cur = cfg?.currencies?.length ? cfg.currencies : Object.keys(rt.state.vars).filter(k => k.startsWith('money.')).map(k => ({ id: k.slice(6), name: k.slice(6), var: k }));
-  return cur.map(c => ({ id: c.id, name: c.name || c.id, icon: c.icon ?? null, var: c.var || `money.${c.id}`, value: num(rt, c.var || `money.${c.id}`) }));
+  return cur.map(c => ({ id: c.id, name: c.name || '', icon: c.icon ?? null, var: c.var || `money.${c.id}`, value: num(rt, c.var || `money.${c.id}`) }));
 }
 
 // ---------------------------------------------------------------- combat
@@ -180,10 +178,10 @@ export function battleView(rt) {
  * every legal answer is offered and sent exactly as the primitive defines it.
  */
 function fromCreatureBattle(rt, b) {
-  const unit = (side, c, i, active) => { const max = svc(rt, 'creatures', 'stats', c)?.hp ?? c.maxHp ?? c.hp; const sp = rt.doc.content?.species?.find?.(x => x.id === c.species); return { id: `${side}:${c.uid ?? i}`, name: c.name || sp?.name || c.species, model: sp?.model || c.species, hp: c.hp, hpMax: max || 1, level: c.level, status: c.status ? [c.status] : [], active, down: c.hp <= 0 }; };
+  const unit = (side, c, i, active) => { const max = svc(rt, 'creatures', 'stats', c)?.hp ?? c.maxHp ?? c.hp; const sp = rt.doc.content?.species?.find?.(x => x.id === c.species); return { id: `${side}:${c.uid ?? i}`, name: c.name || sp?.name || '', model: sp?.model || c.species, hp: c.hp, hpMax: max || 1, level: c.level, status: c.status ? [c.status] : [], active, down: c.hp <= 0 }; };
   const me = b.player.party[b.player.active], foe = b.foe.party[b.foe.active];
   const opts = rt.availableOptions().filter(o => o.actions?.battle);
-  const pretty = o => { const v = o.actions.battle; if (v.kind === 'move') { const m = me?.moves?.[v.index]; const def = rt.doc.content?.moves?.find?.(x => x.id === m?.id); return { label: def?.name || String(m?.id || o.label.replace(/^use /, '')).replace(/[_-]+/g, ' ').replace(/^./, x => x.toUpperCase()), pp: m?.pp, ppMax: def?.pp, type: def?.type }; } if (v.kind === 'item') return { label: rt.doc.content?.items?.find(x => x.id === v.item)?.name || o.label }; if (v.kind === 'switch') return { label: `Send ${b.player.party[v.index]?.name || o.label}` }; if (v.kind === 'run') return { label: 'Run' }; return { label: o.label }; };
+  const pretty = o => { const v = o.actions.battle; if (v.kind === 'move') { const m = me?.moves?.[v.index]; const def = rt.doc.content?.moves?.find?.(x => x.id === m?.id); return { label: def?.name || o.text || '', pp: m?.pp, ppMax: def?.pp, type: def?.type }; } if (v.kind === 'item') return { label: rt.doc.content?.items?.find(x => x.id === v.item)?.name || o.text || '' }; if (v.kind === 'switch') return { label: b.player.party[v.index]?.name ? `Send ${b.player.party[v.index].name}` : o.text || '' }; if (v.kind === 'run') return { label: 'Run' }; return { label: o.text || '' }; };
   return { active: true, turn: 'player', sides: [{ id: 'player', player: true, units: me ? [unit('player', me, b.player.active, true)] : [] }, { id: 'foe', units: foe ? [unit('foe', foe, b.foe.active, false)] : [] }],
     menu: opts.map(o => ({ id: o.label, kind: o.actions.battle.kind === 'learn' ? 'move' : o.actions.battle.kind, enabled: true, action: o.actions, target: 'none', ...pretty(o) })) };
 }
@@ -192,8 +190,8 @@ function fromTurns(rt, t) {
   const myTurn = (t.sides || []).find(s => s.id === t.side)?.control === 'player';
   return {
     active: true, turn: myTurn ? 'player' : t.side, round: t.round,
-    sides: (t.sides || []).map(s => ({ id: s.id, player: s.control === 'player', units: (s.units || []).map(u => { const e = rt.entity(u.id), hp = health(e); return { id: u.id, name: entityName(rt, u.id, u.name), model: e?.components?.model, hp: hp?.hp ?? 0, hpMax: hp?.max ?? 1, active: u.id === t.unit, down: u.downed || hp?.dead, ap: u.ap, apMax: u.apMax }; }) })),
-    menu: myTurn ? (t.legal || []).map(a => ({ id: a.id, label: a.label || a.id, kind: 'move', enabled: true, cost: a.cost, target: a.target, targets: a.targets, hit: a.hit })) : [],
+    sides: (t.sides || []).map(s => ({ id: s.id, name: s.name || '', player: s.control === 'player', units: (s.units || []).map(u => { const e = rt.entity(u.id), hp = health(e); return { id: u.id, name: entityName(rt, u.id, u.name), model: e?.components?.model, hp: hp?.hp ?? 0, hpMax: hp?.max ?? 1, active: u.id === t.unit, down: u.downed || hp?.dead, ap: u.ap, apMax: u.apMax }; }) })),
+    menu: myTurn ? (t.legal || []).map(a => ({ id: a.id, label: a.text || '', kind: 'move', enabled: true, cost: a.cost, target: a.target, targets: a.targets, hit: a.hit })) : [],
     ap: t.ap, apMax: t.apMax,
   };
 }

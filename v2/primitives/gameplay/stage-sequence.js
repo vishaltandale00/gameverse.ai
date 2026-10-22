@@ -68,7 +68,7 @@ export default {
     params: {
       id: { type: 'string', default: 'stages', effect: 'name used by the stage predicate' },
       stages: { type: 'list', min: 1, required: true, of: { type: 'object', fields: {
-        id: { type: 'string', required: true }, name: { type: 'string' }, intro: { type: 'string' },
+        id: { type: 'string', required: true }, name: { type: 'string', display: true, effect: 'what a person reads for the stage' }, intro: { type: 'string', display: true },
         params: { type: 'object', open: true, default: {}, effect: 'target -> value applied at stage start (see targets)' },
         goal: { type: 'object', fields: GOAL_FIELDS }, stars: { type: 'list', of: { type: 'number' }, default: [] },
         clear: { type: 'predicate' }, fail: { type: 'predicate' },
@@ -264,7 +264,9 @@ function install(rt, config) {
     }
     for (const sp of d.spawn) { if (sp.id && rt.entity(sp.id)) rt.despawn(sp.id); const e = rt.spawn(sp.archetype, { id: sp.id, space: sp.space, at: sp.at }); if (sp.zone) rt.space(e.space).teleport(e, { zone: sp.zone }, rt); }
     runBound(rt, d.onStart, { actor: 'player' });
-    rt.emitTyped('stage_intro', s.stageId, { stage: s.stageId, index: i, number: i + 1, loop: s.loop, name: d.name ?? s.stageId, intro: d.intro ?? '' });
+    // title: the stage's declared name (display text; null when it declares none, never its id). A `name` key would
+    // overwrite the event's name in state.events.
+    rt.emitTyped('stage_intro', s.stageId, { stage: s.stageId, index: i, number: i + 1, loop: s.loop, title: d.name ?? null, intro: d.intro ?? '' });
     if (!F(config.introSec)) begin(s);
   }
   function begin(s) { s.phase = 'play'; s.pt = 0; rt.emitTyped('stage_start', s.stageId, { stage: s.stageId, index: s.index, loop: s.loop }); }
@@ -356,6 +358,6 @@ function install(rt, config) {
 
   rt.options(rt => {
     const s = st(); if (!config.select || s.phase === 'play' || s.phase === 'intro') return [];
-    return config.stages.map((x, i) => ({ x, i })).filter(({ i }) => unlocked(s, i)).map(({ x }) => ({ label: `stage ${x.id}`, actions: { select_stage: x.id } }));
+    return config.stages.map((x, i) => ({ x, i })).filter(({ i }) => unlocked(s, i)).map(({ x, i }) => ({ label: `stage ${x.id}`, text: x.name ? `Stage ${i + 1}: ${x.name}` : `Stage ${i + 1}`, actions: { select_stage: x.id } }));
   });
 }

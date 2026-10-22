@@ -54,7 +54,7 @@ export function drawZones(F, api, { cellAnchored = false } = {}) {
       if (!top || sy < top[1]) top = [sx + w / 2, sy];
     }
     // Its name (the themed one) above it, so a person knows what the area is.
-    label(g, zone.name || titleCase(id), top[0], top[1] - Math.max(8, z * 0.35), { size: Math.max(10, Math.min(18, z * 0.45)), color: light(c, 0.3) });
+    if (zone.name) label(g, zone.name, top[0], top[1] - Math.max(8, z * 0.35), { size: Math.max(10, Math.min(18, z * 0.45)), color: light(c, 0.3) });
   }
 }
 

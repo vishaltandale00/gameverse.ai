@@ -40,6 +40,7 @@ const AXES = ['x', 'y', 'z'];
 
 import { movementEnvelope } from './move-lib-envelope.js';
 import { intercept } from './combat-lib.js';
+import { entityName, zoneName, listed, cellText } from '../engine/runtime-lib-names.js';
 
 // ---------------------------------------------------------------- vocabulary of other primitives
 
@@ -727,7 +728,8 @@ export function ensureShared(rt, macro = {}) {
     const listed = reachableZones(rt, p, api);
     return listed.slice(0, S.max).map(({ id, dist }) => {
       const steps = Math.min(Math.round(S.seconds / rt.dt), Math.max(30, Math.ceil(((dist + 2) / S.speed) * 1.6 / rt.dt)));
-      return { label: `travel to ${id}`, actions: { travel: id }, steps, macro: true, apply: rt => travel(rt, id, steps, S) };
+      const name = zoneName(rt.doc, id);
+      return { label: `travel to ${id}`, ...(name ? { text: `Go to ${name}` } : {}), actions: { travel: id }, steps, macro: true, apply: rt => travel(rt, id, steps, S) };
     });
   });
 }
