@@ -65,7 +65,7 @@ export default {
     const machine = createDialogueMachine({ cps: config.cps });
     const messages = [];
     let view = null, cats = [], level = 'root', cat = null, items = [], index = 0, targeting = null, unitNodes = new Map(), lastUnitsSig = '', lastMenuSig = '', lastT = host.now(), waitingSince = lastT;
-    const layer = { id: 'battle', modal: true, onVerb: verb => press(verb) };
+    const layer = { id: 'battle', modal: false, takesInput: true, onVerb: verb => press(verb) }; // the turn screen is where play happens: keys the game binds still reach it
 
     rt.on('battle_message', e => say(e.text));
     rt.on('battle_log', e => { if (e.text) say(e.text); });
@@ -84,12 +84,14 @@ export default {
         else if (verb === 'right' || verb === 'down') { targeting.i = (targeting.i + 1) % targeting.ids.length; host.sound('move'); paintTargets(); }
         else if (verb === 'confirm') { send(targeting.item, targeting.ids[targeting.i]); }
         else if (verb === 'back') { targeting = null; paintTargets(); host.sound('back'); }
+        else return false;
         return true;
       }
       if (['up', 'down', 'left', 'right'].includes(verb)) { const i = moveFocus(index, verb, items.length, 2); if (i !== index && i >= 0) { index = i; focusMenu(); host.sound('move'); } return true; }
       if (verb === 'confirm') { items[index]?._run?.(); return true; }
-      if (verb === 'back' && level !== 'root') { level = 'root'; cat = null; lastMenuSig = ''; paintMenu(); host.sound('back'); return true; }
-      return true;
+      // One category opens by itself (paintMenu), so there is no root to go back to: back is not handled.
+      if (verb === 'back' && level !== 'root' && !(cats.length === 1 && !cats[0].direct)) { level = 'root'; cat = null; lastMenuSig = ''; paintMenu(); host.sound('back'); return true; }
+      return false; // not handled: the pause menu's key reaches it
     }
     function choose(item) {
       if (item.enabled === false) { host.sound('error'); return; }

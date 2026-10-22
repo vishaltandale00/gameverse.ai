@@ -1,13 +1,12 @@
-// Layers 1-3 of ARCHITECTURE.md §4: outline (preflight + repair rounds), first playable
-// (no model, <1 s), detail patches (repaired, guarded, verified, hot-loaded via mergePatch + rt.extend).
+// The step path's outline (preflight + repair rounds) and first playable (no model, <1 s). There is no detail pass
+// after publishing (ARCHITECTURE §5: no post-publish pass adds content the declarations did not ask for).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createWorld } from '../v2/kernel/world.js';
 import { preflight, mergePatch } from '../v2/kernel/document.js';
-import { selectPrimitives } from '../v2/planner/select.js';
-import { proceduralOutline, writeOutline, fewShot, ensureAgency } from '../v2/planner/outline.js';
+import { spaceVariants } from '../v2/planner/catalog.js';
+import { proceduralOutline, writeOutline, fewShot } from '../v2/planner/outline.js';
 import { firstPlayable, replayCheck } from '../v2/planner/first-playable.js';
-import { detailTasks, proceduralDetail, acceptPatch, sanitizePatch } from '../v2/planner/detail.js';
 import { verifyDocument, regressed } from '../v2/planner/verify-adapter.js';
 import { solve } from '../v2/verify/solve.js';
 import { testCatalogue, fakeWriter, decomposition, broken, picky } from './v2-p-pipeline-fixtures.js';
@@ -15,7 +14,18 @@ import { testCatalogue, fakeWriter, decomposition, broken, picky } from './v2-p-
 const { registry, logic } = testCatalogue();
 /** A play spec saying the idea has a story told in acts (the rest is decided by the collection). */
 const STORY = { interaction: null, opponent: 'none', win: 'reach the lamp', lose: '', theme: '', narrative: true, mashup: [] };
-const plan = async (mechanics, core = STORY) => { const d = decomposition(mechanics, core ? { core } : {}); const a = await ensureAgency({ decomposition: d, selection: await selectPrimitives({ decomposition: d, registry }), registry, logic, seed: 1 }); return { d, sel: a.selection, agency: a }; };
+/**
+ * The selection these outline tests start from (selection itself is the model's build: v2-p-pipeline-build*.test.js):
+ * collecting items is the inventory's, the story told in acts is the story runner's, on the graph of places.
+ */
+const plan = () => {
+  const d = decomposition(['find and collect items', 'follow a story told in acts'], { core: STORY });
+  const space = { id: 'world', use: 'engine.space.graph', with: {}, role: 'world', caps: [...spaceVariants(registry, 'engine.space.graph')[0].caps] };
+  const by = ['gameplay.inventory', 'plot.storyboard'];
+  const sel = { version: 'test', systems: [...by], spaces: [space], generators: [], graphics: [], bind: {}, gaps: [], provider: 'test', ms: 0,
+    mechanics: d.mechanics.map((m, i) => ({ ...m, primitives: [by[i]], candidates: [], source: 'test', score: 1 })), completeness: { locomotion: { view: null, medium: null, removed: [], added: null } } };
+  return { d, sel };
+};
 /**
  * The story a model writes on the structure (the preset authors none): a guide, an arrival beat, a beat per zone
  * reached, the second zone's exit gated by a key the first beat gives, and a finale that wins. Test data only.
@@ -28,45 +38,32 @@ function authored(structure) {
   const gate = zones[1]?.exits?.find(x => x.to === zones[2]?.id); if (gate) gate.gate = { item: 'brass_key' };
   doc.plot.storyboard = { acts: [{ id: 'act_1', title: 'Arrival', beats: [
     { id: 'arrival', do: [{ do: 'say', character: 'guide', text: 'Find the lamp.' }, { do: 'give_item', item: 'brass_key' }] },
-    ...zones.slice(1).map(z => ({ id: `reach_${z.id}`, when: { zone: z.id }, do: [{ do: 'say', character: 'guide', text: `${z.name}.` }] })),
+    ...zones.slice(1).map(z => ({ id: `reach_${z.id}`, when: { zone: z.id }, do: [{ do: 'say', character: 'guide', text: `${z.id}.` }] })),
     { id: 'finale', after: [`reach_${zones[zones.length - 1].id}`], do: [{ do: 'end_game', ending: 'victory' }] },
   ] }] };
   return doc;
 }
 
 test('the procedural structure composes what the cards declare and authors no story', async () => {
-  for (const mechanics of [['find and collect items', 'follow a story told in acts'], ['dash through enemies with a burst of speed']]) {
-    const { d, sel } = await plan(mechanics);
-    const o = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 3 });
-    // The structure has no story until the model writes one: it does not validate, and nothing invents one.
-    assert.equal(o.ok, false);
-    assert.deepEqual([...new Set(o.errors.map(e => e.code))], ['plot_missing'], JSON.stringify(o.errors));
-    assert.equal(o.doc.plot.storyboard, undefined, 'no adventure skeleton, no placeholder act: the story is the model\'s');
-    assert.equal(o.doc.spaces[0].zones.length, d.zones);
-    assert.ok(preflight(authored(o.doc), registry, logic).ok, 'an authored story on the structure preflights');
-    assert.ok(o.doc.systems.some(s => s.use === 'plot.storyboard'), 'the idea has a story: its runner is in the collection');
-    assert.equal(o.structure.win?.use, 'plot.storyboard', 'the story declares the win (its endings)');
-    assert.ok(o.doc.plot.endings.some(e => e.id === 'victory' && e.outcome === 'won'));
-    if (o.doc.spaces[0].use === 'engine.space.graph') {
-      const s = solve(preflight(authored(o.doc), registry, logic).doc, registry, logic, { budgetMs: 1000 });
-      assert.ok(s.completable, 'the structure carries an authored story end to end');
-    } else assert.ok(sel.spaces[0].caps.includes('gravity'), 'the dash needs gravity');
-  }
-});
-
-test('agency: a skeleton whose player has no options re-selects the space; if none offers any, it is a reported gap', async () => {
-  const items = await plan(['find and collect items'], null);
-  assert.ok(items.agency.agency);
-  assert.equal(items.sel.spaces[0].use, 'engine.space.graph', 'the space whose player can act');
-  assert.ok(items.agency.attempts.length >= 1 && items.agency.attempts.at(-1).options > 0);
-  const dash = await plan(['dash through enemies with a burst of speed'], null);
-  assert.equal(dash.agency.agency, false, 'no movement primitive is registered for continuous spaces in this catalogue');
-  assert.ok(dash.sel.systems.includes('gameplay.test.dash'), 'the chosen mechanic is never dropped for agency');
-  assert.ok(dash.sel.gaps.some(g => g.mechanic === 'player_agency' && g.kind === 'capability'));
-  // A structure that cannot validate before the model writes its story leaves agency to the publish gate.
-  const story = await plan(['find and collect items']);
-  assert.equal(story.agency.agency, null);
-  assert.ok(!story.sel.gaps.some(g => g.mechanic === 'player_agency'));
+  const { d, sel } = plan();
+  const o = proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 3 });
+  // The structure has no story until the model writes one: it does not validate, and nothing invents one.
+  assert.equal(o.ok, false);
+  assert.deepEqual([...new Set(o.errors.map(e => e.code))], ['plot_missing'], JSON.stringify(o.errors));
+  assert.equal(o.doc.plot.storyboard, undefined, 'no adventure skeleton, no placeholder act: the story is the model\'s');
+  // The story runner is in the collection (a mechanic's pick): its places are the ones the play spec's story asks for,
+  // with code-written ids and no names (the model names them).
+  assert.equal(o.doc.spaces[0].zones.length, d.zones);
+  assert.ok(o.doc.spaces[0].zones.every((z, i) => z.id === `place_${i + 1}` && z.name === undefined));
+  assert.ok(preflight(authored(o.doc), registry, logic).ok, 'an authored story on the structure preflights');
+  assert.equal(o.structure.win?.use, 'plot.storyboard', 'the story declares the win (its endings)');
+  assert.ok(o.doc.plot.endings.some(e => e.id === 'victory' && e.outcome === 'won'));
+  const s = solve(preflight(authored(o.doc), registry, logic).doc, registry, logic, { budgetMs: 1000 });
+  assert.ok(s.completable, 'the structure carries an authored story end to end');
+  // Without the story runner in the collection there is no story and no story places, whatever the play spec's flag says.
+  const plain = proceduralOutline({ decomposition: d, selection: { ...sel, systems: ['gameplay.inventory'], mechanics: sel.mechanics.slice(0, 1) }, registry, logic, seed: 3 });
+  assert.ok(!plain.doc.systems.some(x => x.use === 'plot.storyboard'));
+  assert.equal(plain.structure.narrative, false);
 });
 
 test('few-shot material only teaches registered primitives', () => {
@@ -76,7 +73,7 @@ test('few-shot material only teaches registered primitives', () => {
 });
 
 test('model outline: errors are repaired by code first, then sent back to the model; never substituted by the skeleton', async () => {
-  const { d, sel } = await plan(['find and collect items']);
+  const { d, sel } = plan();
   const skeleton = authored(proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 1 }).doc);
   // The drafts carry the content the chosen primitives need (authored: a story and items to hold), so they are not hollow.
   const full = doc => structuredClone(doc);
@@ -124,7 +121,7 @@ test('model outline: errors are repaired by code first, then sent back to the mo
 });
 
 test('model outline: a hollow draft gets the missing content back as concrete problems, with the shape to add', async () => {
-  const { d, sel } = await plan(['find and collect items']);
+  const { d, sel } = plan();
   const skeleton = authored(proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 1 }).doc);
   const hollow = structuredClone(skeleton); hollow.content.items = [{ id: 'brass_key', name: 'Brass key' }];
   const filled = structuredClone(skeleton);
@@ -139,7 +136,7 @@ test('model outline: a hollow draft gets the missing content back as concrete pr
 });
 
 test('model outline: static plot analysis (plotGraph) and verification problems drive repair rounds', async () => {
-  const { d, sel } = await plan(['find and collect items']);
+  const { d, sel } = plan();
   const skeleton = authored(proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 1 }).doc);
   // Preflight-valid, but the first exit needs an item nothing gives: the story can never be finished.
   const locked = structuredClone(skeleton);
@@ -155,7 +152,7 @@ test('model outline: static plot analysis (plotGraph) and verification problems 
 });
 
 test('first playable: no model, well under a second, deterministic; an install that throws is named, never removed', async () => {
-  const { d, sel } = await plan(['find and collect items']);
+  const { d, sel } = plan();
   const o = { doc: authored(proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 9 }).doc) };
   const t = performance.now();
   const fp = firstPlayable(o.doc, registry, logic, { seed: 9 });
@@ -173,51 +170,18 @@ test('first playable: no model, well under a second, deterministic; an install t
   assert.equal(fp2.errors[0].primitive, 'gameplay.test.broken');
 });
 
-test('detail patches: sanitized (namespaced ids, optional beats), merged, verified, and hot-loaded into a running world', async () => {
-  const { d, sel } = await plan(['find and collect items']);
-  const base = firstPlayable(authored(proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 2 }).doc), registry, logic, { seed: 2 }).doc;
-  const tasks = detailTasks(base);
-  assert.equal(tasks.length, d.zones);
-  const task = tasks[1];
-  const s = sanitizePatch({ plot: { characters: [{ id: 'fisher', name: 'Old Fisher' }], storyboard: { acts: [{ id: 'act_1', beats: [{ id: 'chat', when: { zone: task.zone }, do: [{ do: 'say', character: 'fisher', text: 'Hm.' }] }] }, { id: 'no_such_act', beats: [{ id: 'x' }] }] } }, title: 'hijack' }, task, base);
-  assert.equal(s.title, undefined, 'only additive sections survive');
-  assert.equal(s.plot.characters[0].id, `${task.zone}_fisher`);
-  assert.deepEqual(s.plot.storyboard.acts.map(a => a.id), ['act_1']);
-  assert.equal(s.plot.storyboard.acts[0].beats[0].optional, true);
-  assert.equal(s.plot.storyboard.acts[0].beats[0].do[0].character, `${task.zone}_fisher`, 'references follow renamed ids');
-
-  const baseVerify = await verifyDocument(base, registry, logic);
-  const accepted = await acceptPatch({ current: base, patch: proceduralDetail(base, task, registry), task, registry, logic, baseVerify });
-  assert.ok(accepted.ok, JSON.stringify(accepted.errors));
-  assert.ok(accepted.added.beats.length === 1 && accepted.added.keys.includes('plot.characters'));
-  assert.ok(accepted.verify.completable, 'still completable');
-  // Hot-load into a world that is already running, then walk into the zone.
-  const rt = createWorld(preflight(base, registry, logic).doc, registry, logic, { seed: 2 });
-  rt.step();
-  rt.extend(accepted.doc, accepted.added);
-  assert.equal(rt.state.counts.content_added, 1);
-  const path = rt.space(base.spaces[0].id);
-  path.teleport(rt.player(), { zone: task.zone }, rt);
-  rt.step(); rt.step();
-  assert.ok(rt.store('plot.storyboard').fired[`${task.zone}_welcome`], 'the hot-loaded beat fired');
-
-  const empty = await acceptPatch({ current: base, patch: { title: 'x' }, task, registry, logic, baseVerify });
-  assert.equal(empty.reason, 'empty');
-  const bad = await acceptPatch({ current: base, patch: { plot: { storyboard: { acts: [{ id: 'act_1', beats: [{ id: 'b', do: [{ do: 'explode' }] }] }] } } }, task, registry, logic, baseVerify });
-  assert.ok(bad.ok, 'an unknown effect is repaired away by code (the beat stays, harmless)');
+test('a regression is a proof: an unfinished search never counts as one', () => {
   assert.equal(regressed({ completable: true }, { completable: false, exhaustive: true }), true);
   assert.equal(regressed({ completable: true }, { completable: false, exhaustive: false }), false, 'an unfinished search is not a proof');
 });
 
-test('mergePatch keeps the outline intact: parallel zone patches never collide', async () => {
-  const { d, sel } = await plan(['find and collect items']);
-  const base = authored(proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 4 }).doc);
-  let current = base;
-  for (const task of detailTasks(base)) {
-    const r = await acceptPatch({ current, patch: proceduralDetail(base, task, registry), task, registry, logic });
-    assert.ok(r.ok, `${task.id}: ${JSON.stringify(r.errors)}`);
-    current = r.doc;
-  }
-  assert.equal(current.plot.characters.length, base.plot.characters.length + detailTasks(base).length);
-  assert.deepEqual(mergePatch(current, {}).doc.spaces, current.spaces);
+test('model outline: data the model writes that no chosen primitive reads is left out and recorded; no primitive is added for it', async () => {
+  const { d, sel } = plan();
+  const skeleton = authored(proceduralOutline({ decomposition: d, selection: sel, registry, logic, seed: 1 }).doc);
+  const extra = { ...structuredClone(skeleton), plot: { ...structuredClone(skeleton.plot), quests: [{ id: 'q', title: 'Q', steps: [] }] } };
+  const r = await writeOutline({ forms: 'single', writer: fakeWriter([extra]), prompt: 'idea', decomposition: d, selection: sel, registry, logic, seed: 1, verify: false });
+  assert.ok(r.ok, JSON.stringify(r.errors?.slice(0, 2)));
+  assert.equal(r.doc.plot.quests, undefined);
+  assert.deepEqual(r.doc.systems.map(s => s.use).sort(), [...skeleton.systems.map(s => s.use)].sort(), 'the collection is code\'s');
+  assert.ok(r.rounds.some(x => x.unread?.includes('plot.quests')), JSON.stringify(r.rounds));
 });

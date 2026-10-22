@@ -7,7 +7,7 @@
 import { preflight } from '../kernel/document.js';
 import { hostDocument } from '../web/host-doc.js';
 import { solve } from '../verify/solve.js';
-import { loopEvents } from '../verify/objective.js';
+import { loopEvents, loopShown } from '../verify/objective.js';
 import { createWorld } from '../kernel/world.js';
 import { worldProblems, spacesNeedingWorld } from './world.js';
 import { isObj, objects, prop } from '../kernel/guards.js';
@@ -119,10 +119,8 @@ function unplayable(play, problems, strategies, loop) {
   // A feature the document mixes in that does not exist, has no control or does nothing when pressed (verify/features.js).
   for (const p of problems) if (p.stage === 'features' && p.severity === 'error') out.push(`${p.code}: ${p.message}`);
   // The core loop happens: an event the primitives declare as their loop's progress fires from play (more than idling fires it).
-  const fired = pt.eventsFired || {}, idle = pt.idle?.counts || {};
-  const played = (/** @type {string} */ e) => Object.keys(fired).some(k => (e.endsWith(':') ? k.startsWith(e) : k === e) && (fired[k] || 0) > (idle[k] || 0));
   if (!loop.length) out.push('loop_undeclared: no primitive in the game declares its loop (card.loop.progress), so nothing defines what playing it is');
-  else if (!loop.some(played)) out.push(`loop_absent: none of the loop's events (${loop.slice(0, 6).join(', ')}) happened from play`);
+  else if (!loopShown(loop, pt.eventsFired || {}, pt.idle?.counts || {})) out.push(`loop_absent: none of the loop's events (${loop.slice(0, 6).join(', ')}) happened from play`);
   // Progress toward the win: a win, or play moving the quantity the core loop's win reads toward it beyond what idling
   // moves it (an intro beat, ambient events or a rising general score are not progress).
   if (!won0) {
@@ -146,11 +144,13 @@ export { winQuantity };
  * simulated frames per stage, never wall time). `playable`: the playability checks apply (the playtest agents' run:
  * the bots the loops name, the loop, progress toward the win). `budget` overrides stage budgets; `wallMs` caps total
  * wall time between stages (a stage it stops leaves the verdict budget_limited, never a different one).
+ * `won`: the caller reads the explorer's win (playtest.winnable: the outline's completion signal), so the explorer plays
+ * for one (a win or its budget) instead of stopping once it has shown what the gate reads.
  * @param {unknown} doc a document (preflighted here) @param {RegistryLike} registry @param {LogicLike} logic
- * @param {{ playable?: boolean, budget?: Record<string, number> | null, wallMs?: number | null }} [opts]
+ * @param {{ playable?: boolean, budget?: Record<string, number> | null, wallMs?: number | null, won?: boolean }} [opts]
  * @returns {Promise<Verification>}
  */
-export async function verifyDocument(doc, registry, logic, { playable = false, budget = null, wallMs = null } = {}) {
+export async function verifyDocument(doc, registry, logic, { playable = false, budget = null, wallMs = null, won = false } = {}) {
   const started = performance.now();
   // The gate verifies what the host mounts (ARCHITECTURE §6.3): the document with the host's default input and UI
   // (v2/web/host-doc.js, the same function the browser player mounts), so the controls the bots play through are the
@@ -171,9 +171,13 @@ export async function verifyDocument(doc, registry, logic, { playable = false, b
   const m = await verifyModule();
   if (typeof m.verify === 'function') {
     try {
-      // The playtest steers by, and reports progress on, the quantity the core loop's win reads.
-      const win = winQuantity(pre.doc, registry);
-      const r = await m.verify(pre.doc, registry, logic, { seed: pre.doc.seed, ...(budget ? { budget } : {}), ...(Number.isFinite(wallMs) ? { wallMs } : {}), ...(win ? { playtest: { win } } : {}) });
+      // The playtest steers by, and reports progress on, the quantity the core loop's win reads. Checked for
+      // playability, it is run to show what viability() reads from it (the loop, and progress unless a bot won) and
+      // stops once it has, unless the caller reads its win (`won`): the same document, seed and budgets still give the
+      // same play and verdict.
+      const win = winQuantity(pre.doc, registry), loop = loopEvents(pre.doc, registry);
+      const explorer = { ...(win ? { win } : {}), ...(playable && !won ? { prove: { loop } } : {}) };
+      const r = await m.verify(pre.doc, registry, logic, { seed: pre.doc.seed, ...(budget ? { budget } : {}), ...(Number.isFinite(wallMs) ? { wallMs } : {}), ...(Object.keys(explorer).length ? { playtest: explorer } : {}) });
       const solved = r?.plot || r?.solve || r;
       // ok stays "the document is valid and runs"; verified is the layer's own verdict (no error-severity problem).
       const problems = [...world, ...(r?.problems || [])];
@@ -183,7 +187,7 @@ export async function verifyDocument(doc, registry, logic, { playable = false, b
       /** @type {Verification} */
       const result = { ...out, ok: !(r?.problems || []).some(p => p.stage === 'preflight' && p.severity === 'error'), verified: world.length ? false : r?.ok ?? null, completable: solved?.completable ?? null, exhaustive: Boolean(solved?.exhaustive), source: 'verify',
         playtest: pt ? { winnable: pt.winnable, win: pt.win, losses: pt.losses, idle: pt.idle, explored: pt.explored, framesSimulated: pt.framesSimulated ?? null, timeline: pt.timeline ?? null, sample: (pt.sample || []).map(c => ({ key: c.key, frames: c.frames, score: c.score })), progress: pt.progress ?? null } : null,
-        ...(limited.length ? { viable: false, viability: `budget_limited: the wall-time cap (${wallMs} ms) passed before ${limited.join(', ')} ran` } : playable ? viability(pt, problems, r?.strategies ?? null, loopEvents(pre.doc, registry)) : viability(pt, problems)),
+        ...(limited.length ? { viable: false, viability: `budget_limited: the wall-time cap (${wallMs} ms) passed before ${limited.join(', ')} ran` } : playable ? viability(pt, problems, r?.strategies ?? null, loop) : viability(pt, problems)),
         solve: solved ? { completable: solved.completable, exhaustive: solved.exhaustive, endings: solved.endings || {}, beatsNeverFired: solved.beatsNeverFired || [], states: solved.states ?? null } : null,
         problems, timings: r?.timings || null, features: r?.features ?? null, ms: Math.round(performance.now() - started) };
       // The full playtest (archive snapshots included) stays in memory for quality measurements (v2/verify/quality.js); it is never serialized.

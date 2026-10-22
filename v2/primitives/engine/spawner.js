@@ -9,7 +9,7 @@
 // the arcade ghost house, waves leaving a gate, a queue at a door.
 // The spawn/despawn effects place entities through the same code.
 import { ENTITY_KINDS } from '../../kernel/params.js';
-import { frames, rollRange, zoneDef, zoneArea, samplePoint, scatter, isVec, pick, uniqueIds } from './runtime-lib.js';
+import { frames, rollRange, zoneDef, zoneArea, samplePoint, scatter, isVec, pick, uniqueIds, standable as standsAt } from './runtime-lib.js';
 
 const ID = 'engine.spawner';
 const pair = (effect, dflt) => ({ type: 'list', of: { type: 'integer', min: 0 }, min: 1, max: 2, default: dflt, effect });
@@ -24,7 +24,9 @@ export default {
         of: { type: 'object', fields: {
           id: { type: 'string', required: true }, archetype: { type: 'ref', to: 'archetype', required: true },
           space: { type: 'ref', to: 'space', effect: 'the space to spawn in (default: the zone\'s, else the space the spawner is bound to, else the player\'s)' }, zone: { type: 'ref', to: 'zone' },
-          at: { type: 'json', scale: 'world', effect: 'a point or a list of points to spawn at, in its space\'s coordinates' }, near: { type: 'string', selects: ENTITY_KINDS, effect: 'entity id or archetype to spawn around (falls back to the zone)' },
+          at: { type: 'json', scale: 'world', effect: 'a point or a list of points to spawn at, in its space\'s coordinates' },
+          band: { type: 'integer', min: 0, effect: 'a seat at an edge of a cell space, resolved on the world as generated when the rule first spawns: 0 the far row, 1 the near row, 2 and 3 the side columns, 4 and up the same bands further in; cells the archetype can stand in, lines from the edge inward, each from its middle out, one per spawn, never a cell another band rule of this spawner, the player or another body holds (used when no at is given)' },
+          near:{ type: 'string', selects: ENTITY_KINDS, effect: 'entity id or archetype to spawn around (falls back to the zone)' },
           spread: { type: 'number', default: 0, min: 0, effect: 'scatter radius around at/near/group anchor' },
           count: pair('[min, max] alive target, rolled each time the rule activates', [1, 1]),
           per1000m2: { type: 'number', min: 0, effect: 'density; with a zone of known area the target is area x density, clamped to count' },
@@ -112,30 +114,78 @@ export default {
       if (!rt.hasService('biomeAt') || !isVec(at)) return false;
       const b = rt.service('biomeAt'); return (typeof b === 'function' ? b : b.at)(at[0], at.length >= 3 ? at[2] : at[1], space) === r.biome;
     };
+    const spaceOfRule = (r, z = r.zone ? zoneDef(rt.doc, r.zone) : null) => r.space ?? z?.space ?? instance?.space ?? rt.player()?.space ?? rt.doc.spaces[0].id;
+    // Can the archetype stand at `at` (runtime-lib standable: inside a cell space, in a cell it may enter)?
+    const standable = (api, space, at, archetype) => standsAt(rt, api, space, at, { archetype, components: {} });
+    const rectCells = (x0, y0, x1, y1) => { const out = []; for (let y = Math.ceil(y0); y < y1; y++) for (let x = Math.ceil(x0); x < x1; x++) out.push([x, y]); return out; };
+    const discCells = (c, rad) => rectCells(c[0] - rad, c[1] - rad, c[0] + rad + 1, c[1] + rad + 1).filter(q => Math.hypot(q[0] - c[0], q[1] - c[1]) <= rad);
+    const zoneCells = zone => (Array.isArray(zone.rect) ? rectCells(...zone.rect) : Array.isArray(zone.cells) ? zone.cells.filter(isVec) : []);
+    // Edge seats (rule.band) are resolved once, on the world as generated, for every band rule of this spawner on that
+    // space together (in rule order, so no two share a cell), and kept in state so a replay or a restore seats the same cells.
+    const bandCells = (g, area, n, taken, ok) => {
+      const [x0, y0, x1, y1] = area.map(Math.floor), W = x1 - x0, H = y1 - y0, side = g % 4, ring = Math.floor(g / 4);
+      const rows = side < 2, len = rows ? W : H, depth = Math.max(1, Math.floor((rows ? H : W) / 2));
+      const order = Array.from({ length: len }, (_, i) => i).sort((a, b) => Math.abs(a - (len - 1) / 2) - Math.abs(b - (len - 1) / 2) || a - b);
+      const cells = [];
+      for (let k = ring * depth; k < depth * (ring + 1) && cells.length < n; k++) for (const i of order) {
+        if (cells.length >= n) break;
+        const line = side === 0 ? y1 - 1 - k : side === 1 ? y0 + k : side === 2 ? x0 + k : x1 - 1 - k;
+        const at = rows ? [x0 + i, line] : [line, y0 + i];
+        if (taken.has(at.join()) || !ok(at)) continue;
+        taken.add(at.join()); cells.push(at);
+      }
+      return cells;
+    };
+    const seatsOn = (space, api) => {
+      const s = st(); s.seats ??= {};
+      if (s.seats[space]) return s.seats[space];
+      const b = api.bounds?.(), area = b && b.min.length >= 2 && [b.min[0], b.min[1], b.max[0], b.max[1]].every(Number.isFinite) ? [b.min[0], b.min[1], b.max[0], b.max[1]] : null;
+      const mine = config.rules.filter(r => r.band !== undefined && r.at === undefined && spaceOfRule(r) === space);
+      const out = {};
+      if (area) {
+        // Cells already held: the player's and any other body's (pellets and pickups carry none and hold no cell).
+        const player = rt.player();
+        const taken = new Set(Object.values(rt.state.entities).filter(e => e.space === space && isVec(e.at) && (e === player || e.components.body)).map(e => e.at.slice(0, 2).map(Math.round).join()));
+        for (const g of [...new Set(mine.map(r => r.band))]) {
+          const rules = mine.filter(r => r.band === g), need = rules.map(r => (r.unique ? 1 : Math.max(...r.count, 1)));
+          rules.forEach((r, j) => { out[r.id] = bandCells(g, area, need[j], taken, at => standable(api, space, at, r.archetype)); });
+        }
+      }
+      return (s.seats[space] = out);
+    };
     // Candidate position for a rule-like spec; null when no valid position was found.
-    const place = (r, anchor = null) => {
+    const place = (r, anchor = null, seat = null) => {
       const p = rt.player(), z = r.zone ? zoneDef(rt.doc, r.zone) : null;
       // The rule's space, its zone's, the space the spawner is bound to (a composed document binds an inner template's
       // spawner to the inner space), else the player's.
-      const space = r.space ?? z?.space ?? instance?.space ?? p?.space ?? rt.doc.spaces[0].id, api = rt.space(space);
+      const space = spaceOfRule(r, z), api = rt.space(space);
       for (let attempt = 0; attempt < 8; attempt++) {
-        let at = null, teleportZone = null, sampled = true;
-        if (anchor) at = scatter(anchor, r.spread || 2, rt.random);
+        // region: the cells a sampled position was drawn from, on a grid (anchor 'cell').
+        let at = null, teleportZone = null, sampled = true, region = null;
+        if (anchor) { at = scatter(anchor, r.spread || 2, rt.random); region = () => discCells(anchor.map(Math.round), r.spread || 2); }
         else if (r.at !== undefined) sampled = false, at = scatter(Array.isArray(r.at) && r.at.every(isVec) && !isVec(r.at) ? pick(r.at, rt.random) : r.at, r.spread, rt.random);
-        else if (r.near && Object.values(rt.state.entities).some(e => e.space === space && (e.id === r.near || e.archetype === r.near))) {
-          const t = Object.values(rt.state.entities).filter(e => e.space === space && (e.id === r.near || e.archetype === r.near));
-          at = scatter(pick(t, rt.random).at, r.spread || 3, rt.random);
+        else if (r.band !== undefined && r.id && rules[r.id] === r) {
+          const seats = seatsOn(space, api)[r.id] || [];
+          if (!seats.length) return null;
+          sampled = false; at = seats[(seat ?? rs(r.id).spawned) % seats.length].slice();
+        } else if (r.near && Object.values(rt.state.entities).some(e => e.space === space && (e.id === r.near || e.archetype === r.near))) {
+          const t = Object.values(rt.state.entities).filter(e => e.space === space && (e.id === r.near || e.archetype === r.near)), c = pick(t, rt.random).at;
+          at = scatter(c, r.spread || 3, rt.random); if (isVec(c)) region = () => discCells(c.map(Math.round), r.spread || 3);
         } else if (z) {
           at = api.randomPoint?.(r.zone, rt.random, rt) ?? samplePoint(z.zone, rt.random);
           if (at === null || at === undefined) { at = null; teleportZone = r.zone; }
-        } else if (p && p.space === space) at = scatter(p.at, r.spread || 4, rt.random);
-        if (isVec(at) && api.anchor === 'cell') at = at.map(Math.floor); // cell spaces take integer cells
+          region = () => zoneCells(z.zone);
+        } else if (p && p.space === space) { at = scatter(p.at, r.spread || 4, rt.random); if (isVec(p.at)) region = () => discCells(p.at.map(Math.round), r.spread || 4); }
+        if (isVec(at) && api.anchor === 'cell') {
+          at = at.map(Math.floor); // cell spaces take integer cells
+          // A sampled cell the archetype cannot stand in is drawn again among the cells of the region it came from that it
+          // can (uniform over those overall): the region as generated, never a guess retried blind; none there, no spawn.
+          if (region && !standable(api, space, at, r.archetype)) { const open = region().filter(c => standable(api, space, c, r.archetype)); if (!open.length) return null; at = pick(open, rt.random); }
+        }
         if (isVec(at)) {
           if (api.groundAt && at.length >= 3) { const g = api.groundAt(at[0], at[2]); if (r.surface?.length && !r.surface.includes(g.material)) continue; if (r.snap ?? sampled) at = [at[0], g.y, at[2]]; }
           else if (r.surface?.length && !api.groundAt) return null;
-          // A cell the spawned archetype cannot stand in: the blocks service's solidity, else the space's own passability
-          // (cellRules: a floor block is passable, a door only some classes pass), else any cell is solid.
-          if (api.getCell && (rt.hasService('blocks') ? rt.service('blocks').solidAt(at, space) : typeof api.passable === 'function' ? !api.passable(at, { archetype: r.archetype, components: {} }) : api.getCell(at) != null)) continue;
+          if (!standable(api, space, at, r.archetype)) continue;
           if (r.despawnDist && p?.space === space && isVec(p.at) && api.distance && api.distance(p.at, at) > r.despawnDist) continue;
           if (!biomeOk(r, at, space)) continue;
         }
@@ -158,8 +208,11 @@ export default {
     const start = (r, n) => {
       const where = place(r); if (!where) { rt.emit('spawn_failed', { rule: r.id, archetype: r.archetype }); return 0; }
       let started = 0;
+      const base = rs(r.id).spawned;
       for (let k = 0; k < n; k++) {
-        const w = k === 0 ? where : (isVec(where.at) ? { ...where, at: scatter(where.at, r.spread || 2, rt.random) } : where);
+        // Each spawn of a band rule takes its own seat; others scatter around the first.
+        const w = k === 0 ? where : r.band !== undefined && r.at === undefined ? place(r, null, base + k) : (isVec(where.at) ? { ...where, at: scatter(where.at, r.spread || 2, rt.random) } : where);
+        if (!w) { rt.emit('spawn_failed', { rule: r.id, archetype: r.archetype }); break; }
         const index = rs(r.id).spawned + started;
         if (r.telegraph > 0) { st().pending.push({ rule: r.id, space: w.space, at: w.at, zone: w.zone, due: rt.state.frame + frames(r.telegraph), index }); rt.emitTyped('spawn_telegraph', r.id, { rule: r.id, archetype: r.archetype, at: w.at, seconds: r.telegraph }); }
         else make(r, w, r.id, { index, held: Boolean(r.release) });

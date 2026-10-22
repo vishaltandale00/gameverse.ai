@@ -42,7 +42,7 @@ export default {
       koSec: { type: 'number', default: 1.83, min: 0, max: 30, unit: 's', effect: 'KO slow-down before the round ends' },
       roundEndSec: { type: 'number', default: 2.83, min: 0, max: 30, unit: 's' },
       respawnSec: { type: 'number', default: 2, min: 0, max: 30, unit: 's', effect: 'stock mode respawn delay' },
-      spawns: { type: 'list', of: { type: 'json' }, default: [], effect: 'positions for fighters at round start (by fighter order)' },
+      spawns: { type: 'list', of: { type: 'json', scale: 'world' }, default: [], effect: 'positions for fighters at round start (by fighter order), in the space\'s coordinates' },
       onRoundStart: { type: 'effects', default: [], effect: 'run per fighter at each round start (actor = fighter), e.g. heal/revive' },
       onRespawn: { type: 'effects', default: [], effect: 'stock mode: run for a fighter that respawns (actor = fighter)' },
       scoring: { type: 'object', default: { var: 'score', win: 1000, perSecond: 50, health: 1000, perfect: 5000 }, fields: { var: { type: 'string', default: 'score' }, win: { type: 'number', default: 1000 }, perSecond: { type: 'number', default: 50 }, health: { type: 'number', default: 1000 }, perfect: { type: 'number', default: 5000 } }, effect: 'points to the first fighter for won rounds' },

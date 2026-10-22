@@ -143,6 +143,16 @@ export function plotZones(doc) {
 }
 
 /**
+ * Has play shown the loop (ARCHITECTURE §6.3: the core loop's declared events fire from play)? One of `loop`'s events
+ * (a name ending in ':' matches every typed form) fired in `fired` more often than idling fired it (`idle`). The gate's
+ * reading (planner/verify-adapter.js) and the explorer's stop (playtest.js opts.prove) are this one function.
+ * @param {string[]} loop @param {Record<string, number>} fired @param {Record<string, number>} idle
+ */
+export function loopShown(loop, fired, idle) {
+  return loop.some(e => Object.keys(fired).some(k => (e.endsWith(':') ? k.startsWith(e) : k === e) && (fired[k] || 0) > (idle[k] || 0)));
+}
+
+/**
  * The progress events the document's primitives declare for their loops (card.loop.progress, and card.mode's
  * when it lists them): the game's core loop, as its collection of primitives defines it. Wildcards end in ':'.
  */

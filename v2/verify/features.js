@@ -1,7 +1,8 @@
 // Feature checks (ARCHITECTURE.md §6.3): one check per feature a document mixes in, generated from what its primitives
 // declare. For every primitive instance whose card declares a loop with verbs or progress events:
-//   exists        it installs in the world, and the document sections its loop declares it needs (loop.needs.content)
-//                 are not empty;
+//   exists        it installs in the world, the document sections its loop declares it needs (loop.needs.content)
+//                 are not empty, and every participant it declares (sides, teams, racers, fighters) is an entity of the
+//                 world at the start of play (planner/content.js absentParticipants);
 //   controllable  each of its loop verbs has a control a person has (a key, an axis, or a UI primitive the host mounts:
 //                 controls.js uncontrolledVerbs);
 //   works         pressing each verb's control (through the controls: controls.js), from states the gate's play
@@ -17,10 +18,11 @@
 import { cardLoop, loopExists } from '../planner/loop.js';
 import { uncontrolledVerbs } from './controls.js';
 import { instanceVerbs, choiceValues } from '../primitives/engine/runtime-lib-controls.js';
+import { absentParticipants, startOfPlay } from '../planner/content.js';
 
 export const FEATURES_VERSION = 'features/0.1';
 /** Problem codes, by check. */
-export const FEATURE_CODES = Object.freeze({ exists: ['feature_missing', 'feature_content_empty'], controllable: ['feature_uncontrolled'], works: ['feature_inert', 'feature_unreached'] });
+export const FEATURE_CODES = Object.freeze({ exists: ['feature_missing', 'feature_content_empty', 'feature_participant_absent'], controllable: ['feature_uncontrolled'], works: ['feature_inert', 'feature_unreached'] });
 
 const defaults = card => Object.fromEntries(Object.entries(card?.params || {}).filter(([, s]) => s && typeof s === 'object' && 'default' in s).map(([k, s]) => [k, s.default]));
 /** Is a declared content path non-empty in a document ('content.items'; 'spaces.zones': some space has zones)? */
@@ -72,6 +74,9 @@ export function featureChecks(doc, registry, make, { seed = 1, states = [], fram
   const reached = states.filter(s => s?.status === 'playing'), room = Math.max(0, maxStates - 1 - early.length), picked = [start, ...early];
   for (let i = 0; i < Math.min(room, reached.length); i++) picked.push(reached[Math.floor((i * reached.length) / Math.min(room, reached.length))]);
   const moves = (rt.controls.controls.map?.axes?.move || []).length ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : [];
+  const absent = absentParticipants(doc, registry, startOfPlay(rt)); rt.restore(start);
+  /** The runs without a press, shared by every verb's checks (works). */
+  const idleRuns = new Map();
   for (const f of featuresOf(doc, registry)) {
     const declared = [...new Set([...f.loop.progress, ...(f.card.provides?.events || [])])];
     const row = { use: f.use, path: f.path, exists: true, controllable: true, verbs: {} };
@@ -80,11 +85,12 @@ export function featureChecks(doc, registry, make, { seed = 1, states = [], fram
     if (!rt.has(f.use)) { row.exists = false; fail('feature_missing', `${f.use} is in the document but does not install`); }
     const empty = (f.loop.needs.content || []).filter(p => !contentMet(doc, p));
     if (empty.length) { row.exists = false; fail('feature_content_empty', `${f.use}: the content its loop needs is empty (${empty.join(', ')})`); }
+    if (absent.some(x => x.path === f.path)) row.exists = false;
     const loose = uncontrolledVerbs(doc, registry, f.verbs);
     for (const v of loose) { const verb = v.split(' ')[0]; row.controllable = false; row.verbs[verb] = { controllable: false, works: false }; fail('feature_uncontrolled', `${f.use}: no control a person has issues '${v}'`, verb); }
     for (const verb of f.verbs) {
       if (row.verbs[verb]) continue;
-      const r = works(rt, verb, declared, picked, moves, frames, stepsPerVerb);
+      const r = works(rt, verb, declared, picked, moves, frames, stepsPerVerb, idleRuns);
       row.verbs[verb] = { controllable: true, works: r.works, ...(r.event ? { event: r.event } : {}), tried: r.tried };
       // Blocking needs evidence (ARCHITECTURE §1.5, §6.3: a crash, a control that does nothing when pressed): a verb
       // pressed and inert is a defect (feature_inert, an error); a verb never tried, because no reached state offered it
@@ -96,16 +102,17 @@ export function featureChecks(doc, registry, make, { seed = 1, states = [], fram
     if (!f.verbs.length) row.events = declared.slice(0, 8);
     table.push(row);
   }
+  for (const a of absent) problems.push({ code: 'feature_participant_absent', path: a.path, message: a.message, use: a.use });
   rt.restore(start);
   return { version: FEATURES_VERSION, table, problems };
 }
 
 /** Does pressing `verb` from one of `states` make a declared event fire more than not pressing it? */
-function works(rt, verb, declared, states, moves, frames, budget) {
+function works(rt, verb, declared, states, moves, frames, budget, idleRuns = new Map()) {
   let steps = 0, tried = 0;
   // What the player steers (the vehicle it sits in, else itself) and where it is: a held axis's effect is movement.
   const where = () => { const p = rt.player(), seat = p?.components.seat, e = seat ? rt.entity(seat.vehicle) ?? p : p; return Array.isArray(e?.at) ? e.at.slice() : null; };
-  // One run: after each frame, the declared events fired so far (an event fired sooner counts, not only more often),
+  // One run: after each frame, the events fired so far (an event fired sooner counts, not only more often),
   // and in the end how far the player moved.
   // input: the first frame's input and the rest's, or a function of the frame index.
   const run = (snap, first, rest, n) => {
@@ -114,13 +121,24 @@ function works(rt, verb, declared, states, moves, frames, budget) {
     for (let i = 0; i < n && rt.state.status === 'playing'; i++) {
       rt.step(typeof first === 'function' ? first(i) : i === 0 ? first : rest); steps++;
       const at = {};
-      for (const [k, v] of Object.entries(rt.state.counts)) if (v > (c0[k] || 0) && matches(declared, k)) at[k] = v - (c0[k] || 0);
+      for (const [k, v] of Object.entries(rt.state.counts)) if (v > (c0[k] || 0)) at[k] = v - (c0[k] || 0);
       trace.push(at);
     }
     const z = where();
     return { trace, moved: a && z ? Math.hypot(...z.map((v, i) => v - (a[i] ?? 0))) : 0 };
   };
-  const sooner = (p, q) => { for (let i = 0; i < p.trace.length; i++) { const k = Object.keys(p.trace[i]).find(e => p.trace[i][e] > (q.trace[Math.min(i, q.trace.length - 1)]?.[e] || 0)); if (k) return k; } return undefined; };
+  // The run without the press depends only on the state, the move held and the length, not on the press it is compared
+  // with: played once per state and kept for every verb (worlds are deterministic). Its frames are charged to the budget
+  // on every comparison as when it was replayed, so the tries made, and the table, stay the same.
+  const idleRun = (snap, base, n) => {
+    const k = `${states.indexOf(snap)}|${JSON.stringify(base)}|${n}`, kept = idleRuns.get(k);
+    if (kept) { steps += kept.steps; return kept.run; }
+    const s0 = steps, out = run(snap, base, base, n);
+    idleRuns.set(k, { run: out, steps: steps - s0 });
+    return out;
+  };
+  // Traces keep every event count (an idle run is shared by every feature); a press is judged on this feature's events.
+  const sooner = (p, q) => { for (let i = 0; i < p.trace.length; i++) { const k = Object.keys(p.trace[i]).find(e => matches(declared, e) && p.trace[i][e] > (q.trace[Math.min(i, q.trace.length - 1)]?.[e] || 0)); if (k) return k; } return undefined; };
   const axis = (rt.controls.controls.map?.axes?.[verb] || []).length > 0;
   for (const snap of states) {
     rt.restore(snap);
@@ -136,7 +154,7 @@ function works(rt, verb, declared, states, moves, frames, budget) {
       const rest = { ...base, ...(Object.keys(heldVerbs).length ? { held: heldVerbs } : {}), ...(p.axes ? { axes: { ...(base.axes || {}), ...p.axes } } : {}) };
       const n = Math.max(frames, p.steps || 0);
       let pressed, idle;
-      try { pressed = run(snap, first, rest, n); idle = run(snap, base, base, n); } catch (error) { if (error?.code === 'controls_missing') continue; throw error; }
+      try { pressed = run(snap, first, rest, n); idle = idleRun(snap, base, n); } catch (error) { if (error?.code === 'controls_missing') continue; throw error; }
       tried++;
       // A held axis works when it moves the player (or its vehicle) further than idling does; a press when one of the
       // primitive's declared events fires sooner or more often than without it, or, pressed while moving (a run, a

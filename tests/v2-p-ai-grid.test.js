@@ -71,3 +71,16 @@ test('grid ghosts replay deterministically', () => {
   const a = make(), b = make(); run(a, 240); run(b, 240);
   assert.deepEqual(a.snapshot(), b.snapshot());
 });
+
+test('grid navigation inside a read (entity obstacles indexed once per read) answers as outside one', () => {
+  const { rt } = compile(doc({ personality: 'chaser', scatter: [8, 6] }), { primitives: P });
+  const crate = rt.spawn('pac', { at: [2, 5], components: { body: { solid: true } } });
+  const api = rt.space('board'), p = rt.player();
+  const moves = () => [[2, 5], [1, 4], [1, 6]].map(c => api.canMove(p, c, rt));
+  const outside = moves();
+  assert.equal(outside[0], false, 'the solid crate blocks its cell');
+  assert.deepEqual(rt.read(moves), outside);
+  api.setPos(crate, [3, 5], rt); rt.step();
+  assert.equal(rt.read(() => api.canMove(p, [2, 5], rt)), true, 'a read after the crate moved sees where it is now');
+  assert.equal(api.canMove(p, [2, 5], rt), true);
+});

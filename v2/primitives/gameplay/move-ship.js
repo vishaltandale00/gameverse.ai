@@ -142,7 +142,7 @@ export default {
       }
     }, ID);
     rt.options(rt => {
-      const p = rt.player(); if (!p || mv(p).owner !== owner) return [];
+      const p = rt.player(); if (!p || p.components.move?.owner !== owner) return []; // listing reads: no mv(), which creates the component
       // Directions are the move axis it declares (provides.actions move), held for the option's steps, as a person holds it.
       const out = [['left', { move: [-1, 0] }], ['right', { move: [1, 0] }]];
       if (c.mode !== 'rail') out.push(['up', { move: [0, 1] }], ['down', { move: [0, -1] }]);

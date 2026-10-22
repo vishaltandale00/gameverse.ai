@@ -1,14 +1,14 @@
-// The play spec, selection and re-planning against the live "chess but with pokemon" failure
+// The play spec and selection against the live "chess but with pokemon" failure
 // (tests/fixtures/v2-live/chess-pokemon-failed.json, the real decomposition and selection): the mashup the model left
 // empty is caught by the deterministic post-check and re-asked as one field, avatar locomotion never carries piece
-// movement for pieces-turns, and re-planning never replaces piece movement with falling pieces. Fake writers; no network.
+// movement for pieces-turns, and falling pieces is never offered for it. Fake writers; no network.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { normalize, decomposeIdea } from '../v2/planner/decompose.js';
 import { mashupProblem } from '../v2/planner/play-spec.js';
-import { selectPrimitives, declaredFit, servesInteraction } from '../v2/planner/select.js';
-import { replan, gapRequest } from '../v2/planner/replan.js';
+import { selectPrimitives, servesInteraction } from '../v2/planner/select.js';
+import { servesContext } from '../v2/planner/retrieval.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { fakeWriter, buildAnswer, decomposer, planFrom } from './v2-p-pipeline-fixtures.js';
 
@@ -17,8 +17,6 @@ const { registry } = buildCatalogue();
 const INTERACTION = 'pieces-turns';
 /** The live decomposition, narrowed as decomposeIdea does (core.mashup is [] as the model wrote it). */
 const decomposition = () => normalize(structuredClone(live.decomposition), live.prompt, registry);
-/** The live selection with the fields a fresh selection carries. */
-const selection = () => ({ generators: [], graphics: [], bind: {}, ...structuredClone(live.selection) });
 const mappedOf = id => live.selection.mechanics.find(m => m.id === id).primitives;
 const card = id => ({ id, ...registry.get(id).card });
 
@@ -103,51 +101,14 @@ test('a mashup the model still leaves out is never guessed: the spec fails after
   assert.deepEqual(d.core.mashup, []);
 });
 
-/** The re-planning model: picks the turns loop for piece movement when it is offered (else "none"). */
-const replanWriter = () => fakeWriter([req => buildAnswer(req, { picks: { turn_based_piece_movement: ['gameplay.turns'] } }) ?? '{}']);
-/** Every option a replan question offered for a mechanic. */
-const offeredTo = (w, mechanic) => w.calls.filter(c => c.schema.name === 'pick_primitive' && c.user.includes(`\nMechanic ${mechanic} (`)).flatMap(c => c.schema.schema.properties.pick.enum.filter(x => x !== 'none'));
-
-test('re-planning the live failure: piece movement stays with the turns loop, never falling pieces', async () => {
+test('falling pieces never moves chess pieces: its loop is played another way and owns its game, so it is never offered', async () => {
   const d = decomposition();
-  const diagnosis = { kind: 'primitive', mechanic: 'turn_based_piece_movement', primitive: 'gameplay.move.grid', codes: ['core_degraded'], message: live.attempt.problems[0] };
-  const w = replanWriter();
-  const r = await replan(selection(), [diagnosis], { registry, decomposition: d, tried: new Map(), writer: w });
-  const action = r.actions.find(a => a.action === 'replace');
-  assert.equal(action.by, 'gameplay.turns', JSON.stringify(r.actions));
-  // The model chose among the valid options played as pieces-turns: never falling pieces, never the failed grid steps.
-  const offered = offeredTo(w, 'turn_based_piece_movement');
+  const writer = liveWriter(() => [{ relation: 'nested', mechanics: ['turn_based_piece_movement', 'type_advantages'], why: 'a creature battle decides each capture' }]);
+  await selectPrimitives({ decomposition: d, registry, writer });
+  const offered = writer.calls.filter(c => c.schema.name === 'pick_primitive' && c.user.includes('\nMechanic turn_based_piece_movement (')).flatMap(c => c.schema.schema.properties.pick.enum);
   assert.ok(offered.includes('gameplay.turns'));
   assert.ok(!offered.includes('gameplay.falling.pieces') && !offered.includes('gameplay.move.grid'), offered.join(', '));
-  assert.ok(!r.selection.systems.includes('gameplay.move.grid') && !r.selection.systems.includes('gameplay.falling.pieces'));
-  assert.ok(!r.selection.mechanics.find(m => m.id === 'turn_based_piece_movement').primitives.includes('gameplay.move.grid'));
-  // Without a model nothing is picked: the need goes to the gap layer.
-  const offline = await replan(selection(), [diagnosis], { registry, decomposition: d, tried: new Map() });
-  assert.deepEqual([offline.actions.length, offline.unresolved.length], [0, 1]);
-});
-
-test('re-planning offers only valid options played as the spec says: falling pieces never moves chess pieces', async () => {
-  const d = decomposition();
-  const m = d.mechanics.find(x => x.id === 'turn_based_piece_movement');
-  // Falling pieces' loop is played on a cursor board and owns its game: it does not fit pieces moved in turns.
-  assert.equal(declaredFit(m, card('gameplay.falling.pieces'), { interaction: INTERACTION, verbs: card('gameplay.move.grid').loop.verbs }), null);
-  assert.ok(declaredFit(m, card('gameplay.turns'), { interaction: INTERACTION, verbs: card('gameplay.move.grid').loop.verbs }) > 0);
-  // Without the turns loop in the collection, it is among the valid options the model picks from.
-  const sel = selection();
-  sel.systems = sel.systems.filter(id => id !== 'gameplay.turns');
-  for (const x of sel.mechanics) x.primitives = x.primitives.filter(id => id !== 'gameplay.turns');
-  const diagnosis = { kind: 'primitive', mechanic: 'turn_based_piece_movement', primitive: 'gameplay.move.grid', codes: ['core_degraded'], message: 'lost' };
-  const r = await replan(sel, [diagnosis], { registry, decomposition: d, tried: new Map(), writer: replanWriter() });
-  const action = r.actions.find(a => a.action === 'replace');
-  assert.equal(action?.by, 'gameplay.turns', JSON.stringify(r));
-  // When nothing valid is left, the gap layer is asked for the primitive signature, never a word match.
-  const tried = new Map([['turn_based_piece_movement', new Set(registry.ids().filter(id => id !== 'gameplay.falling.pieces'))]]);
-  const none = await replan(sel, [diagnosis], { registry, decomposition: d, tried, writer: replanWriter() });
-  assert.equal(none.actions.filter(a => a.action === 'replace').length, 0, JSON.stringify(none.actions));
-  assert.equal(none.unresolved.length, 1);
-  assert.match(none.unresolved[0].signature, /played as pieces-turns/);
-  const { request, gap } = gapRequest(none.unresolved[0], none.selection, d);
-  assert.match(request, /be played as pieces-turns/);
-  assert.match(request, /Signature: /);
-  assert.equal(gap.kind, 'no_primitive');
+  // By its declarations alone (card.loop interactions, card.locomotion), never by a score.
+  assert.equal(servesContext(card('gameplay.falling.pieces'), INTERACTION), false);
+  assert.equal(servesContext(card('gameplay.turns'), INTERACTION), true);
 });

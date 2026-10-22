@@ -35,6 +35,39 @@ export function buildLogic(registry, Logic) {
   return logic;
 }
 
+/**
+ * A copy of JSON game state (snapshot and restore): plain objects and arrays copied member by member, numbers (NaN and
+ * Infinity included), strings, booleans and null as they are. State is JSON (KERNEL_API.md), so this is the whole copy;
+ * a value that is not plain JSON data (a primitive keeping a Map in state) is copied by structuredClone as before.
+ * Searches snapshot and restore on every lookahead, and this is several times faster than structuredClone on JSON.
+ * @param {unknown} v @returns {unknown}
+ */
+export function cloneState(v) {
+  if (typeof v !== 'object' || v === null) return v;
+  // Copies are made whole (slice, spread) and then their members replaced, so they get the original's element kind and
+  // a shape sized for their properties: a copy built member by member is slower in every later step's math.
+  if (Array.isArray(v)) {
+    const out = v.slice();
+    for (let i = 0; i < out.length; i++) { const x = out[i]; if (typeof x === 'object' && x !== null) out[i] = cloneState(x); }
+    return out;
+  }
+  const proto = Object.getPrototypeOf(v);
+  if (proto !== Object.prototype && proto !== null) return structuredClone(v);
+  /** @type {Record<string, unknown>} */
+  const out = { .../** @type {Record<string, unknown>} */ (v) };
+  for (const k in out) { const x = out[k]; if (typeof x === 'object' && x !== null) out[k] = cloneState(x); }
+  return out;
+}
+
+/**
+ * The part of a step's input a modal lets through: its actions, held verbs and axes named in `allowed`.
+ * @param {any} input @param {string[]} allowed @returns {any}
+ */
+function modalInput(input, allowed) {
+  const only = (/** @type {Record<string, any> | undefined} */ rec) => Object.fromEntries(Object.entries(rec || {}).filter(([k]) => allowed.includes(k)));
+  return { ...input, actions: only(input.actions), held: only(input.held), axes: only(input.axes) };
+}
+
 /** doc must be the normalized document returned by preflight(). */
 /**
  * view (browser only, when headless is false) is supplied by the host page:
@@ -43,11 +76,14 @@ export function buildLogic(registry, Logic) {
  * with view.onFrame, and send player choices through view.act({ name: value }).
  */
 /**
- * @param {Doc} doc @param {RegistryLike} registry @param {LogicLike} logic
+ * @param {Doc} source @param {RegistryLike} registry @param {LogicLike} logic
  * @param {{ seed?: unknown, headless?: boolean, view?: View | null }} [opts]
  * @returns {Runtime}
  */
-export function createWorld(doc, registry, logic, { seed, headless = true, view = null } = {}) {
+export function createWorld(source, registry, logic, { seed, headless = true, view = null } = {}) {
+  // Each world owns its document: a primitive that sets params at run time (stage tables) changes this world's
+  // document only, never another world made from the same document (the gate's bots make many).
+  const doc = structuredClone(source);
   /** @type {State} */
   const state = {
     schema: 'gameverse.v2.state/0.1', docId: doc.id, frame: 0, time: 0, status: 'playing', ending: null,
@@ -59,7 +95,18 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
   const systems = /** @type {Array<{ p: number, order: number, fn: (rt: Runtime) => void, owner: string }>} */ ([]), handlers = /** @type {Map<string, Array<(data: any, rt: Runtime) => void>>} */ (new Map()),
     actions = /** @type {Map<string, (value: any, rt: Runtime) => void>} */ (new Map()), spaces = /** @type {Map<string, SpaceApi>} */ (new Map()), services = /** @type {Map<string, any>} */ (new Map()),
     restorers = /** @type {Array<(rt: Runtime) => void>} */ ([]), optionProviders = /** @type {Array<(rt: Runtime) => Option[]>} */ ([]);
-  let order = 0;
+  let order = 0, reading = 0;
+  // A read (listing options, a host drawing a frame, a UI handling a key) never changes state: while one runs, a store
+  // nobody created yet reads as a fresh empty object instead of being created. Lazily initialised state is then made
+  // by the steps alone, at the same moment in every host, however often presentation and bots read.
+  // Data derived from the state during one read (rt.derived): the state cannot change while a read runs, so an index
+  // built once serves every lookup in it. Dropped when the outermost read ends and by every step, restore and extend.
+  /** @type {Map<string, unknown> | null} */
+  let derived = null;
+  // Randomness a read draws is given back (the rng is restored), so a read never shifts what the steps draw.
+  /** @template T @param {() => T} fn @returns {T} */
+  const read = fn => { const rng = state.rng; if (!reading) derived = null; reading++; try { return fn(); } finally { reading--; state.rng = rng; if (!reading) derived = null; } };
+  const listing = read;
 
   /** @type {Runtime} */
   const rt = {
@@ -113,9 +160,22 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
      *  Used by solvers and playtesters; continuous spaces offer macro options (travel to a zone). */
     options(fn) { optionProviders.push(fn); },
     /** Options from every provider except `skip` (lets a provider defer to others without recursing). */
-    optionsExcept(skip) { return optionProviders.filter(fn => fn !== skip).flatMap(fn => fn(rt) || []); },
+    optionsExcept(skip) { return listing(() => optionProviders.filter(fn => fn !== skip).flatMap(fn => fn(rt) || [])); },
+    /** Run fn as a read: stores it touches are not created (presentation, bots and tests reading the world). */
+    read,
+    /**
+     * Inside a read: build(), once per read and key (an index over the state that every lookup of the read shares).
+     * Outside a read the state may change between any two lookups: null, and the caller computes directly.
+     * @template T @param {string} key @param {() => T} build @returns {T | null}
+     */
+    derived(key, build) {
+      if (!reading) return null;
+      derived ??= new Map();
+      if (!derived.has(key)) derived.set(key, build());
+      return /** @type {T} */ (derived.get(key));
+    },
     availableOptions() {
-      const all = optionProviders.flatMap(fn => fn(rt) || []), m = state.modal;
+      const all = listing(() => optionProviders.flatMap(fn => fn(rt) || [])), m = state.modal;
       return m ? all.filter(o => o.modal === m.owner || Object.keys(o.actions || {}).some(a => m.actions.includes(a))) : all;
     },
     actions: () => [...actions.keys()],
@@ -128,8 +188,9 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     space(id = doc.spaces?.[0]?.id) { const s = spaces.get(id); if (!s) throw Error(`no space '${id}'`); return s; },
     onRestore(fn) { restorers.push(fn); },
     /** Per-instance JSON state: rt.store('gameplay.inventory') -> object kept in snapshots.
-     *  Fetch it inside each system/handler call; never cache it at install (restore() replaces it). */
-    store(key) { return (state.prim[key] ??= {}); },
+     *  Fetch it inside each system/handler call; never cache it at install (restore() replaces it).
+     *  Inside an option provider an absent store is not created (a fresh empty object is returned). */
+    store(key) { return state.prim[key] ?? (reading ? {} : (state.prim[key] = {})); },
     archetype(id) { return doc.content?.archetypes?.find((/** @type {any} */ a) => a.id === id); },
     spawn(archetype, { space, at, components = {}, id } = {}) {
       const base = rt.archetype(archetype)?.components || {};
@@ -169,10 +230,12 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
     /** Advance one fixed step. input = { actions: { name: value }, axes: {...} }. */
     step(input = {}) {
       if (state.status !== 'playing') return state;
-      state.events = []; rt.input = input;
-      for (const [name, value] of Object.entries(input.actions || {})) {
+      // While a modal is open, the step's input is only its actions (as actions, held verbs or axes): every host
+      // and every system sees the same input, so headless verification and the browser agree.
+      state.events = []; rt.input = state.modal ? modalInput(input, state.modal.actions) : input;
+      for (const [name, value] of Object.entries(rt.input.actions || {})) {
         if (value === undefined || value === null || value === false) continue; // 0 and '' are real choices
-        if (state.modal && !state.modal.actions.includes(name)) continue;
+        if (state.modal && !state.modal.actions.includes(name)) continue; // a modal an earlier action opened
         const fn = actions.get(name);
         if (fn) { fn(value, rt); rt.emit('action', { action: name }); }
       }
@@ -189,7 +252,9 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
      * should read document data lazily from rt.doc (re-index when rt.doc
      * changes); those that keep derived caches implement extend(rt, cfg, added).
      */
-    extend(normalizedDoc, added) {
+    extend(source, added) {
+      derived = null;
+      const normalizedDoc = structuredClone(source); // this world's own copy, as at creation
       const before = { systems: (rt.doc.systems || []).length, graphics: (rt.doc.graphics || []).length, spaces: new Set((rt.doc.spaces || []).map(s => s.id)),
         generators: new Map((rt.doc.spaces || []).map(s => [s.id, (s.generators || []).length])) };
       rt.doc = normalizedDoc;
@@ -205,13 +270,18 @@ export function createWorld(doc, registry, logic, { seed, headless = true, view 
       (normalizedDoc.graphics || []).slice(before.graphics).forEach((g, i) => install(g, `graphics[${before.graphics + i}]`));
       rt.emit('content_added', { zones: added.zones.length, beats: added.beats.length, systems: added.systems.length });
     },
-    snapshot: () => structuredClone(state),
+    snapshot: () => /** @type {State} */ (cloneState(state)),
     restore(snapshot) {
+      derived = null;
       for (const k of Object.keys(state)) delete /** @type {Record<string, any>} */ (state)[k];
-      Object.assign(state, structuredClone(snapshot));
+      Object.assign(state, cloneState(snapshot));
       for (const fn of restorers) fn(rt);
     },
   };
+
+  // A step drives the world even when a read runs it (a provider probing what inputs do, then restoring).
+  const stepOnce = rt.step;
+  rt.step = input => { const outer = reading; reading = 0; derived = null; try { return stepOnce(input); } finally { reading = outer; derived = null; } };
 
   /** @param {Instance} instance @param {string} key */
   const install = (instance, key) => {

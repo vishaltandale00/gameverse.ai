@@ -44,7 +44,8 @@ test('creature battle: view from the real primitive, menu from its options', () 
 test('creature battle: the UI plays a real battle to its end through view.act', () => {
   const m = mount(doc(), { primitives: P });
   m.frame(1, start); m.frame(2);
-  assert.equal(m.view.modal, 'battle');
+  assert.ok(!m.q('.gv-battle').classList.contains('gv-hide'));
+  assert.equal(m.view.modal, null, 'the battle screen takes UI keys; the battle\'s own modal filters input in the kernel');
   assert.match(m.text('.gv-bmsg'), /A wild Mote appeared!/);
   assert.deepEqual([...m.qa('.gv-bmenu .gv-btn')].map(b => b.textContent.replace(/[0-9/ PA·]+$/, '')), ['Fight', 'Run'], 'Bag appears only when an item is usable (full HP: no tonic)');
   for (let turn = 0; turn < 10 && m.rt.state.prim['gameplay.creature.battle'].battle; turn++) {

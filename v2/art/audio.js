@@ -752,7 +752,9 @@ export function createMixer({ seed = 'gameverse', AudioContextImpl = globalThis.
   let desired = null, tracks = [], voices = [], lastPlayed = {}, pumpId = null;
   const keyOf = (plan, variant) => `${variant}|${JSON.stringify(plan)}`;
   const ready = () => Boolean(ctx) && !disposed && ctx.state !== 'closed';
-  const later = (fn, seconds) => setTimer(fn, Math.max(0, seconds) * 1000);
+  // Node clean-ups after fades and stingers; cleared on dispose (the closed context drops the nodes).
+  const timers = new Set();
+  const later = (fn, seconds) => { const id = setTimer(() => { timers.delete(id); fn(); }, Math.max(0, seconds) * 1000); timers.add(id); return id; };
   const drop = node => { try { node.disconnect(); } catch { /* already gone */ } };
 
   function compose(plan, variant) {
@@ -909,6 +911,8 @@ export function createMixer({ seed = 'gameverse', AudioContextImpl = globalThis.
       if (disposed) return;
       mixer.stopMusic(0.05); disposed = true;
       if (pumpId !== null) { clearTimer(pumpId); pumpId = null; }
+      for (const id of timers) clearTimer(id);
+      timers.clear();
       ctx?.close?.();
     },
   };

@@ -12,6 +12,19 @@ export function untilDecision(rt, max = 600) {
 }
 
 /**
+ * untilDecision, returning the options the runtime offers where it stopped (read once: a decision's options are what a
+ * bot chooses among next, so it need not read them again; [] when the game ended or none came within `max` steps).
+ */
+export function toDecision(rt, max = 600) {
+  for (let k = 0; ; k++) {
+    if (rt.state.status !== 'playing') return [];
+    const options = rt.availableOptions();
+    if (options.length || k >= max) return options;
+    rt.step({});
+  }
+}
+
+/**
  * The step budgets of one bot run, one per seed: each seed's play is metered on its own budget of `steps` frames
  * (every frame its worlds simulate, lookahead on snapshots included: util.js budget.meter), so a seed's result never
  * depends on the other seeds, on the machine's load or on wall time. budget() is a fresh budget for one seed (b.meter(rt)
@@ -26,15 +39,18 @@ export function seedBudgets(steps = Infinity) {
   };
 }
 
-/** Apply option index i from snapshot `snap` and run to the next decision; returns the rt (mutated). */
-export function simulateOption(rt, snap, i, { rng = null, maxWait = 600 } = {}) {
+/**
+ * Apply option index i from snapshot `snap` and run to the next decision (rt is mutated); returns the options offered
+ * there (toDecision). `options`: the options read at `snap` already (a data option, actions and
+ * steps only, is the same after restore; a macro option, whose apply() closure may capture state, is re-read).
+ */
+export function simulateOption(rt, snap, i, { rng = null, maxWait = 600, options = null } = {}) {
   rt.restore(snap);
   if (rng !== null) rt.state.rng = rng >>> 0 || 1;
-  const o = rt.availableOptions()[i];
-  if (!o) return rt;
+  const o = options && options[i] && typeof options[i].apply !== 'function' ? options[i] : rt.availableOptions()[i];
+  if (!o) return rt.availableOptions();
   applyOption(rt, o);
-  untilDecision(rt, maxWait);
-  return rt;
+  return toDecision(rt, maxWait);
 }
 
 /** Deterministic alternative RNG states for chance sampling. */

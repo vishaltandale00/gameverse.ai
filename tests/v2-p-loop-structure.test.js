@@ -1,17 +1,17 @@
 // The structural loop check (v2/planner/loop-check.js), the preset that writes loop structure from declarations
-// (presets.js repairLoop) and the figure-it-out loop that re-plans from it (replan.js, kernel-pipeline.js), proven on
+// (presets.js repairLoop) and the step path built through them (build.js, kernel-pipeline.js), proven on
 // three unrelated minimal collections of test primitives, none of which the planner knows by id:
 //   sides    a turn-based duel between camps: participants with control, a component the win reads, moves as data;
 //   collect  a real-time forage: the win counts an event some player-driven primitive must produce;
 //   race     runners on a course: participants as a member list, the win reads laps.
-// For each: the check catches a broken structure, the preset produces a passing one, and the replan loop repairs a
-// seeded failure with scripted fake writers (no network). The same rules hold for the real catalogue's turn loop.
+// For each: the check catches a broken structure, the preset produces a passing one, and the build's steps complete a
+// seeded collection, or drop a pick whose own declarations cannot play its loop, with scripted fake writers (no network);
+// what nothing completes fails the build with its problems. The same rules hold for the real catalogue's turn loop.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { loopProblems, loopReport, LOOP_CODES } from '../v2/planner/loop-check.js';
 import { preset, repairLoop } from '../v2/planner/presets.js';
-import { diagnose, replan } from '../v2/planner/replan.js';
 import { createKernelPipeline } from '../v2/planner/kernel-pipeline.js';
 import { buildCatalogue } from '../v2/planner/catalog.js';
 import { preflight } from '../v2/kernel/document.js';
@@ -141,6 +141,9 @@ const raceOf = (id, { example = true } = {}) => ({
     provides: { actions: ['stride'], events: ['strode', 'lap_done'] },
   },
   install(rt, config) {
+    // Its rivals are in the world at the start of play, as the real race's are (spawned when no entity stands for one):
+    // a race whose declared runners never appear is a hollow game the gate refuses (feature_participant_absent).
+    for (const r of config.runners) if (r !== 'player' && !rt.entity(r)) rt.spawn(null, { id: r });
     rt.action('stride', (v, r) => {
       if (!v) return;
       const s = r.store(id); s.n = (s.n || 0) + 1; r.emit('strode', {});
@@ -354,57 +357,9 @@ test('opponents without behavior are caught; the preset wires the driver selecti
   const bare = testCatalogue([...BASE, munch]);
   const lone = preset({ decomposition: decompositionOf(COLLECTIONS.chase.description, COLLECTIONS.chase.core), selection: selectionOf(bare.registry, chaseCore, COLLECTIONS.chase.description, grid), registry: bare.registry, logic: bare.logic, seed: 5 });
   assert.deepEqual(lone.loop.map(p => p.code), [LOOP_CODES.inert]);
-  // Re-planning treats it like the other loop codes: the static problem (or a gate verdict on that document) is a
-  // structure diagnosis, re-planned through the build's driver step: the model is offered only drivers whose units
-  // change what the lose reads (the camp AI, never the taunter) and picks one.
-  const sel = selectionOf(registry, sidesCore, COLLECTIONS.sides.description);
-  const ds = diagnose(unaffected, { selection: sel, registry, doc: strutting, core: sidesCore });
-  assert.deepEqual(ds.map(d => [d.kind, d.primitive, d.loop?.code]), [['structure', 'gameplay.test.duel', LOOP_CODES.loseUnaffected]]);
-  const gate = diagnose([{ code: 'not_playable', path: '$', message: 'no_progress: x' }], { selection: sel, registry, doc: spooked, core: chaseCore, opponent: 'ai-rival' });
-  assert.deepEqual(gate.map(d => [d.kind, d.loop?.code]), [['structure', LOOP_CODES.inert]]);
-  const w = stepWriter();
-  const r = await replan({ ...sel, systems: [...sidesCore, 'gameplay.test.taunter'] }, ds, { registry, decomposition: decompositionOf(COLLECTIONS.sides.description, COLLECTIONS.sides.core), tried: new Map(), writer: w });
-  assert.deepEqual(r.actions.map(a => [a.action, a.primitive]), [['add', 'gameplay.test.campai']]);
-  assert.deepEqual(w.calls.map(c => [c.schema.name, c.schema.schema.properties.pick.enum]), [['pick_driver', ['gameplay.test.campai', 'none']]]);
-  // Without a model, re-planning chooses nothing: the need is unresolved with the gap layer's signature.
-  const offline = await replan({ ...sel, systems: [...sidesCore, 'gameplay.test.taunter'] }, ds, { registry, decomposition: decompositionOf(COLLECTIONS.sides.description, COLLECTIONS.sides.core), tried: new Map() });
-  assert.deepEqual(offline.actions, []);
-  assert.match(offline.unresolved[0].signature, /card\.drives \{ control: 'ai' \}/);
 });
 
-test('the published haunted-library failure (an ai-rival play spec, no primitive giving the opponents behavior) is caught; the repair wires the chosen driver from the real catalogue and never picks one', () => {
-  const { registry, logic } = buildCatalogue();
-  // local-data pac-man-in-a-haunted-library v1, reduced to what the check reads: the core collection (grid movement,
-  // the tome counter, dodging) places ghosts nothing drives; a supporting turn loop has its own AI side.
-  const doc = { schema: 'gameverse.v2.game/0.2', id: 'x', title: 'x', seed: 1, spaces: [{ id: 'main', use: 'engine.space.grid', with: { size: [9, 9] }, zones: [{ id: 'vault', rect: [0, 0, 9, 9] }] }],
-    systems: [
-      { use: 'engine.spawner', with: { rules: [{ id: 'g1', archetype: 'ghost_librarian', zone: 'vault', count: [2, 2] }, { id: 't1', archetype: 'magical_tome', zone: 'vault', count: [5, 5] }] } },
-      { use: 'gameplay.collectible', with: { counters: [{ id: 'tomes', var: 'collected.tomes', total: 5, clearsLevel: true, onComplete: [{ do: 'end_game', ending: 'victory' }] }] } },
-      { use: 'gameplay.move.grid' }, { use: 'gameplay.move.dodge' }, { use: 'gameplay.combat.health' },
-      { use: 'gameplay.turns', with: { sides: [{ id: 'player', control: 'player', members: ['player'] }, { id: 'ghosts', control: 'ai', members: ['ghost_librarian'] }] } }],
-    plot: { endings: [{ id: 'victory', outcome: 'won' }, { id: 'captured', outcome: 'lost' }] },
-    content: { archetypes: [{ id: 'player', kind: 'player', components: { health: { max: 10 } } }, { id: 'ghost_librarian', kind: 'enemy', components: { name: 'Ghost Librarian', turns: { side: 'ghosts' } } }, { id: 'magical_tome', kind: 'pickup', components: { collectible: { counter: 'tomes' } } }] },
-    player: { archetype: 'player', space: 'main', at: [0, 0] } };
-  const core = ['gameplay.move.grid', 'gameplay.collectible', 'gameplay.move.dodge'];
-  assert.deepEqual(loopProblems(doc, registry, { logic, core }).filter(p => p.code === LOOP_CODES.inert), [], 'without the play spec nothing asks for a driver');
-  const found = loopProblems(doc, registry, { logic, core, opponent: 'ai-rival' });
-  assert.deepEqual(found.map(p => p.code), [LOOP_CODES.inert]);
-  assert.deepEqual(found[0].need.archetypes, ['ghost_librarian', 'magical_tome']);
-  // The repair adds no driver: it reports the need (selection's driver step chooses one).
-  const idea = 'being caught by a ghost. collect all tomes in the maze. dodge ghostly librarians and spirits who chase the player';
-  const unchosen = repairLoop(doc, registry, { logic, core, opponent: 'ai-rival', idea });
-  assert.deepEqual(unchosen.doc.systems.map(s => s.use), doc.systems.map(s => s.use));
-  assert.deepEqual(unchosen.problems.map(p => p.code), [LOOP_CODES.inert]);
-  // With the driver selection chose, the repair puts its declared example component on the enemy-kind archetypes only.
-  const chosen = { ...doc, systems: [...doc.systems, { use: 'gameplay.ai.brain' }] };
-  const fixed = repairLoop(chosen, registry, { logic, core, opponent: 'ai-rival', idea });
-  assert.deepEqual(fixed.problems, []);
-  assert.deepEqual(fixed.doc.systems.map(s => s.use), chosen.systems.map(s => s.use));
-  assert.ok(fixed.doc.content.archetypes.find(a => a.id === 'ghost_librarian').components.ai?.brain?.length);
-  assert.equal(fixed.doc.content.archetypes.find(a => a.id === 'magical_tome').components.ai, undefined);
-});
-
-// ---------- the figure-it-out loop ----------
+// ---------- the step path ----------
 const memoryCtx = () => {
   const versions = [], stages = [], checkpoints = {};
   return { versions, stages, checkpoints, ctx: {
@@ -424,7 +379,7 @@ const scripted = (name, mapped, replacements = []) => {
     // The template pick: no template is this idea, so the step path builds it (what this test exercises).
     const picked = stepPick(req); if (picked) return picked;
     const schema = String(req.schema?.name || '');
-    const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { core: [...mapped, ...replacements] } }); // the iterative builder asks per mechanic, so the scripted model picks the mapped primitives (re-planning, the replacements it would pick)
+    const built = buildAnswer(req, { space: ['engine.space.graph'], picks: { core: [...mapped, ...replacements] }, steps: c.drivers?.length ? { driver: c.drivers } : {} }); // the iterative builder asks per mechanic, so the scripted model picks the mapped primitives (re-planning, the replacements it would pick)
     if (built) return built;
     const decomposed = decompose(req);
     if (decomposed) return decomposed;
@@ -439,7 +394,7 @@ const scripted = (name, mapped, replacements = []) => {
 };
 const run = async (name, mapped, config = {}, replacements = []) => {
   const cat = catalogue();
-  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: scripted(name, mapped, replacements) }, config: { replanAttempts: 3, maxDetailTasks: 0, ...config } });
+  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: scripted(name, mapped, replacements) }, config });
   const m = memoryCtx();
   const out = await pipeline({ gameId: name, prompt: COLLECTIONS[name].description, kind: 'create', seed: 5 }, m.ctx);
   return { ...m, out };
@@ -451,9 +406,9 @@ const loopStepsOf = checkpoints => (checkpoints.selection?.build?.steps || []).f
 test('sides: the seeded standoff has no move that saps; the build\'s loop steps add the owner, a verb that does and the camp driver before any form call', async () => {
   const { out, versions, checkpoints } = await run('sides', ['gameplay.test.standoff']);
   // The loop check of the partial collection after the mechanic step asked for each missing piece, one small question each.
-  assert.deepEqual(loopStepsOf(checkpoints), [['driver', 'gameplay.test.campai'], ['coverage', 'gameplay.test.vigor'], ['coverage', 'gameplay.test.jabber']]);
-  const [first] = out.outline.attempts;
-  assert.equal(first.stage, 'published', 'nothing left for re-planning');
+  // In declaration order the first verb on offer is the jabber, whose bundle brings the vigor it requires (the owner).
+  assert.deepEqual(loopStepsOf(checkpoints), [['driver', 'gameplay.test.campai'], ['coverage', 'gameplay.test.jabber']]);
+  assert.ok(checkpoints.selection.systems.includes('gameplay.test.vigor'), 'the owner comes with the jabber');
   // Published: the jabber's verb wears the opposing camp down and the duel's win fires.
   assert.equal(versions.length, 1);
   assert.ok(versions[0].doc.systems.some(s => s.use === 'gameplay.test.jabber'));
@@ -464,18 +419,19 @@ test('sides: the seeded standoff has no move that saps; the build\'s loop steps 
 test('collect: nothing produces what the forage win counts; the build\'s coverage step adds the player-driven producer and the game publishes', async () => {
   const { out, versions, checkpoints } = await run('collect', ['gameplay.test.forage']);
   assert.deepEqual(loopStepsOf(checkpoints), [['coverage', 'gameplay.test.pluck']]);
-  assert.equal(out.outline.attempts[0].stage, 'published');
   assert.equal(versions.length, 1);
   assert.ok(out.base.viable, out.base.viability);
   assert.equal(out.base.playtest?.winnable, true, 'the playtest agent wins it');
 });
 
-test('race: the scramble declares no runners at all; re-planning replaces it for its mechanic with a race whose runners it declares', async () => {
-  const { out, versions } = await run('race', ['gameplay.test.scramble'], {}, ['gameplay.test.sprint']);
-  const [first] = out.outline.attempts;
-  assert.ok(first.diagnoses.some(d => d.primitive === 'gameplay.test.scramble' && d.codes.includes(LOOP_CODES.participants)), JSON.stringify(first.diagnoses));
-  assert.ok(first.actions.some(a => a.action === 'replace' && a.primitive === 'gameplay.test.scramble' && a.by === 'gameplay.test.sprint'), JSON.stringify(first.actions));
+test('race: the scramble declares no runners at all; its step drops it and asks again, and the race whose runners it declares is built', async () => {
+  const { out, versions, checkpoints } = await run('race', ['gameplay.test.scramble', 'gameplay.test.sprint']);
+  const step = checkpoints.selection.build.steps.find(s => s.kind === 'mechanic' && s.mechanic === 'core');
+  assert.deepEqual(step.asks.map(a => a.pick), ['gameplay.test.scramble', 'gameplay.test.sprint']);
+  assert.match(step.asks[0].problem, new RegExp(LOOP_CODES.participants));
+  assert.deepEqual([step.outcome, step.primitive], ['added', 'gameplay.test.sprint']);
   assert.equal(versions.length, 1);
+  assert.ok(!versions[0].doc.systems.some(s => s.use === 'gameplay.test.scramble'));
   assert.deepEqual(inst(versions[0].doc, 'gameplay.test.sprint').with.runners.slice(0, 2), ['player', 'rival']);
   assert.ok(out.base.viable, out.base.viability);
   assert.equal(out.base.playtest?.winnable, true, 'the playtest agent wins it');
@@ -483,49 +439,17 @@ test('race: the scramble declares no runners at all; re-planning replaces it for
 
 test('when nothing in the catalogue can make the declared win reachable, the build fails with the full diagnosis and publishes nothing', async () => {
   const cat = testCatalogue([...BASE, vigor, standoff]);
-  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: scripted('sides', ['gameplay.test.standoff']) }, config: { replanAttempts: 3, maxDetailTasks: 0 } });
+  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: scripted('sides', ['gameplay.test.standoff']) } });
   const m = memoryCtx();
   await assert.rejects(pipeline({ gameId: 'g', prompt: 'duel', kind: 'create', seed: 5 }, m.ctx), e => {
     assert.equal(e.code, 'not_buildable');
-    assert.ok(e.report.missing.some(x => /gameplay\.test\.standoff/.test(x) && /loop_win_unaffected/.test(x) && /vigor/.test(x) && /player verbs or effects change/.test(x)), JSON.stringify(e.report.missing));
-    // Attempts remain, but another on the same selection would fail the same way: the stop says so, and each diagnosis
-    // re-planning took no action for says why.
-    assert.match(e.report.stopped, /^Stopped after attempt 1 of 3: re-planning found no action for 2 diagnosis/);
-    assert.match(e.message, /Stopped after attempt 1 of 3/);
-    assert.ok(e.report.missing.every(x => /; no action: /.test(x)), JSON.stringify(e.report.missing));
+    assert.equal(e.report.path, 'step');
+    // The build's loop steps found nothing that lets play change the win's reads: the selection's core gaps, with the
+    // gap layer's signature, fail the build before any form is asked.
+    assert.equal(e.report.stage, 'selection');
+    assert.ok(e.report.problems.some(p => /player verbs or effects change/.test(p.message) && /gameplay\.test\.standoff/.test(p.message)), JSON.stringify(e.report.problems));
+    assert.match(e.message, /the step path failed at selection/);
     return true;
   });
   assert.equal(m.versions.length, 0);
-});
-
-test('gate verdicts are diagnosed through the loop check of the played document: no_progress, loop_absent, plot_uncompletable', async () => {
-  const { registry } = catalogue();
-  const sel = selectionOf(registry, COLLECTIONS.sides.systems, COLLECTIONS.sides.description);
-  const doc = build('sides').doc;
-  const broken = structuredClone(doc); inst(broken, 'gameplay.test.duel').with.moves = [{ id: 'feint', onHit: [] }];
-  for (const verdict of ['no_progress: play makes no progress toward a win beyond what idling reaches', 'loop_absent: none of the loop\'s events happened from play', 'plot_uncompletable: no ending is reachable']) {
-    const ds = diagnose([{ code: 'not_playable', path: '$', message: verdict }], { selection: sel, registry, doc: broken, core: COLLECTIONS.sides.systems });
-    assert.deepEqual(ds.map(d => [d.kind, d.primitive, d.loop?.code]), [['structure', 'gameplay.test.duel', LOOP_CODES.unaffected]], verdict);
-    assert.equal(ds[0].codes[0], `not_playable:${verdict.split(':')[0]}`);
-  }
-  // A structure that passes leaves the verdict to the existing re-planning (the win, the loop, the fields).
-  assert.equal(diagnose([{ code: 'not_playable', path: '$', message: 'no_progress: none' }], { selection: sel, registry, doc, core: COLLECTIONS.sides.systems })[0].kind, 'win');
-  assert.equal(diagnose([{ code: 'not_playable', path: '$', message: 'loop_absent: none' }], { selection: sel, registry, doc, core: COLLECTIONS.sides.systems })[0].kind, 'loop');
-  // A structure diagnosis re-plans through the build's coverage step: the model picks a primitive whose player verbs
-  // change what the win reads, and it is added (with what it requires).
-  const ds = diagnose([{ code: 'not_playable', path: '$', message: 'no_progress: x' }], { selection: sel, registry, doc: broken, core: COLLECTIONS.sides.systems });
-  const w = stepWriter({ coverage: ['gameplay.test.jabber'] });
-  const r = await replan(selectionOf(registry, ['gameplay.test.duel'], COLLECTIONS.sides.description, graph, COLLECTIONS.sides.drivers), ds, { registry, decomposition: decompositionOf(COLLECTIONS.sides.description, COLLECTIONS.sides.core), tried: new Map(), writer: w });
-  assert.deepEqual(r.actions.map(a => [a.action, a.primitive]), [['add', 'gameplay.test.jabber']]);
-  assert.ok(r.selection.systems.includes('gameplay.test.vigor'), 'what it requires comes with it');
-  assert.deepEqual(w.calls.map(c => c.schema.name), ['pick_coverage']);
-  // The owner alone answers it too (the duel's declared example move saps once vigor is in): both are offered.
-  assert.deepEqual(w.calls[0].schema.schema.properties.pick.enum.slice().sort(), ['gameplay.test.jabber', 'gameplay.test.vigor', 'none']);
-  // A declared win play never moved toward (no static cause) goes to the same coverage step, over the win's reads.
-  const passing = diagnose([{ code: 'not_playable', path: '$', message: 'no_progress: none' }], { selection: sel, registry, doc, core: COLLECTIONS.sides.systems });
-  const w2 = stepWriter({ coverage: [] });
-  const r2 = await replan(sel, passing, { registry, decomposition: decompositionOf(COLLECTIONS.sides.description, COLLECTIONS.sides.core), tried: new Map(), writer: w2 });
-  assert.deepEqual(w2.calls.map(c => c.schema.name), ['pick_coverage']);
-  assert.ok(w2.calls[0].schema.schema.properties.pick.enum.includes('gameplay.test.jabber'), 'the verb that changes the read vigor is offered');
-  assert.deepEqual([r2.actions, r2.unresolved.map(d => d.kind)], [[], ['win']], 'the model said none: unresolved for the gap layer, nothing added');
 });
