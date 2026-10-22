@@ -37,7 +37,7 @@ function envelope(config) {
 export default {
   id: ID,
   card: {
-    loop: { shows: ['entities'], verbs: ['left', 'right', 'jump', 'slide', 'crouch', 'move'], progress: ['lane_switch', 'jumped', 'slide'], lose: { param: 'onCaught', once: true, reads: { event: 'caught', by: { actions: ['left', 'right', 'jump', 'slide', 'crouch', 'move'] } } } },
+    loop: { shows: ['entities'], verbs: ['left', 'right', 'jump', 'slide', 'crouch', 'move'], progress: ['lane_switch', 'jumped', 'slide'], lose: { param: 'onCaught', once: true, says: "Don't get caught", reads: { event: 'caught', by: { actions: ['left', 'right', 'jump', 'slide', 'crouch', 'move'] } } } },
     locomotion: 'base', medium: 'track', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
     // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).

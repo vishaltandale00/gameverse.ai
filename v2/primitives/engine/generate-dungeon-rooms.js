@@ -28,7 +28,7 @@ export default {
     // rules. Its bot plays it on cell spaces (navigate: it plans over the walker's moves and the space's cells).
     mode: { shows: ['entities', 'cells'], loop: 'crawl', applies: { param: 'boss', given: true }, via: 'gameplay.combat.boss', interaction: 'avatar-grid', opponent: 'hazards', space: ['engine.space.grid', ['navigate']], needs: { content: ['content.archetypes'], participants: null },
       progress: ['key_found', 'unlocked'],
-      win: { param: 'bosses.onDefeat', shown: { bar: 'boss' }, reads: { component: 'health', of: 'opponents', by: { events: ['died'], effects: ['damage'] } } }, lose: { param: null }, bot: 'crawl' },
+      win: { param: 'bosses.onDefeat', says: 'Defeat the boss at the end of the dungeon', shown: { bar: 'boss', label: 'Boss' }, reads: { component: 'health', of: 'opponents', by: { events: ['died'], effects: ['damage'] } } }, lose: { param: null }, bot: 'crawl' },
     params: {
       rooms: { type: 'integer', min: 3, max: 80, default: 12, scale: 'world', per: 'area' },
       branching: { type: 'number', min: 0, max: 1, default: 0.3, effect: '0 long paths, 1 bushy; also loop chance inside a region' },

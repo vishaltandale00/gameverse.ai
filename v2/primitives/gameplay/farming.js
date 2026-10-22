@@ -13,7 +13,7 @@ import { spaceFrame } from '../engine/runtime-lib-frame.js';
 const KEY = 'gameplay.farming';
 const parse = v => (isVec(v) ? { cell: v } : v || {});
 // Harvesting a target number of crops wins: a plot ending tests the count ('$target' is a number the content picks).
-const WIN = { when: { count: 'harvested', gte: '$target' }, reads: { event: 'harvested', by: { actions: ['harvest'] } } };
+const WIN = { when: { count: 'harvested', gte: '$target' }, says: 'Harvest {target} crops', label: 'Harvested', reads: { event: 'harvested', by: { actions: ['harvest'] } } };
 
 export default {
   id: 'gameplay.farming',

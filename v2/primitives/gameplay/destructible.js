@@ -31,7 +31,7 @@ export default {
   card: {
     // What an entity carrying these components reads as on screen (graphics/flat-art.js roleOf; never its name).
     presents: { destructible: { role: 'prop' } },
-    loop: { shows: ['entities'], verbs: [], progress: ['destroyed', 'cracked', 'cell_broken'], win: { when: { count: 'destroyed', gte: '$target' }, reads: { event: 'destroyed', by: { effects: ['detonate', 'shatter'], events: ['contact', 'explosion', 'destructible_request'] } } } },
+    loop: { shows: ['entities'], verbs: [], progress: ['destroyed', 'cracked', 'cell_broken'], win: { when: { count: 'destroyed', gte: '$target' }, says: 'Destroy {target} pieces', label: 'Destroyed', reads: { event: 'destroyed', by: { effects: ['detonate', 'shatter'], events: ['contact', 'explosion', 'destructible_request'] } } } },
     // Shapes of the archetype components this primitive owns (the planner's schemas and repair read them).
     components: { destructible: { type: 'object', fields: { material: { type: 'string', required: true, effect: 'a key of the materials param: wood, stone, glass, tnt...' }, hp: { type: 'number', min: 0 }, scale: { type: 'number', min: 0 } }, effect: 'breaks from impacts and blasts' } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

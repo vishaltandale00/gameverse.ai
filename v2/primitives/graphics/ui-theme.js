@@ -431,6 +431,7 @@ export const THEME_CSS = `
 .gv-press{margin-top:22px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;animation:gv-pulse 1.6s ease-in-out infinite;pointer-events:auto;cursor:pointer;background:none;border:0;color:var(--gv-ink);font-family:var(--gv-font)}
 .gv-controls{position:absolute;right:3%;bottom:4%;width:min(320px,80cqw);padding:14px 16px;font-size:.86em;animation:gv-in-up .9s .45s var(--gv-ease) both}
 .gv-controls h4{margin:0 0 8px;font-size:.8em;letter-spacing:.14em;text-transform:uppercase;color:var(--gv-ink-dim)}
+.gv-goal{margin:0 0 10px;line-height:1.4}.gv-goal b{display:block;font-size:.8em;letter-spacing:.14em;text-transform:uppercase;color:var(--gv-ink-dim);margin-bottom:2px}
 .gv-controls dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:5px 14px;align-items:center}.gv-controls dt{color:var(--gv-ink-dim)}.gv-controls dd{margin:0;display:flex;gap:4px;flex-wrap:wrap}
 .gv-slider{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 12px}
 .gv-slider-track{grid-column:1/-1;height:8px;border-radius:99px;background:rgba(0,0,0,.4);overflow:hidden}.gv-slider-track i{display:block;height:100%;background:var(--gv-accent);transition:width .15s}

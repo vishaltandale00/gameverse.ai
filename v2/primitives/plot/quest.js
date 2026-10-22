@@ -44,7 +44,7 @@ export default {
   id: ID,
   solverKey, progress,
   card: {
-    loop: { shows: [], verbs: ['accept_quest', 'track_quest'], progress: ['objective_done', 'quest_complete'], win: { when: { count: 'quest_complete', gte: '$target' }, reads: { event: 'quest_complete', by: { actions: ['accept_quest'], effects: ['complete_quest', 'set_objective'], events: ['*'] } } } },
+    loop: { shows: [], verbs: ['accept_quest', 'track_quest'], progress: ['objective_done', 'quest_complete'], win: { when: { count: 'quest_complete', gte: '$target' }, says: 'Complete {target} quests', label: 'Quests', reads: { event: 'quest_complete', by: { actions: ['accept_quest'], effects: ['complete_quest', 'set_objective'], events: ['*'] } } } },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { accept_quest: { type: 'choice', of: 'an offered quest', from: 'options', emits: ['quest_started'] }, track_quest: { type: 'choice', of: 'an active quest', from: 'options', emits: ['quest_tracked'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

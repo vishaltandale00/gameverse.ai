@@ -42,6 +42,21 @@ function parseUse(target, instances) {
   return null;
 }
 
+/**
+ * What a person reads for each goal kind (card.mode.parts.kinds): the sentence (placeholders: the goal's number fields)
+ * and the label of the quantity (vars stage.goal / stage.target); null for a kind that sets nothing a person watches (a
+ * predicate, or none: the stage is won by the wrapped play's own win).
+ */
+const GOAL_SAYS = {
+  lines: { says: 'Clear {target} lines', label: 'Lines' }, score: { says: 'Score {target} points', label: 'Score' },
+  survive: { says: 'Survive for {timeSec} seconds', label: 'Time' }, chain: { says: 'Make a chain of {target}', label: 'Chain' },
+  viruses: { says: 'Clear every virus', label: 'Viruses' }, blockers: { says: 'Clear every blocker', label: 'Blockers' },
+  jelly: { says: 'Clear all the jelly', label: 'Jelly' }, collect: { says: 'Collect {target} pickups', label: 'Collected' },
+  tile: { says: 'Make a {target} tile', label: 'Best tile' }, when: null, none: null,
+};
+/** The instances whose sequence ends (neither loops nor runs endlessly): the win and the stage count exist only there. */
+const ENDS = [{ param: 'loop', eq: false }, { param: 'endless', eq: false }];
+
 const GOAL_FIELDS = {
   kind: { type: 'string', options: GOALS, default: 'none' }, target: { type: 'number', default: 1, min: 0 },
   moves: { type: 'integer', default: 0, min: 0, max: 100000, effect: 'move limit (0 = none)' }, timeSec: { type: 'number', default: 0, min: 0, max: 36000, unit: 's', effect: 'time limit; for survive, the time to survive' },
@@ -65,7 +80,13 @@ export default {
     // Levels mode: a wrapper that sequences the stages of another mode; its bot plays the wrapped mode stage by stage.
     // The win reads stage.advance (stages cleared plus the current stage's goal progress): it moves within a stage, so
     // progress toward completing the sequence is measurable before the first stage clears.
-    mode: { loop: 'levels', wraps: true, interaction: 'any', opponent: 'clock', space: [], needs: { content: [], participants: null }, win: { param: 'onComplete', end: 'endOnComplete', shown: { var: 'stage.number', label: 'Stage' }, reads: { var: 'stage.advance', by: { events: ['*'] } } }, lose: { param: null, end: 'endOnGameOver', shown: { var: 'stage.lives', label: 'Lives', applies: { param: 'lives', gt: 0 } }, reads: { var: 'stage.lives', by: { events: ['*'] } } }, bot: 'stages' },
+    // A sequence that loops or runs endlessly never completes: its win and the stage count exist only for one that ends.
+    // Each stage's goal is the wrapped play's goal while that stage runs (parts: what a person is told and watches).
+    mode: { loop: 'levels', wraps: true, interaction: 'any', opponent: 'clock', space: [], needs: { content: [], participants: null },
+      win: { param: 'onComplete', end: 'endOnComplete', says: { text: 'Clear all {stages} stages', applies: ENDS }, shown: { var: 'stage.number', label: 'Stage', max: { param: 'stages' }, applies: ENDS }, reads: { var: 'stage.advance', by: { events: ['*'] } } },
+      lose: { param: null, end: 'endOnGameOver', says: { text: "Don't fail more than {lives} times", applies: { param: 'lives', gt: 0 } }, shown: { var: 'stage.lives', label: 'Lives', applies: { param: 'lives', gt: 0 } }, reads: { var: 'stage.lives', by: { events: ['*'] } } },
+      parts: { param: 'stages', goal: 'goal', kind: 'kind', start: 'startAt', index: 'stage.index', value: 'stage.goal', target: 'stage.target', kinds: GOAL_SAYS },
+      bot: 'stages' },
     intent: 'Ordered stages/levels with intro, play, clear and fail phases; per-stage parameter tables applied to other primitives and vars; stage goals (lines, score, survive, chain, viruses, blockers, jelly, collect, tile, predicate), move and time limits, stars, lives and retries, loops with difficulty scaling, endless mode, arcade ladders and stage select.',
     views: ['any'],
     params: {
@@ -101,7 +122,7 @@ export default {
     },
     provides: {
       events: ['stage_intro', 'stage_intro:*', 'stage_start', 'stage_start:*', 'stage_clear', 'stage_clear:*', 'stage_fail', 'stage_fail:*', 'stars', 'stage_loop', 'sequence_complete', 'sequence_over', 'stage_selected'],
-      vars: ['stage.index', 'stage.number', 'stage.loop', 'stage.stars', 'stage.progress', 'stage.advance', 'stage.moves', 'stage.time', 'stage.lives', 'stage.starsTotal', 'stage.score'],
+      vars: ['stage.index', 'stage.number', 'stage.loop', 'stage.stars', 'stage.progress', 'stage.advance', 'stage.moves', 'stage.time', 'stage.lives', 'stage.starsTotal', 'stage.score', 'stage.goal', 'stage.target'],
       actions: ['select_stage', 'next_stage'],
     },
     requires: {},
@@ -360,9 +381,15 @@ function install(rt, config) {
     v['stage.index'] = s.index ?? 0; v['stage.number'] = (s.index ?? 0) + 1; v['stage.loop'] = s.loop; v['stage.stars'] = s.stars ?? 0; v['stage.starsTotal'] = totalStars(s);
     v['stage.score'] = s.index !== undefined ? scoreNow(s) : 0;
     v['stage.lives'] = config.lives ? Math.max(0, s.lives ?? config.lives) : 0;
-    v['stage.moves'] = g?.moves ? Math.max(0, g.moves - (s.moves ?? 0)) : 0;
+    // Moves left exist only while the stage has a move limit (a stage without one has no moves to count down).
+    if (g?.moves) v['stage.moves'] = Math.max(0, g.moves - (s.moves ?? 0)); else delete v['stage.moves'];
     v['stage.time'] = g?.timeSec ? Math.max(0, Math.ceil(g.timeSec - (s.playT ?? 0) / 60)) : r6((s.playT ?? 0) / 60);
     v['stage.progress'] = !g || g.m === 'pred' || g.m === 'none' ? 0 : g.m === 'remaining' ? (s.seen ? r6(measure(s, g) / s.seen) : 0) : g.m === 'time' ? r6(Math.min(1, s.playT / Math.max(1, F(g.timeSec)))) : r6(Math.min(1, measure(s, g) / (g.target || 1)));
+    // The current stage's goal quantity and its target (card.mode.parts value/target): lines cleared of the lines asked,
+    // seconds survived of the seconds asked, the cleared of what there was to clear; 0 for a goal with no quantity.
+    const counted = g && g.kind !== 'none' && g.m !== 'pred' && g.m !== 'none';
+    v['stage.goal'] = counted ? r6(measure(s, g)) : 0;
+    v['stage.target'] = !counted ? 0 : g.m === 'time' ? g.timeSec : g.m === 'remaining' ? (s.seen ?? 0) : g.target;
     // Stages cleared plus the current stage's goal progress: what the levels win reads (card.mode.win.reads).
     v['stage.advance'] = r6((s.phase === 'complete' ? N : (s.index ?? 0)) + (s.phase === 'complete' ? 0 : v['stage.progress']));
   }, ID);

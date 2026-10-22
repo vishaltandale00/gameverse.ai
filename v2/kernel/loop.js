@@ -25,6 +25,14 @@
 //                    whose param compares so; `each: { param, where? }` repeats it per entry of a list param with `$id`
 //                    the entry's id (data only: cards are cloned; graphics/ui-defaults.js hudGoals);
 //             once   the end happens at the first occurrence of what it reads (a finish, a top-out): no quantity to watch;
+//             says   the sentence a person reads for this end (graphics/ui-defaults.js objectiveOf: the how-to-play Goal
+//                    line), plain and generic so it fits every theme (no game's names, no ids); placeholders '{target}'
+//                    (the win's target: the won ending's, or the shown max), '{label}' (the label of what it shows) and
+//                    '{<param>}' (a number param of the instance, or a list param's length);
+//                    `{ text, applies: { param, gt|gte|lt|lte|eq } }` when the end exists only for instances whose param
+//                    compares so (a game over by lives only when lives are limited); every end declares it (endTextProblems);
+//             label  what a person reads for the quantity the end reads, when it declares no `shown` (each shown entry
+//                    declares its own `label`); every end that is not `once` declares one (endTextProblems);
 //   lose?:    the same, for defeat;
 //   outcome?: how this loop's result maps onto the participants of an encounter that runs it as an inner loop
 //             (engine.adapt.nested): { sides: ['player', 'opponent'?], results: { <result>: { param, player, opponent? } } }
@@ -38,6 +46,14 @@
 //             e.g. attack_hit: { attacker: 'who', defender: 'target' }; what a nested encounter can be entered on
 //             (build-steps.js nestedStep) and the roles it binds (engine.adapt.nested with.roles);
 // }
+// card.mode.parts, on a wrapper (card.mode.wraps: it plays the wrapped loop part by part, a stage at a time), declares the
+// parts and the goal each one sets, so a person is told the wrapped play's goal of the part in play:
+//   { param, goal, kind, start, index, value, target, kinds }
+//   param  the list param of parts; goal  its entries' goal field; kind  the goal's field naming its kind;
+//   start  the param holding the first part's index; index  the var holding the current part's;
+//   value, target  the vars holding the current part's goal quantity and its target (what the HUD shows);
+//   kinds  per goal kind: { says, label } (says' placeholders: the goal's number fields), or null for a kind that sets
+//          nothing a person watches (the part is won by the wrapped loop's own win).
 // card.mode is the richer form of the same declaration on primitives that own a whole loop (interaction, opponent,
 // preferred spaces, a bot that proves it): cardLoop() merges the two, card.loop winning field by field.
 import { isObj, isList, isStr, list, objects, prop } from './guards.js';
@@ -47,14 +63,16 @@ import { sideDecl, playerSides } from './sides.js';
 /** @typedef {import('./types.js').RegistryLike} RegistryLike */
 /** What changes the state a loop end reads. @typedef {{ actions?: string[], effects?: string[], events?: string[], movement?: boolean }} ReadsBy */
 /** @typedef {{ component?: string, of?: string, event?: string, var?: string, from?: string, by?: ReadsBy }} EndReads */
-/** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, shown?: unknown, once?: boolean, applies?: { param: string, field?: string, is?: unknown, given?: boolean }, reads?: EndReads }} LoopEnd */
+/** @typedef {{ param?: string, end?: string, when?: Record<string, unknown>, ending?: string, scope?: string, shown?: unknown, once?: boolean, says?: unknown, label?: string, applies?: { param: string, field?: string, is?: unknown, given?: boolean }, reads?: EndReads }} LoopEnd */
+/** A part's goal kind as a person reads it (card.mode.parts.kinds). @typedef {{ says: string, label: string }} PartKind */
+/** @typedef {{ param: string, goal: string, kind: string, start: string, index: string, value: string, target: string, kinds: Record<string, PartKind | null> }} LoopParts */
 /** A side's fate when an inner loop ends one way. @typedef {'keeps' | 'defeated'} Fate */
 /** @typedef {{ param: string, player: Fate, opponent?: Fate }} OutcomeResult */
 /** @typedef {{ sides: string[], results: Record<string, OutcomeResult> }} LoopOutcome */
 /**
  * A primitive's loop declaration (card.loop merged over card.mode).
  * @typedef {{ verbs: string[], progress: string[], win: LoopEnd | null, lose: LoopEnd | null, needs: { content: string[], participants: unknown },
- *   interactions: string[], interaction: string | null, opponent: string | null, space: Array<string | string[]>, via: string | null, bot: string | null, wraps: boolean, outcome: LoopOutcome | null,
+ *   interactions: string[], interaction: string | null, opponent: string | null, space: Array<string | string[]>, via: string | null, bot: string | null, wraps: boolean, parts: LoopParts | null, outcome: LoopOutcome | null,
  *   targets: string | null, involves: Record<string, Record<string, string>> }} Loop
  * `interactions`: the set of interactions the loop is played in (card.loop / card.mode interaction: a string or a list);
  * empty when it declares none or 'any' (a wrapper takes the interaction of the loop it wraps). `interaction` is its first
@@ -128,6 +146,7 @@ export function cardLoop(card) {
     interactions, interaction: interactions[0] ?? null, opponent: typeof (own?.opponent ?? mode?.opponent) === 'string' ? String(own?.opponent ?? mode?.opponent) : null,
     space: /** @type {Array<string | string[]>} */ (space.filter(x => typeof x === 'string' || (isList(x) && x.every(c => typeof c === 'string')))),
     via: typeof mode?.via === 'string' ? mode.via : null, bot: typeof mode?.bot === 'string' ? mode.bot : null, wraps: Boolean(mode?.wraps),
+    parts: isObj(mode?.parts) ? /** @type {LoopParts} */ (mode.parts) : null,
     outcome: outcomeOf(own?.outcome),
     targets: typeof (own?.targets ?? mode?.targets) === 'string' ? String(own?.targets ?? mode?.targets) : null,
     involves: involvesOf(own?.involves),
@@ -451,6 +470,126 @@ export function winQuantity(doc, registry, core = null) {
     if ((e.outcome ?? 'won') !== 'won' || !isObj(w) || !((out.event && w.count === out.event) || (out.var && w.var === out.var))) continue;
     const cmp = ['gte', 'gt', 'lte', 'lt', 'eq'].find(k => typeof w[k] === 'number');
     if (cmp) return { ...out, cmp, target: Number(w[cmp]) };
+  }
+  return out;
+}
+
+// ---------- what a person reads for a loop end: its sentence (says) and the label of its quantity ----------
+
+/** @type {Record<string, (x: number, y: number) => boolean>} */
+const CMP = { gt: (x, y) => x > y, gte: (x, y) => x >= y, lt: (x, y) => x < y, lte: (x, y) => x <= y, eq: (x, y) => x === y };
+/**
+ * Does an instance config meet a condition ({ param, gt|gte|lt|lte|eq }: its number param compares so to each number
+ * given, a boolean param equals `eq`), or every condition of a list? No condition holds always. The `applies` of a shown
+ * entry and of a `says`.
+ * @param {unknown} a @param {Record<string, unknown>} config @returns {boolean}
+ */
+export const compares = (a, config) => (isList(a) ? a.every(x => compares(x, config)) : !isObj(a) || Object.entries(CMP).every(([k, f]) => a[k] === undefined || f(Number(config?.[String(a.param)]), Number(a[k]))));
+
+const PLACEHOLDER = /\{([A-Za-z][A-Za-z0-9]*)\}/g;
+/** What a person never reads: ids, paths, patterns and template markers. */
+export const ID_LIKE = /[.:*_$]|undefined/;
+
+/**
+ * The sentence a loop end says for an instance config: its `says` text, or the text of a `{ text, applies }` whose
+ * condition the config meets; null when the end declares none or its condition fails (no such end in this instance).
+ * @param {LoopEnd | null | undefined} end @param {Record<string, unknown>} config @returns {string | null}
+ */
+export function saysOf(end, config) {
+  const s = end?.says;
+  if (isStr(s)) return s;
+  if (isObj(s) && isStr(s.text) && compares(s.applies, config)) return s.text;
+  return null;
+}
+
+/**
+ * A sentence with its placeholders filled: a number as written (whole numbers grouped), a list by its length, a
+ * non-empty string as it is. null when a placeholder has no value (a sentence never shows a bare placeholder).
+ * @param {string} text @param {Record<string, unknown>} values @returns {string | null}
+ */
+export function fillSays(text, values) {
+  let ok = true;
+  const out = text.replace(PLACEHOLDER, (_, /** @type {string} */ k) => {
+    const v = values[k];
+    if (isList(v)) return String(v.length);
+    if (typeof v === 'number' && Number.isFinite(v)) return Number.isInteger(v) ? v.toLocaleString('en-US') : String(v);
+    if (isStr(v) && v) return v;
+    ok = false;
+    return '';
+  });
+  return ok ? out : null;
+}
+
+/** The placeholders a sentence names. @param {string} text @returns {string[]} */
+export const placeholders = text => [...text.matchAll(PLACEHOLDER)].map(m => m[1]);
+
+/**
+ * Problems of a card's person-facing loop declarations: every win and lose says what a person reads (`says`), every end
+ * a person watches a quantity for labels it (`label`, or each `shown` entry's), a wrapper's parts declare their goal
+ * kinds' sentences and labels (card.mode.parts), and none of it is an id: placeholders name only the end's target, its
+ * label, a number param or a list param (its length). Checked over the catalogue (tests/v2-p-loop-says.test.js).
+ * @param {unknown} card @returns {string[]}
+ */
+export function endTextProblems(card) {
+  const l = cardLoop(card);
+  if (!l) return [];
+  const id = String(prop(card, 'id'));
+  /** @type {Record<string, any>} */
+  const params = isObj(prop(card, 'params')) ? /** @type {Record<string, any>} */ (prop(card, 'params')) : {};
+  /** @type {string[]} */
+  const out = [];
+  const numeric = (/** @type {unknown} */ s) => isObj(s) && (s.type === 'integer' || s.type === 'number');
+  /** @param {unknown} t @param {string} at @param {(k: string) => boolean} allowed */
+  const text = (t, at, allowed) => {
+    if (!isStr(t) || !t.trim()) { out.push(`${at}: a non-empty sentence`); return; }
+    const bare = t.replace(PLACEHOLDER, '');
+    if (ID_LIKE.test(bare) || /[{}]/.test(bare)) out.push(`${at}: '${t}' has an id-like token (. : * _ $ undefined or a stray brace)`);
+    for (const k of placeholders(t)) if (!allowed(k)) out.push(`${at}: '{${k}}' names nothing it can be filled from`);
+  };
+  for (const side of /** @type {const} */ (['win', 'lose'])) {
+    const e = l[side];
+    if (!e) continue;
+    const at = `${id} ${side}`;
+    const shown = e.shown === undefined ? [] : (isList(e.shown) ? e.shown : [e.shown]);
+    const hasTarget = (isObj(e.when) && Object.values(e.when).includes('$target')) || shown.some(q => isObj(q) && q.max !== undefined);
+    const labelled = isStr(e.label) || shown.some(q => isObj(q) && isStr(q.label));
+    const param = (/** @type {string} */ k) => numeric(params[k]) || params[k]?.type === 'list';
+    const allowed = (/** @type {string} */ k) => (k === 'target' ? hasTarget : k === 'label' ? labelled : param(k));
+    const s = e.says;
+    if (s === undefined) out.push(`${at}: declares no says (the sentence a person reads for it)`);
+    else if (isStr(s)) text(s, `${at}.says`, allowed);
+    else if (isObj(s)) {
+      text(s.text, `${at}.says.text`, allowed);
+      const cond = (/** @type {unknown} */ a) => isObj(a) && isStr(a.param) && ((numeric(params[a.param]) && Object.keys(CMP).some(k => typeof a[k] === 'number')) || (params[a.param]?.type === 'boolean' && typeof a.eq === 'boolean'));
+      if (s.applies !== undefined && !(isList(s.applies) ? s.applies.length && s.applies.every(cond) : cond(s.applies))) out.push(`${at}.says.applies: { param: a number param, gt|gte|lt|lte|eq: a number } or { param: a boolean param, eq: a boolean }, or a list of them`);
+    } else out.push(`${at}.says: a sentence or { text, applies }`);
+    if (e.once) continue;
+    if (e.shown === undefined) {
+      if (!isStr(e.label)) out.push(`${at}: declares no label (what a person reads for the quantity it reads)`);
+      else text(e.label, `${at}.label`, () => false);
+    } else shown.forEach((q, i) => {
+      if (!isObj(q) || !isStr(q.label)) out.push(`${at}.shown[${i}]: declares no label`);
+      // '$name' is the declared name of the list entry the shown entry repeats for (`each`): display text.
+      else text(q.label.replaceAll('$name', 'Name'), `${at}.shown[${i}].label`, () => false);
+    });
+  }
+  if (l.parts) {
+    const P = /** @type {Record<string, any>} */ (l.parts), at = `${id} mode.parts`;
+    for (const k of ['param', 'goal', 'kind', 'start', 'index', 'value', 'target']) if (!isStr(P[k])) out.push(`${at}.${k}: a name`);
+    if (!l.wraps) out.push(`${at}: parts are declared on a wrapper (card.mode.wraps)`);
+    const vars = list(prop(prop(card, 'provides'), 'vars'));
+    for (const k of ['index', 'value', 'target']) if (isStr(P[k]) && !vars.includes(P[k])) out.push(`${at}.${k}: '${P[k]}' is not a var the card provides`);
+    if (isStr(P.start) && !numeric(params[P.start])) out.push(`${at}.start: '${P.start}' is not a number param`);
+    const fields = params[P.param]?.of?.fields?.[P.goal]?.fields, kinds = fields?.[P.kind]?.options;
+    if (!isList(kinds)) out.push(`${at}: ${P.param}[].${P.goal}.${P.kind} is not a param field with options`);
+    else for (const k of kinds.map(String)) {
+      if (!isObj(P.kinds) || !(k in P.kinds)) { out.push(`${at}.kinds.${k}: undeclared (a sentence and label, or null)`); continue; }
+      const d = P.kinds[k];
+      if (d === null) continue;
+      if (!isObj(d)) { out.push(`${at}.kinds.${k}: { says, label } or null`); continue; }
+      text(d.says, `${at}.kinds.${k}.says`, f => numeric(fields[f]));
+      text(d.label, `${at}.kinds.${k}.label`, () => false);
+    }
   }
   return out;
 }

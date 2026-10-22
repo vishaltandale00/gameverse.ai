@@ -107,7 +107,7 @@ export default {
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { place: { type: 'choice', of: 'a placement of the falling piece (column, rotation)', from: 'options', emits: ['piece_locked'] } },
     // Falling-blocks mode: clear lines before the stack tops out (the line target wins through an ending or a stage goal).
-    mode: { loop: 'falling-blocks', interaction: 'cursor-board', opponent: 'clock', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { when: { var: 'falling.lines', gte: '$target' }, reads: { var: 'falling.lines', by: { actions: VERBS } } }, lose: { param: 'onTopOut', once: true, reads: { event: 'top_out', by: { actions: VERBS } } }, bot: 'placement' },
+    mode: { loop: 'falling-blocks', interaction: 'cursor-board', opponent: 'clock', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { when: { var: 'falling.lines', gte: '$target' }, says: 'Clear {target} lines', label: 'Lines', reads: { var: 'falling.lines', by: { actions: VERBS } } }, lose: { param: 'onTopOut', once: true, says: "Don't let the stack reach the top", reads: { event: 'top_out', by: { actions: VERBS } } }, bot: 'placement' },
     intent: 'Falling pieces over a board in any editCells space: Tetris-guideline wells (SRS, 7-bag, hold, ghost, T-spins, combos), puyo pairs and capsules handed to gameplay.match, or blocks dropping into a platformer level / rising into a breakout wall as cells or entities.',
     views: ['side', 'board', 'td'],
     params: {

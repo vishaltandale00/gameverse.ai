@@ -56,7 +56,10 @@ const card = {
       of: { type: 'string', options: ['opponents', 'player'], default: 'opponents' },
       bar: { type: 'string', options: ['boss'], effect: 'a bar widget that shows it (the boss bar)' },
       max: { type: 'number', effect: 'a fixed target shown as value/max' }, maxVar: { type: 'string', effect: 'the var holding the target shown as value/max' },
-      label: { type: 'string' }, pos: pos('top-right'),
+      label: { type: 'string', effect: 'what a person reads for it (the loop end\'s declared label)' },
+      labels: { type: 'list', of: { type: 'string' }, effect: 'a wrapper\'s parts (card.mode.parts): the label of each part\'s goal, by the part index var `index`; empty for a part that sets none' },
+      index: { type: 'string', effect: 'the var holding the current part\'s index (with labels)' },
+      pos: pos('top-right'),
     } }, effect: 'the quantities the loops\' win and lose read (ui-defaults.js hudGoals, from card.loop win/lose reads)' },
     prompt: { type: 'boolean', default: true, effect: 'contextual interact prompt with the device glyph' },
     compass: { type: 'boolean', default: false, effect: 'heading strip with the tracked objective marker' },
@@ -131,7 +134,9 @@ export function formatReadout(value, format) {
 /** Readouts to show: configured ones, then auto ones whose vars exist and are not already shown elsewhere. */
 export function readoutsFor(rt, config) {
   const vars = rt.state.vars, shown = new Set([...config.meters.map(m => meterVars(m).value), ...config.counters.map(c => c.var), config.score?.var, config.lives?.var, config.stars?.var]);
-  const list = [...config.readouts, ...(config.auto ? AUTO_READOUTS.filter(a => !config.readouts.some(r => r.var === a.var)) : [])];
+  // A var a loop goal shows (config.goals) is shown by the goal, with its declared label and target, not by an auto readout.
+  const goal = new Set((config.goals || []).map(g => g.var).filter(Boolean));
+  const list = [...config.readouts, ...(config.auto ? AUTO_READOUTS.filter(a => !config.readouts.some(r => r.var === a.var) && !goal.has(a.var)) : [])];
   return list.filter(r => isNum(vars[r.var]) && !shown.has(r.var)).map(r => { const max = isNum(r.max) ? r.max : r.maxVar ? vars[r.maxVar] : undefined; return { key: `r:${r.var}`, var: r.var, label: r.label ?? titleCase(r.var.split('.').pop()), text: formatReadout(vars[r.var], r.format) + (isNum(max) ? `/${fmtInt(max)}` : ''), pos: r.pos || 'top-center', format: r.format || 'number', low: r.format === 'clock' && vars[r.var] <= 10 }; });
 }
 
@@ -226,14 +231,17 @@ export function goalsFor(rt, config, out, bound = new Set(), local = {}) {
   const targetOf = g => (isNum(g.max) ? g.max : typeof g.maxVar === 'string' && isNum(vars[g.maxVar]) ? vars[g.maxVar] : null);
   for (const [i, g] of (config.goals || []).entries()) {
     const key = `g${i}`, pos = g.pos || 'top-right';
+    // What a person reads for it: its declared label, or, for a wrapper's parts, the label of the part in play's goal.
+    const label = Array.isArray(g.labels) ? (g.labels[Math.min(Math.max(0, Math.trunc(Number(vars[g.index]) || 0)), g.labels.length - 1)] ?? '') : (g.label ?? '');
     if (g.var && g.var.endsWith('.*')) { res.push({ ...g, shown: Boolean(out.scoreboard) }); continue; }
+    if (Array.isArray(g.labels) && !label) { res.push({ ...g, shown: false }); continue; } // this part sets no goal to watch
     if (g.var || g.count) {
       // An absent var is 0, as the kernel's var predicate reads it (the win tests it from 0).
       const v = g.var ? vars[g.var] ?? 0 : countOf(rt, g.count);
       if (g.var && valueShown(g.var)) { res.push({ ...g, shown: true }); continue; }
       if (!isNum(v)) { res.push({ ...g, shown: false }); continue; }
       const max = targetOf(g);
-      out.readouts.push({ key, var: g.var || `count:${g.count}`, label: g.label !== undefined ? g.label : titleCase(String(g.var || g.count).split('.').pop().replace(/:/g, ' ')), text: fmtInt(v) + (isNum(max) ? `/${fmtInt(max)}` : ''), pos, format: 'number', low: false });
+      out.readouts.push({ key, var: g.var || `count:${g.count}`, label, text: fmtInt(v) + (isNum(max) ? `/${fmtInt(max)}` : ''), pos, format: 'number', low: false });
       res.push({ ...g, shown: true }); continue;
     }
     if (g.bar === 'boss') { res.push({ ...g, shown: Boolean(config.bossBar) }); continue; }
@@ -241,7 +249,7 @@ export function goalsFor(rt, config, out, bound = new Set(), local = {}) {
       if ((g.of || 'opponents') === 'player') {
         const p = rt.player(), h = p?.components?.[g.component];
         if (g.component === 'health' && (bound.has('hp') || out.meters.some(m => m.id === 'hp') || out.counters.some(c => c.key === 'auto-hp'))) { res.push({ ...g, shown: true }); continue; }
-        if (h && isNum(h.hp)) { out.meters.push({ key, id: g.component, label: g.label ?? 'Health', value: h.hp, max: h.max ?? h.hp, frac: clamp(h.hp / (h.max || h.hp || 1), 0, 1), color: DEFAULT_COLORS.hp, pos: 'top-left', style: 'bar', low: h.hp / (h.max || 1) <= 0.25 }); res.push({ ...g, shown: true }); continue; }
+        if (h && isNum(h.hp)) { out.meters.push({ key, id: g.component, label, value: h.hp, max: h.max ?? h.hp, frac: clamp(h.hp / (h.max || h.hp || 1), 0, 1), color: DEFAULT_COLORS.hp, pos: 'top-left', style: 'bar', low: h.hp / (h.max || 1) <= 0.25 }); res.push({ ...g, shown: true }); continue; }
         res.push({ ...g, shown: false }); continue;
       }
       // The opponents a win counts: entities carrying the component that are not the player's or on its side (kernel/sides.js).
@@ -252,7 +260,7 @@ export function goalsFor(rt, config, out, bound = new Set(), local = {}) {
         const h = e.components.health, max = h.max ?? h.hp ?? 1, hp = h.hp ?? max;
         out.meters.push({ key: `${key}:${e.id}`, id: e.id, label: S.entityName(rt, e.id), value: hp, max, frac: clamp(hp / (max || 1), 0, 1), color: '#e8404a', pos, style: 'bar', low: hp / (max || 1) <= 0.25 });
       }
-      else out.readouts.push({ key, var: `foes:${g.component}`, label: g.label ?? 'Foes', text: `${fmtInt(alive.length)}/${fmtInt(seen.size)}`, pos, format: 'number', low: false });
+      else out.readouts.push({ key, var: `foes:${g.component}`, label, text: `${fmtInt(alive.length)}/${fmtInt(seen.size)}`, pos, format: 'number', low: false });
       res.push({ ...g, shown: true }); continue;
     }
     res.push({ ...g, shown: false });

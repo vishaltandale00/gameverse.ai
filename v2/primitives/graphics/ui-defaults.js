@@ -6,7 +6,7 @@
 // Nothing game-specific: every rule keys off primitive ids, cards and data.
 
 import { unclaimedChoices } from '../engine/runtime-lib-controls.js';
-import { loopInstances, readsOf, winQuantity, endsGame } from '../../kernel/loop.js';
+import { loopInstances, readsOf, winQuantity, winOwner, endsGame, appliesTo, unwired, hostOf, compares, saysOf, fillSays } from '../../kernel/loop.js';
 
 const has = (registry, id) => (registry ? registry.has(id) : true);
 const sysOf = (doc, id) => (doc.systems || []).find(s => s.use === id || s.use.startsWith(id + '.'));
@@ -73,57 +73,165 @@ export function defaultWorldGraphics(doc, registry) {
   return out;
 }
 
-// ---- The quantities a person watches: what the loops' win and lose read (card.loop win/lose reads; the win's is
-// kernel/loop.js winQuantity, the quantity the gate measures), as the end declares a person watches it:
-//   end.shown  { var, max?, label? } | { bar } | [...] | (config, doc) => [...]: what shows it when that is not the read
-//              itself (a measurement var, an event every racer emits); max a number, a var or { param } of the instance;
+// ---- What a person plays toward and against: the loop ends of the document (playedEnds), each with the sentence it
+// says (card.loop end.says: objectiveOf, the how-to-play Goal line) and the quantities a person watches for it (hudGoals,
+// the HUD), what the end reads (card.loop win/lose reads; the win's is kernel/loop.js winQuantity, the quantity the gate
+// measures) as the end declares a person watches it:
+//   end.shown  { var, max?, label } | { bar, label } | [...]: what shows it when that is not the read itself (a
+//              measurement var, an event every racer emits); max a number, a var or { param } of the instance (a list
+//              param by its length);
 //   end.once   the end happens at the first occurrence of what it reads: there is no quantity to watch;
-//   otherwise  the read: a var, an event's count (the won ending's target as its max) or a component of entities.
-const titleCase = s => String(s).replace(/[_-]+/g, ' ').replace(/^./, c => c.toUpperCase());
+//   otherwise  the read: a var, an event's count (the won ending's target as its max) or a component of entities,
+//              labelled by end.label.
+// A wrapper (card.mode.wraps) plays the wrapped loop part by part: the goal of the part in play (card.mode.parts) is shown
+// and said; a part that sets none is won by the wrapped loop's own win (the owner among the other loops), shown and said.
 /** The ending a document wins by testing an event count or a var, with its comparison target. */
 const wonEnding = (doc, test) => (doc.plot?.endings || []).find(e => (e.outcome ?? 'won') === 'won' && e.when && test(e.when));
+/** A number param of an instance, a list param by its length. */
+const paramNumber = v => (Array.isArray(v) ? v.length : v);
+/** The parts of a wrapper instance (card.mode.parts param) and each one's declared goal kind ({ says, label } or null). */
+function partsOf(l) {
+  const P = l.loop.parts;
+  if (!P) return null;
+  const parts = Array.isArray(l.config[P.param]) ? l.config[P.param] : [];
+  return { P, parts, kinds: parts.map(p => P.kinds?.[p?.[P.goal]?.[P.kind]] ?? null) };
+}
 /**
- * HUD goals for a document: [{ end, use, var? | count? | component?, of? | bar?, max? | maxVar?, label? }], one per quantity, win first.
+ * The loop ends a person plays toward and against, win first: the loop owning the game's win (kernel/loop.js winOwner),
+ * or, when none declares a game-ending win, each encounter win the document wires to a won ending (the encounter ends the
+ * game); for a wrapper owner, the wrapped loop's win (`wrapped`), which a part setting no goal of its own is won by; then
+ * every game-ending lose that applies to its instance. A loop another one runs on (card.mode.via: the card battle on the
+ * turns) has that loop's ends, worded by it: the one played through it stands for it. -> [{ side: 'win' | 'lose', l, e, wrapped? }]
+ */
+function playedEnds(doc, registry, loops) {
+  const played = new Map(loops.filter(l => l.loop.via).map(l => [l.loop.via, l]));
+  const as = l => played.get(l.use) ?? l, out = [], seen = new Set();
+  const push = (side, l, extra = {}) => { const p = as(l), e = p.loop[side]; if (!e || seen.has(`${side} ${p.use}`)) return; seen.add(`${side} ${p.use}`); out.push({ side, l: p, e, ...extra }); };
+  const owner = winOwner(doc, registry, loops, null);
+  for (const l of owner ? [owner] : loops.filter(l => l.loop.win && !unwired(doc, l, l.loop.win, 'won', registry))) push('win', l);
+  if (owner?.loop.wraps) {
+    const inner = winOwner(doc, registry, loops.filter(x => !x.loop.wraps), null);
+    if (inner) push('win', inner, { wrapped: true });
+  }
+  for (const l of loops) if (!played.has(l.use) && l.loop.lose && endsGame(l.loop.lose) && appliesTo(l.loop.lose.applies, l.config) && !repurposed(doc, registry, l, l.loop.lose, 'lost')) push('lose', l);
+  return out;
+}
+/**
+ * Does the document give an end's effects param (on the instance, or its card.mode.via host) effects that end no game
+ * with this outcome? Then the end is not the game's: a nested game makes an inner loop's lose the encounter's result
+ * (engine.adapt.nested). A param the document leaves to the card's default keeps the card's own ending.
+ */
+function repurposed(doc, registry, l, end, outcome) {
+  if (typeof end.param !== 'string') return false;
+  const w = hostOf(doc, l)?.with;
+  return Boolean(w) && w[end.param.split('.')[0]] !== undefined && unwired(doc, l, end, outcome, registry) !== null;
+}
+/** The quantities a person watches for one loop end: [{ end, use, var? | count? | component?, of? | bar?, max? | maxVar?, label? }]. */
+function endGoals(doc, side, l, e, win) {
+  if (e.once) return [];
+  let list;
+  if (e.shown !== undefined) list = (Array.isArray(e.shown) ? e.shown : [e.shown]).flatMap(q => shownEntries(q, l.config));
+  else {
+    const rd = readsOf(e);
+    if (!rd) return [];
+    const label = typeof e.label === 'string' ? { label: e.label } : {};
+    if (rd.var) { const t = side === 'win' && win?.use === l.use && win?.var === rd.var ? win.target : undefined; list = [{ var: rd.var, ...label, ...(t !== undefined ? { max: t } : {}) }]; }
+    else if (rd.event) { const ending = side === 'win' ? wonEnding(doc, w => typeof w.count === 'string' && (w.count === rd.event || w.count.startsWith(rd.event + ':'))) : null; const t = ending && ['gte', 'gt', 'eq'].find(k => typeof ending.when[k] === 'number'); list = [{ count: ending ? ending.when.count : rd.event, ...label, ...(t ? { max: ending.when[t] } : {}) }]; }
+    else list = [{ component: rd.component, of: rd.of || 'opponents', ...label }];
+  }
+  // The target, as graphics.ui.hud declares a goal's: a number (given, or the instance's { param }) is max, a var name is maxVar.
+  return list.map(q => {
+    const { max: given, ...rest } = q;
+    const max = given && typeof given === 'object' ? paramNumber(l.config[given.param]) : given;
+    return { end: side, use: l.use, ...rest, ...(typeof max === 'number' ? { max } : typeof max === 'string' ? { maxVar: max } : {}) };
+  });
+}
+/**
+ * The ends a person plays toward and against with their quantities: [{ side, l, e, goals, part?, wrapped? }]. A wrapper's
+ * entry carries `part`: its parts' goal quantity (the vars card.mode.parts names, labelled per part by its goal kind); the
+ * wrapped loop's entry is kept only when some part sets no goal of its own (those parts its win decides).
+ */
+function playedGoals(doc, registry) {
+  const loops = loopInstances(doc, registry), win = winQuantity(doc, registry);
+  const ends = playedEnds(doc, registry, loops).map(x => ({ ...x, goals: endGoals(doc, x.side, x.l, x.e, win) }));
+  const wrapper = ends.find(x => x.side === 'win' && !x.wrapped && x.l.loop.parts), parts = wrapper ? partsOf(wrapper.l) : null;
+  if (parts) {
+    const labels = parts.kinds.map(k => k?.label ?? '');
+    if (labels.some(Boolean)) wrapper.part = { end: 'win', use: wrapper.l.use, var: parts.P.value, maxVar: parts.P.target, labels, index: parts.P.index };
+  }
+  return ends.filter(x => !x.wrapped || !parts || parts.kinds.some(k => !k));
+}
+/**
+ * HUD goals for a document: [{ end, use, var? | count? | component?, of? | bar?, max? | maxVar?, label? | labels + index }],
+ * one per quantity, win first.
  * @param {any} doc @param {any} registry
  */
 export function hudGoals(doc, registry) {
   if (!registry) return [];
-  const loops = loopInstances(doc, registry), out = [], keys = new Set();
-  const win = winQuantity(doc, registry), owner = win ? loops.find(l => l.use === win.use) : null;
-  const ends = [...(owner ? [{ end: 'win', l: owner, e: owner.loop.win }] : []), ...loops.filter(l => l.loop.lose && endsGame(l.loop.lose) && readsOf(l.loop.lose)).map(l => ({ end: 'lose', l, e: l.loop.lose }))];
-  for (const { end, l, e } of ends) {
-    if (e.once) continue;
-    let list;
-    if (e.shown !== undefined) list = (Array.isArray(e.shown) ? e.shown : [e.shown]).flatMap(q => shownEntries(q, l.config));
-    else {
-      const rd = readsOf(e);
-      if (rd.var) { const t = end === 'win' && win?.var === rd.var ? win.target : undefined; list = [{ var: rd.var, ...(t !== undefined ? { max: t } : {}) }]; }
-      else if (rd.event) { const ending = wonEnding(doc, w => typeof w.count === 'string' && (w.count === rd.event || w.count.startsWith(rd.event + ':'))); const t = ending && ['gte', 'gt', 'eq'].find(k => typeof ending.when[k] === 'number'); list = [{ count: ending ? ending.when.count : rd.event, ...(t ? { max: ending.when[t] } : {}) }]; }
-      else list = [{ component: rd.component, of: rd.of || 'opponents' }];
-    }
-    for (const q of list) {
-      // The target, as graphics.ui.hud declares a goal's: a number (given, or the instance's { param }) is max, a var
-      // name is maxVar.
-      const { max: given, ...rest } = q;
-      const max = given && typeof given === 'object' ? l.config[given.param] : given;
-      const g = { end, use: l.use, ...rest, ...(typeof max === 'number' ? { max } : typeof max === 'string' ? { maxVar: max } : {}) };
-      const key = JSON.stringify([g.var, g.count, g.component, g.of, g.bar]);
-      if (keys.has(key)) continue;
-      keys.add(key); out.push(g);
-    }
+  const out = [], keys = new Set();
+  for (const x of playedGoals(doc, registry)) for (const g of [...x.goals, ...(x.part ? [x.part] : [])]) {
+    const key = JSON.stringify([g.var, g.count, g.component, g.of, g.bar]);
+    if (keys.has(key)) continue;
+    keys.add(key); out.push(g);
   }
   return out;
 }
-const NUM = ['gt', 'gte', 'lt', 'lte', 'eq'];
-/** Does an instance config meet a shown entry's `applies` ({ param, gt|gte|lt|lte|eq }: a number its param must compare to). */
-const applies = (a, config) => !a || NUM.every(k => a[k] === undefined || ({ gt: (x, y) => x > y, gte: (x, y) => x >= y, lt: (x, y) => x < y, lte: (x, y) => x <= y, eq: (x, y) => x === y })[k](Number(config[a.param]), a[k]));
+
+/**
+ * The objective a person is told (the how-to-play Goal line, graphics/ui-menu.js): the sentences the document's loop ends
+ * say (card.loop end.says), win first and then lose, placeholders filled from the instance (its params; {target} and
+ * {label} from the quantity a person watches for the end, as hudGoals derives it). A wrapper says the goal of the part in
+ * play (from `vars`, the state's, else its first part) before its own; a part setting no goal says the wrapped loop's win.
+ * `missing` names every end that says nothing where it should (no `says` declared, a placeholder with no value): text a
+ * person would not get. The one function every screen that tells the objective reads; `text` is the line as shown.
+ * @param {any} doc @param {any} registry @param {Record<string, unknown> | null} [vars]
+ * @returns {{ win: string[], lose: string[], text: string, missing: string[] }}
+ */
+export function objectiveOf(doc, registry, vars = null) {
+  const out = { win: [], lose: [], missing: [] };
+  if (!registry) return { ...out, text: '' };
+  const add = (side, t) => { if (t && !out[side].includes(t)) out[side].push(t); };
+  const ends = playedGoals(doc, registry);
+  const said = x => {
+    if (x.e.says === undefined) { out.missing.push(`${x.l.use} ${x.side}: declares no says`); return []; }
+    const text = saysOf(x.e, x.l.config);
+    if (!text) return []; // its declared condition does not hold: the instance has no such end
+    const params = Object.fromEntries(Object.entries(x.l.config).filter(([, v]) => typeof v === 'number' || Array.isArray(v)));
+    const per = /\{(target|label)\}/.test(text) && x.goals.length ? x.goals : [null];
+    return per.map(g => {
+      const target = !g ? undefined : typeof g.max === 'number' ? g.max : vars && typeof vars[g.maxVar] === 'number' ? vars[g.maxVar] : undefined;
+      const t = fillSays(text, { ...params, ...(target !== undefined ? { target } : {}), ...(g?.label ? { label: g.label } : {}) });
+      if (t === null) out.missing.push(`${x.l.use} ${x.side}: '${text}' has a placeholder with no value`);
+      return t;
+    }).filter(Boolean);
+  };
+  // The goal of the part in play (null when that part sets none: the wrapped loop's win decides it).
+  const partSaid = x => {
+    const p = partsOf(x.l);
+    if (!p || !p.parts.length) return null;
+    const at = vars && typeof vars[p.P.index] === 'number' ? vars[p.P.index] : Number(x.l.config[p.P.start] ?? 0);
+    const i = Math.min(Math.max(0, Math.trunc(at)), p.parts.length - 1), kind = p.kinds[i];
+    if (!kind) return null;
+    const goal = p.parts[i]?.[p.P.goal] || {};
+    const t = fillSays(kind.says, Object.fromEntries(Object.entries(goal).filter(([, v]) => typeof v === 'number')));
+    if (t === null) out.missing.push(`${x.l.use} part ${i + 1}: '${kind.says}' has a placeholder with no value`);
+    return t;
+  };
+  const wrapped = ends.find(x => x.wrapped);
+  for (const x of ends) {
+    if (x.wrapped) continue;
+    if (x.side === 'win' && x.l.loop.wraps) { const part = partSaid(x); if (part) add('win', part); else if (wrapped) for (const t of said(wrapped)) add('win', t); }
+    for (const t of said(x)) add(x.side, t);
+  }
+  return { ...out, text: [...out.win, ...out.lose].join(' · ') };
+}
 /**
  * The entries a declared `shown` stands for on an instance: itself, or one per entry of a list param (`each: { param,
  * where? }`, the entry's fields matching `where`) with `$id` in its strings replaced by that entry's id and `$name` by its
  * declared name (display text; '' when it declares none). Data only.
  */
 function shownEntries(q, config) {
-  if (!q || typeof q !== 'object' || !applies(q.applies, config)) return [];
+  if (!q || typeof q !== 'object' || !compares(q.applies, config)) return [];
   const { each, applies: _, ...rest } = q;
   if (!each) return [rest];
   const sub = (v, x) => (typeof v === 'string' ? v.replaceAll('$id', String(x.id)).replaceAll('$name', typeof x.name === 'string' ? x.name : '') : v);

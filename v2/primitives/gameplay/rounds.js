@@ -25,7 +25,7 @@ export default {
       {"need": "param", "param": "fighters", "min": 2, "why": "a match needs the player and an opponent (entity ids or archetypes)", "example": ["player", "rival"]},
     ],
     // Versus mode: rounds against AI fighters, won on the match result.
-    mode: { loop: 'versus', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.arena2d', ['position', 'distance', 'overlap']], needs: { content: ['content.archetypes'], participants: 'fighters' }, win: { param: 'onWin', end: 'endGame', reads: { component: 'health', of: 'opponents', by: { effects: ['damage'] } } }, lose: { param: 'onLose', end: 'endGame', reads: { component: 'health', of: 'player', by: { effects: ['damage'] } } }, bot: 'versus' },
+    mode: { loop: 'versus', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.arena2d', ['position', 'distance', 'overlap']], needs: { content: ['content.archetypes'], participants: 'fighters' }, win: { param: 'onWin', end: 'endGame', says: 'Knock out your rival', label: 'Opponent', reads: { component: 'health', of: 'opponents', by: { effects: ['damage'] } } }, lose: { param: 'onLose', end: 'endGame', says: "Don't get knocked out", label: 'Health', reads: { component: 'health', of: 'player', by: { effects: ['damage'] } } }, bot: 'versus' },
     intent: 'Versus match rules: round intro, round timer, KO (health or a predicate), double KO, time over decided by health, perfect rounds, best-of-N rounds with draws, or stock mode with respawns; match result effects and scoring. Fighting, arena and duel games of any space use it.',
     views: ['any'],
     params: {

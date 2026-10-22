@@ -13,6 +13,7 @@ import { modelsData } from './model-lib.js';
 import { icon } from './ui-icons.js';
 import * as S from './ui-sources.js';
 import { uiControls, unclaimedChoices, loopVerbs } from '../engine/runtime-lib-controls.js';
+import { objectiveOf } from './ui-defaults.js';
 
 const VERB_LABEL = { move: 'Move', look: 'Look', jump: 'Jump', sprint: 'Sprint', crouch: 'Crouch', use: 'Use', interact: 'Interact', attack: 'Attack', alt_attack: 'Heavy attack', block: 'Block', dodge: 'Dodge', aim: 'Aim', mine: 'Mine', place: 'Place', drive: 'Drive', brake: 'Brake', handbrake: 'Handbrake', talk: 'Talk', dash: 'Dash', heal: 'Heal', cast: 'Cast', lockon: 'Lock on', fire: 'Fire', shoot: 'Shoot' };
 const UI_VERBS = [['menu', 'Pause'], ['inventory', 'Inventory'], ['journal', 'Journal'], ['map', 'Map']];
@@ -213,7 +214,7 @@ export default {
       controls() {
         open('controls', () => {
           const b = button('Back', back);
-          root.append(el('section.gv-menu', {}, el('div.gv-scrim'), el('div.gv-menu-card.gv-panel', { style: { width: 'min(520px,92vw)' } }, el('h2.gv-display', { text: 'Controls' }), controlsList(), b)));
+          root.append(el('section.gv-menu', {}, el('div.gv-scrim'), el('div.gv-menu-card.gv-panel', { style: { width: 'min(520px,92vw)' } }, el('h2.gv-display', { text: 'Controls' }), goalLine(), controlsList(), b)));
           setItems([b], { back });
         });
       },
@@ -265,7 +266,10 @@ export default {
     // ------------------------------------------------------------- helpers
     const hint = (verb, label) => el('span', {}, el('span.gv-kbd', { text: glyph(host, verb) }), label);
     function controlsList() { return el('dl', {}, ...controlRows(rt.doc, id => rt.registry.has(id), rt.registry).flatMap(r => [el('dt', { text: r.label }), el('dd', {}, ...r.keys.map(k => el('span.gv-kbd', { text: k })))])); }
-    function controlsCard() { return el('aside.gv-controls.gv-panel', { aria: { label: 'Controls' } }, el('h4', { text: 'How to play' }), controlsList()); }
+    // The objective as the loop ends declare it (ui-defaults.js objectiveOf: their says, win then lose), for the stage in
+    // play: the first thing the how-to-play panel tells a person.
+    function goalLine() { const o = objectiveOf(rt.doc, rt.registry, rt.state.vars); return o.text ? el('p.gv-goal', {}, el('b', { text: 'Goal' }), el('span', { text: o.text })) : null; }
+    function controlsCard() { return el('aside.gv-controls.gv-panel', { aria: { label: 'Controls' } }, el('h4', { text: 'How to play' }), goalLine(), controlsList()); }
     function confirmThen(question, yes) {
       open('confirm', () => {
         const list = [button('Yes', yes), button('No', back)];

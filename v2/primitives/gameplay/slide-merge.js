@@ -51,7 +51,7 @@ export default {
   card: {
     loop: { shows: ['cells', 'labels'], verbs: ['slide'], progress: ['slid', 'merged'] },
     // Slide-merge mode: make the target tile before the board jams.
-    mode: { loop: 'slide-merge', interaction: 'cursor-board', opponent: 'none', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { param: 'onTarget', shown: { var: 'slide.max', max: { param: 'target' }, label: 'Best' }, reads: { var: 'slide.max', by: { actions: ['slide'] } } }, lose: { param: 'onStuck', once: true, reads: { event: 'board_stuck', by: { actions: ['slide'] } } }, bot: 'expectimax' },
+    mode: { loop: 'slide-merge', interaction: 'cursor-board', opponent: 'none', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { param: 'onTarget', says: 'Make a {target} tile', shown: { var: 'slide.max', max: { param: 'target' }, label: 'Best' }, reads: { var: 'slide.max', by: { actions: ['slide'] } } }, lose: { param: 'onStuck', once: true, says: "Don't let the board fill up", reads: { event: 'board_stuck', by: { actions: ['slide'] } } }, bot: 'expectimax' },
     intent: '2048-style board: slide all tiles toward an edge, equal tiles merge once per move, a 2 or 4 spawns after each move, rocks split lines; works on any editCells board.',
     views: ['board', 'td'],
     params: {

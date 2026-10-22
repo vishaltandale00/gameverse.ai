@@ -68,7 +68,7 @@ export default {
     engage: { participants: { param: 'racers' }, encounter: { start: [{ do: 'start_race' }], config: { autoStart: false } } },
     // Race mode: laps through checkpoint zones against rivals (and the clock with timeLimit).
     // Its target service (mode.targets): each AI-controlled racer's next checkpoint zone while the race runs.
-    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, targets: 'race.targets', win: { param: 'onWin', shown: { var: 'race.lap', max: 'race.laps' }, reads: { event: 'lap', of: 'player', by: { movement: true } } }, lose: { param: 'onLose', once: true, reads: { event: 'race_finished', by: { movement: true } } }, bot: 'race' },
+    mode: { loop: 'race', interaction: 'avatar-realtime', opponent: 'ai-rival', space: ['engine.space.track', 'engine.space.mesh3d', ['position', 'distance']], needs: { content: ['spaces.zones'], participants: 'racers' }, targets: 'race.targets', win: { param: 'onWin', says: 'Finish {laps} laps first', shown: { var: 'race.lap', max: 'race.laps', label: 'Lap' }, reads: { event: 'lap', of: 'player', by: { movement: true } } }, lose: { param: 'onLose', once: true, says: "Don't let a rival finish first", reads: { event: 'race_finished', by: { movement: true } } }, bot: 'race' },
   },
   logic(logic) {
     logic.predicate('race', {

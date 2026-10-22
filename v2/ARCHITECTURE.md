@@ -118,7 +118,7 @@ Its card declares, as data:
 | `rules` | every problem code its `validate` can emit, with the fields and allowed values, for rules that cannot be plain data (cross-field rules) |
 | `requires` / `provides` / `conflicts` | capabilities, services, primitives, events, vars, actions |
 | `engage` | how the player and AI participants take part (seated in a vehicle, on a side, holding a deck) |
-| `loop` (and `mode`) | for primitives that can carry play: the interactions it serves (a set), player verbs, progress events, `win`/`lose` with what they `read` and what changes it, participants, encounter `outcome`, target services, the bot that plays it |
+| `loop` (and `mode`) | for primitives that can carry play: the interactions it serves (a set), player verbs, progress events, `win`/`lose` with what they `read` and what changes it and what a person is told (`says`: the sentence; `label`: the quantity watched; a wrapper's `parts`: each part's goal), participants, encounter `outcome`, target services, the bot that plays it |
 | `drives` | for AI primitives: which AI-controlled participants it acts for and what they do |
 | `spaces`, `provides.content`, `provides.extent` | for generators: which spaces they build, what world content they produce, what area they fill |
 | `needs.content` | for spaces: the world content they must have to be playable |

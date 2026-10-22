@@ -16,7 +16,7 @@ const parse = v => (typeof v === 'string' ? { recipe: v, count: 1 } : { recipe: 
 export default {
   id: 'gameplay.crafting',
   card: {
-    loop: { shows: [], verbs: ['craft', 'combine'], verbsOf: config => ['craft', ...(config.discover === 'experiment' ? ['combine'] : [])], progress: ['crafted', 'recipe_learned'], win: { when: { count: 'crafted', gte: '$target' }, reads: { event: 'crafted', by: { actions: ['craft', 'combine'], effects: ['craft'] } } } },
+    loop: { shows: [], verbs: ['craft', 'combine'], verbsOf: config => ['craft', ...(config.discover === 'experiment' ? ['combine'] : [])], progress: ['crafted', 'recipe_learned'], win: { when: { count: 'crafted', gte: '$target' }, says: 'Craft {target} items', label: 'Crafted', reads: { event: 'crafted', by: { actions: ['craft', 'combine'], effects: ['craft'] } } } },
     // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
     actionSpace: { craft: { type: 'choice', of: 'a craftable recipe', from: 'options', emits: ['crafted', 'craft_started'] }, combine: { type: 'choice', of: 'items to combine', from: 'options', emits: ['crafted', 'craft_started', 'craft_failed'] } },
     // What this primitive needs in the document to be meaningful (planner/content.js reads it).

@@ -47,7 +47,7 @@ export default {
     ],
     // RTS mode: the player's faction against AI factions; won when only the player's faction stands, which play
     // moves toward by wearing down and destroying the opponents' units and buildings (their health).
-    mode: { loop: 'rts', interaction: 'cursor-board', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.tilemap', ['position']], needs: { content: ['content.archetypes'], participants: 'factions' }, win: { param: 'onVictory', reads: { component: 'health', of: 'opponents', by: { actions: ['order', 'produce'], effects: ['damage'] } } }, lose: { param: 'onDefeat', once: true, reads: { event: 'faction_defeated', by: { actions: ['order', 'produce'] } } }, bot: 'turn-board' },
+    mode: { loop: 'rts', interaction: 'cursor-board', opponent: 'ai-side', space: ['engine.space.grid', 'engine.space.tilemap', ['position']], needs: { content: ['content.archetypes'], participants: 'factions' }, win: { param: 'onVictory', says: 'Destroy the enemy forces', label: 'Foes', reads: { component: 'health', of: 'opponents', by: { actions: ['order', 'produce'], effects: ['damage'] } } }, lose: { param: 'onDefeat', once: true, says: "Don't let your side be wiped out", reads: { event: 'faction_defeated', by: { actions: ['order', 'produce'] } } }, bot: 'turn-board' },
     intent: 'Real-time strategy: factions and resources, unit selection and orders (move, attack, attack-move, gather, build, stop, hold, patrol, queued), worker gathering loops, production queues with rally points and supply, construction, auto-targeting, fog of war over line of sight, a simple AI opponent, and faction defeat.',
     views: ['td', 'iso'],
     params: {
