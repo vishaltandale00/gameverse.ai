@@ -6,7 +6,7 @@
 // allocates free verbs to primitives that need a button (claim). In the
 // browser only, this primitive also listens to keyboard, mouse, gamepad and
 // touch and sets view.input(); it never touches rt.state there.
-import { compile, conflicts, expand, sample, glyph, keyName, deviceOf, PAD_ORDER, bindingKeys, hostView, decodeValue } from './runtime-lib-input.js';
+import { compile, conflicts, expand, sample, glyph, keyName, deviceOf, PAD_ORDER, bindingKeys, hostView, decodeValue, AXES } from './runtime-lib-input.js';
 import { SLUG } from './runtime-lib.js';
 
 const ID = 'engine.input.actions';
@@ -46,6 +46,8 @@ export default {
         const valueMap = keys && typeof keys === 'object' && !Array.isArray(keys);
         if (!Array.isArray(keys) && !(valueMap && Object.values(keys).every(Array.isArray))) { errors.push({ code: 'param_type', path: `bindings.${view}.${verb}`, message: 'must be a list of key names, or a map of values to key-name lists' }); continue; }
         bindingKeys(keys).forEach(({ name: k }, i) => { if (!expand(k)) errors.push({ code: 'input_key_unknown', path: `bindings.${view}.${verb}[${i}]`, message: `unknown key '${k}'`, hint: 'gamepad face buttons are pad_a pad_b pad_x pad_y' }); });
+        // An axis verb is held as a direction: a single key bound to it would send a press (`move: true`), not one.
+        if (config.axes.includes(verb)) bindingKeys(keys).forEach(({ name: k }, i) => { if (expand(k) && !AXES.has(k)) errors.push({ code: 'input_axis_key', path: `bindings.${view}.${verb}[${i}]`, message: `'${verb}' is an axis and '${k}' is a key: an axis is bound to axis sources`, hint: `bind ${[...AXES].join(', ')}` }); });
       }
     }
     if (!errors.length) for (const c of conflicts(config.bindings, config.shareKeys)) errors.push({ code: 'input_binding_conflict', path: `bindings.${c.view}`, message: `'${c.key}' is bound to both ${c.verbs.join(' and ')}`, hint: 'rebind one, or list both verbs in a shareKeys group' });

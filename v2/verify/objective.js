@@ -4,6 +4,7 @@
 // Used as the best-first heuristic of the plot solver, the cell score of the
 // Go-Explore playtester and the reward of greedy strategies.
 import { instancesOf } from './util.js';
+import { onPlayerSide } from '../kernel/sides.js';
 
 const COMPARATORS = ['gte', 'gt', 'lte', 'lt', 'eq', 'ne'];
 /** Events that mean the player advanced, with weights (wildcards end in ':'). */
@@ -80,7 +81,8 @@ const DIRECTION = { gte: 1, gt: 1, lte: -1, lt: -1 };
  *              read of the player's side (`of: 'player'`, with `subjects`) counts only `event:<subject>` of those
  *              subjects (the player's laps, its team's goals), never a rival's;
  *   var        the change toward the target (gte/gt up, lte/lt down, eq closer to it), any change without a target;
- *   component  how many of the entities it reads ('opponents': non-player entities carrying it, 'player': the player)
+ *   component  how many of the entities it reads ('opponents': entities carrying it not on the player's side, 'player': the
+ *              player and its side; kernel/sides.js)
  *              had it changed from how they first carried it, plus those removed during play (`carry`: per path).
  * track(rt) is taken before a stretch of play and carry(c, token, rt) after it, so removals count along a path.
  * -> null when there is no win quantity.
@@ -112,7 +114,9 @@ export function winMeasure(win) {
   const C = win.component, of = win.of || 'opponents';
   /** How each entity first carried the component (ids are deterministic per seed). */
   const first = new Map();
-  const carriers = rt => Object.values(rt.state.entities).filter(e => e?.components?.[C] !== undefined && (of === 'player' ? e.id === 'player' : of === 'opponents' ? e.id !== 'player' : true));
+  // Sides are the kernel's one reading of the cards' side declarations (kernel/sides.js): 'opponents' are the entities
+  // not on the player's side (never its own pieces), 'player' the player and its side.
+  const carriers = rt => Object.values(rt.state.entities).filter(e => e?.components?.[C] !== undefined && (of === 'player' ? onPlayerSide(rt, e) : of === 'opponents' ? !onPlayerSide(rt, e) : true));
   const changed = rt => { let n = 0; for (const e of carriers(rt)) { const j = JSON.stringify(e.components[C]); if (!first.has(e.id)) first.set(e.id, j); else if (first.get(e.id) !== j) n++; } return n; };
   return {
     label: `${of}' component ${C}`, target: null,

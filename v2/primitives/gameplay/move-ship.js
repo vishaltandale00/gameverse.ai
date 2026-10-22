@@ -143,8 +143,9 @@ export default {
     }, ID);
     rt.options(rt => {
       const p = rt.player(); if (!p || p.components.move?.owner !== owner) return []; // listing reads: no mv(), which creates the component
-      const out = [['left', { left: true }], ['right', { right: true }]];
-      if (c.mode !== 'rail') out.push(['up', { up: true }], ['down', { down: true }]);
+      // Directions are the move axis it declares (provides.actions move), held for the option's steps, as a person holds it.
+      const out = [['left', { move: [-1, 0] }], ['right', { move: [1, 0] }]];
+      if (c.mode !== 'rail') out.push(['up', { move: [0, 1] }], ['down', { move: [0, -1] }]);
       if (c.mode === 'inertial' && hyper.enabled) out.push(['hyperspace', { hyperspace: true }]);
       return out.map(([label, actions]) => ({ label: `ship ${label}`, actions, steps: 10 }));
     });

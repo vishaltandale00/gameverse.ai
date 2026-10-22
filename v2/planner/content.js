@@ -31,6 +31,7 @@ import { createWorld } from '../kernel/world.js';
 import { preflight } from '../kernel/document.js';
 import { standable } from '../primitives/engine/runtime-lib.js';
 import { isObj, isStr, list, objects, prop } from '../kernel/guards.js';
+import { sideDecl } from '../kernel/sides.js';
 
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
 /**
@@ -272,16 +273,13 @@ export const SEAT = 'seat_';
  *   members: string | null, placed: number, space: Record<string, unknown> | null }} Participants
  */
 /**
- * The component field that names a participant's group: a string field of the component whose name is the
- * group param's singular or whose declaration names the param ("the sides[] id this unit fights for").
+ * The component field that names a participant's group: the field the card's side declaration names (card.sides
+ * { param, component, field }: kernel/sides.js) for that param and component, else none.
  * @param {unknown} card @param {string} component @param {string} param @returns {string | null}
  */
 export function groupField(card, component, param) {
-  const fields = prop(prop(prop(card, 'components'), component), 'fields');
-  if (!isObj(fields)) return null;
-  const one = param.replace(/s$/, ''), named = new RegExp(`\\b(${param}|${one})\\b`, 'i');
-  const hit = Object.entries(fields).find(([k, f]) => prop(f, 'type') === 'string' && (k === one || named.test(String(prop(f, 'effect') || ''))));
-  return hit ? hit[0] : null;
+  const d = sideDecl(card);
+  return d && d.param === param && d.component === component && isStr(d.field) ? d.field : null;
 }
 /**
  * Every loop of a document that declares group participants and the archetypes they are made of.

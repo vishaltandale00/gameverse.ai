@@ -41,6 +41,8 @@ const duelOf = (id, { example = true } = {}) => ({
     loop: { shows: [], verbs: ['duel_move'], progress: ['duel_blow', 'fainted'], interaction: 'pieces-turns', opponent: 'ai-side', needs: { participants: 'camps' },
       win: { param: 'onTriumph', reads: { component: 'vigor', of: 'opponents' } }, lose: { param: 'onRout', reads: { component: 'vigor', of: 'player', by: { effects: ['sap'] } } } },
     engage: { join: { param: 'camps', field: 'members', where: { control: 'player' } } },
+    // Whose side its units are on (kernel/sides.js): the component field naming a camp, the player's by control.
+    sides: { param: 'camps', control: 'player', component: 'camp', field: 'side', members: 'members' },
     components: { camp: { type: 'object', fields: { side: { type: 'string', required: true, effect: 'the camps[] id this unit fights for' } } } },
     content: [
       { need: 'param', param: 'camps', min: 2, why: 'a duel needs two camps' },

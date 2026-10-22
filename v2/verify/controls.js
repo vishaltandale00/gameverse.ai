@@ -75,7 +75,12 @@ export function driver(rt, registry) {
   function device(intent = {}) {
     const dev = { down: new Set(), pressed: new Set(), mouse: { dx: 0, dy: 0 }, wheel: 0, sticks: { lstick: [0, 0], rstick: [0, 0] } };
     const acts = {}, missing = [];
-    for (const [verb, v] of Object.entries(intent.axes || {})) {
+    // An action whose verb is a bound input axis, with a vector value (an option's `move: [1, 0]`: what the movement
+    // primitives read), is that axis held, as a person gives it; the other actions are presses or UI choices.
+    /** @type {Record<string, unknown>} */
+    const actions = {}, axes = { ...(intent.axes || {}) };
+    for (const [verb, v] of Object.entries(intent.actions || {})) { if (Array.isArray(v) && c.axisVerbs.has(verb) && axes[verb] === undefined) axes[verb] = v; else actions[verb] = v; }
+    for (const [verb, v] of Object.entries(axes)) {
       if (!Array.isArray(v) || (!v[0] && !v[1])) continue;
       const sources = c.map?.axes?.[verb] || [];
       const [x, y] = v;
@@ -95,12 +100,12 @@ export function driver(rt, registry) {
     }
     // A UI that issues choices from the game's options (controls.choice) sends an option's whole actions record, so an
     // intent carrying one of its verbs goes to it whole, the press verbs with it, in the record's order.
-    const record = Object.entries(intent.actions || {}).filter(([, v]) => v !== undefined && v !== null && v !== false);
+    const record = Object.entries(actions).filter(([, v]) => v !== undefined && v !== null && v !== false);
     // A UI that lists the game's options (controls.options: the story's choices) sends one's whole actions record.
     if (record.length && c.ui.options.length && rt.availableOptions().some(o => same(o.actions, intent.actions))) { for (const [verb, v] of record) acts[verb] = v; return { dev, acts, missing }; }
     const viaChoice = record.some(([verb, v]) => { const u = c.uiFor(verb); return u && c.ui.choice.includes(u) && !keysSending(c.map, verb, v).length; });
     if (viaChoice) { for (const [verb, v] of record) acts[verb] = v; return { dev, acts, missing }; }
-    for (const [verb, v] of Object.entries(intent.actions || {})) {
+    for (const [verb, v] of Object.entries(actions)) {
       if (v === undefined || v === null || v === false) continue;
       const keys = keysSending(c.map, verb, v);
       if (keys.length) { dev.down.add(keys[0]); dev.pressed.add(keys[0]); continue; }
