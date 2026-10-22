@@ -31,6 +31,7 @@ import { playBot } from '../verify/index.js';
 import { usedPrimitives } from '../verify/util.js';
 import { BOT_STEPS, BOT_OPTS } from '../templates/contract.js';
 import { isObj, prop } from '../kernel/guards.js';
+import { explainProblems } from './explain.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').RegistryLike} RegistryLike */
@@ -275,8 +276,8 @@ export async function gateVersion(input, { registry, logic, playable = true, bas
   return Object.assign(result, { ok: true, stage: null, problems: [] });
 }
 
-/** The gate's failure as the error a job throws: 422, the first problem's code, the stage and problems in its report. @param {GateResult} g @param {string} what */
-export function gateError(g, what) {
-  const shown = g.problems.slice(0, 4).map(p => `${p.code}${p.path ? ` ${p.path}` : ''}: ${String(p.message).slice(0, 200)}`).join('; ');
-  return Object.assign(Error(`${what} failed the version gate at ${g.stage}: ${shown}`), { status: 422, code: g.problems[0]?.code ?? 'version_gate_failed', report: { stage: g.stage, problems: g.problems.slice(0, 20) } });
+/** The gate's failure as the error a job throws: 422, the first problem's code, the stage and problems in its report. @param {GateResult} g @param {string} what @param {{ registry?: RegistryLike | null }} [ctx] the catalogue, for the goal a person reads */
+export function gateError(g, what, { registry = null } = {}) {
+  // A person reads why in plain words (explain.js); the stage, codes and technical messages stay in the report.
+  return Object.assign(Error(`${what} wasn't published. ${explainProblems(g.problems, { doc: g.doc, registry })}`), { status: 422, code: g.problems[0]?.code ?? 'version_gate_failed', report: { stage: g.stage, problems: g.problems.slice(0, 20) } });
 }

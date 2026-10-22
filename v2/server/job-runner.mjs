@@ -91,7 +91,7 @@ async function experimentJob({ experiments, catalogue, config }, job, ctx) {
     const next = withoutExperiment(doc, job.experimentId);
     const { registry, logic } = await catalogue(next);
     const g = await gateVersion(next, { registry, logic, ...budgets });
-    if (!g.ok || !g.doc || !g.verification) throw gateError(g, 'The game without that experiment');
+    if (!g.ok || !g.doc || !g.verification) throw gateError(g, 'The game without that experiment', { registry });
     const v = g.verification;
     return ctx.publish({ doc: g.doc, stage: 'experiment removed', report: { ...report, change: null, changes: changeSummary(contentDiff(doc, g.doc)), gaps: [], quality: qualityReport(v, registry, logic, { mechanics }), verification: summarizeVerify(v), features: v.features ?? null, hot: 'restart' },
       provenance: revisionProvenance(latest, { catalogHash: catalogHash(registry), base: latest.version, baseHash: hashOf(doc), change: `remove experiment ${String(job.experimentId)}`, removedExperiment: job.experimentId }) });
@@ -105,7 +105,7 @@ async function experimentJob({ experiments, catalogue, config }, job, ctx) {
   // The version it changes, in the catalogue with the experiment (a superset of the one it was made in).
   const before = await gateVersion(doc, { registry, logic, ...budgets });
   const g = await gateVersion(filled.doc, { registry, logic, ...budgets, ...(before.ok && before.doc && before.verification ? { base: { doc: before.doc, verification: before.verification, proof: baseProof } } : {}) });
-  if (!g.ok || !g.doc || !g.verification) throw gateError(g, 'The game with that experiment');
+  if (!g.ok || !g.doc || !g.verification) throw gateError(g, 'The game with that experiment', { registry });
   const v = g.verification;
   const experiment = filled.experiment, primitive = prop(experiment.card, 'id');
   ctx.stage('experimented', { ms: Math.round(performance.now() - t), attempts: filled.report?.attempts?.length ?? null });

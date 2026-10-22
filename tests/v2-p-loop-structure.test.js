@@ -448,7 +448,7 @@ test('when nothing in the catalogue can make the declared win reachable, the bui
     // gap layer's signature, fail the build before any form is asked.
     assert.equal(e.report.stage, 'selection');
     assert.ok(e.report.problems.some(p => /player verbs or effects change/.test(p.message) && /gameplay\.test\.standoff/.test(p.message)), JSON.stringify(e.report.problems));
-    assert.match(e.message, /the step path failed at selection/);
+    assert.match(e.message, /^This isn't the game you asked for yet\. /, 'said in plain words; the stage and codes stay in the report');
     return true;
   });
   assert.equal(m.versions.length, 0);

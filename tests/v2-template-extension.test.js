@@ -211,7 +211,8 @@ test('answer "the race with Sonic as the character": no valid catalogue option g
   const { second, out, writer, callsToAsk } = await askThenAnswer(1);
   assert.ok(out.e, 'nothing publishes');
   assert.equal(out.e.status, 422); assert.equal(out.e.code, 'extension_missing');
-  assert.match(out.e.message, /"has a gun".*still missing/);
+  assert.match(out.e.message, /cannot have “has a gun” yet/, 'a person reads which mechanic');
+  assert.ok(out.e.report.problems.some(p => /"has a gun".*still missing/.test(String(p.message))), JSON.stringify(out.e.report.problems).slice(0, 300));
   assert.equal(second.versions.length, 0);
   assert.equal(writer.calls.length - callsToAsk, 1, 'the extension question only: no content is asked for a game that cannot be built');
   const stage = second.stages.find(s => s.name === 'not_buildable');
@@ -254,7 +255,8 @@ test('the gap layer failing: the build fails naming the mechanic, with the attem
   const gapService = { async fill() { return { ok: false, experiment: { id: 'x' }, problems: ['check_failed'] }; } };
   const { out } = await askThenAnswer(1, { config: { gaps: 'auto' }, gapService });
   assert.equal(out.e.code, 'extension_missing');
-  assert.match(out.e.message, /has a gun.*gap layer could not write it/);
+  assert.match(out.e.message, /cannot have “has a gun” yet/);
+  assert.ok(out.e.report.problems.some(p => /has a gun.*gap layer could not write it/.test(String(p.message))), JSON.stringify(out.e.report.problems).slice(0, 300));
 });
 
 test('an extension question whose answers keep failing leaves the mechanic missing: the build fails naming it, no gap layer, no content', async () => {
@@ -263,7 +265,8 @@ test('an extension question whose answers keep failing leaves the mechanic missi
   let gaps = 0;
   const { out } = await askThenAnswer(0, { writer: w, config: { gaps: 'auto' }, gapService: { async fill() { gaps++; return { ok: false, experiment: {} }; } } });
   assert.equal(out.e.code, 'extension_missing');
-  assert.match(out.e.message, /"has a gun".*the extension question failed/);
+  assert.match(out.e.message, /cannot have “has a gun” yet/);
+  assert.ok(out.e.report.problems.some(p => /"has a gun".*the extension question failed/.test(String(p.message))), JSON.stringify(out.e.report.problems).slice(0, 300));
   assert.equal(gaps, 0, 'a failing answer is not "none fits"');
   assert.ok(!w.calls.some(r => r.schema.name === 'frame_tune'));
 });

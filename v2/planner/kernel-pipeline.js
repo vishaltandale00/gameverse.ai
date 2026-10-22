@@ -32,6 +32,7 @@ import { TEMPLATE_PATH_VERSION, askPick, composeTemplates, writeContent, offered
 import { EXTEND_VERSION, extendDocument, extensionFaults, paramsForm, recordingWriter, unengaged } from './extend.js';
 import { cardLoop } from '../kernel/loop.js';
 import { instanceVerbs } from '../primitives/engine/runtime-lib-controls.js';
+import { explainProblems } from './explain.js';
 
 /** @typedef {import('../kernel/types.js').Doc} Doc */
 /** @typedef {import('../kernel/types.js').Problem} Problem */
@@ -127,10 +128,10 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     const calls = [];
     const clock = { codeMs: 0 };
     ctx.stage('picking_templates', { model: writer.model, templates: templates.map(t => t.id) });
-    const fail = (/** @type {string} */ code, /** @type {string} */ stage, /** @type {Array<{ code?: unknown, path?: unknown, message?: unknown }>} */ problems) => {
+    const fail = (/** @type {string} */ code, /** @type {string} */ stage, /** @type {Array<{ code?: unknown, path?: unknown, message?: unknown }>} */ problems, /** @type {unknown} */ doc = null) => {
       checkpoint('templateFailure', { stage, code, problems: problems.slice(0, 20), calls });
       ctx.stage('not_buildable', { path: 'template', stage, code, missing: problems.slice(0, 8).map(p => `${p.code} ${p.path ?? ''}: ${String(p.message ?? '').slice(0, 200)}`) });
-      return Object.assign(Error(`This isn't the game you asked for yet: the template path failed at ${stage}: ${problems.slice(0, 4).map(p => `${p.code} ${p.path ?? ''}: ${String(p.message ?? '').slice(0, 200)}`).join('; ')}`), { status: 422, code, report: { path: 'template', stage, problems, calls } });
+      return Object.assign(Error(`This isn't the game you asked for yet. ${explainProblems(problems, { doc, registry })}`), { status: 422, code, report: { path: 'template', stage, problems, calls } });
     };
     let t = performance.now();
     // A job answering the pick's question carries that pick (kept by the job that asked): it is held to the pick's
@@ -253,7 +254,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       timings.gateMs = (timings.gateMs ?? 0) + ms(tg);
       if (gate.ok && gate.doc && gate.verification) break;
       const faults = extensionFaults(gate.problems, ext.coverage);
-      if (!faults.length || (deadline !== null && performance.now() > deadline)) throw fail(gate.stage === 'gate' ? 'not_playable' : defect, gate.stage ?? 'gate', gate.problems);
+      if (!faults.length || (deadline !== null && performance.now() > deadline)) throw fail(gate.stage === 'gate' ? 'not_playable' : defect, gate.stage ?? 'gate', gate.problems, gate.doc);
       for (const f of faults) dropped.set(f.mechanic, [...(dropped.get(f.mechanic) ?? []), { id: f.id, why: f.why }]);
       ctx.stage('extension_dropped', { picks: faults });
     }
@@ -306,7 +307,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
       const missing = problems.slice(0, 8).map(p => `${String(p.code ?? '')} ${String(p.path ?? '')}: ${String(p.message ?? '').slice(0, 200)}`);
       checkpoint('figure', { path: 'step', stage, code, stepPath: use, problems: problems.slice(0, 20) });
       ctx.stage('not_buildable', { path: 'step', stage, code, missing });
-      return Object.assign(Error(`This isn't the game you asked for yet: the step path failed at ${stage}: ${missing.slice(0, 4).join('; ')}`), { status: 422, code, report: { path: 'step', stage, problems: problems.slice(0, 40), stepPath: use } });
+      return Object.assign(Error(`This isn't the game you asked for yet. ${explainProblems(problems, { registry })}`), { status: 422, code, report: { path: 'step', stage, problems: problems.slice(0, 40), stepPath: use } });
     };
     /** A question the time box or the model failed: the build fails at that stage, saying which. @param {string} stage @param {unknown} error */
     const failed = (stage, error) => fail(stage, String(prop(error, 'code') || 'step_failed'), [{ code: prop(error, 'code') || 'step_failed', path: stage, message: errorText(error) }]);
@@ -524,7 +525,7 @@ export function createKernelPipeline({ catalogue, writers = {}, decisions = null
     timings.gateMs = ms(t); timings.botsMs = gate.ms.bots ?? null;
     if (!gate.ok || !gate.doc || !gate.verification) {
       ctx.checkpoint?.('versionGate', { stage: gate.stage, problems: gate.problems.slice(0, 20), ms: gate.ms, baseProof: gate.baseProof, proof: gate.proof });
-      throw gateError(gate, 'That change');
+      throw gateError(gate, 'That change', { registry });
     }
     const v = gate.verification, published = gate.doc, vBefore = gate.baseVerification;
     t = performance.now();

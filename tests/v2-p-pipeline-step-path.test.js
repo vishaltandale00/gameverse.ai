@@ -101,7 +101,8 @@ test('a stage that fails fails the build with its stage and problems: nothing is
     // The outline boots every draft: the throw is found there, named, never removed.
     assert.equal(e.report.stage, 'outline');
     assert.ok(e.report.problems.some(p => p.primitive === 'gameplay.test.broken' || /gameplay\.test\.broken/.test(String(p.message))), JSON.stringify(e.report.problems).slice(0, 400));
-    assert.match(e.message, /the step path failed at outline: install_threw/);
+    assert.ok(e.report.problems.some(p => p.code === 'install_threw'), 'the report names the throw');
+    assert.match(e.message, /^This isn't the game you asked for yet\. The game crashed/, 'a person reads that it crashed');
     assert.equal(e.report.stepPath.stage, 'outline');
     return true;
   });
@@ -122,7 +123,8 @@ test('the step path is time-boxed: no question is asked after its time box, and 
     assert.equal(e.status, 422);
     assert.equal(e.code, 'step_path_timeout');
     assert.equal(e.report.stage, 'select');
-    assert.match(e.message, /time box ran out before pick_/);
+    assert.match(e.message, /Building it took longer than its time limit/);
+    assert.ok(e.report.problems.some(p => /time box ran out before pick_/.test(String(p.message))), 'the report says which question');
     return true;
   });
   assert.equal(versions.length, 0);
