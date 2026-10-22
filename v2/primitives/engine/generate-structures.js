@@ -9,7 +9,7 @@
 import { Rng, subSeed } from './worlds3d-lib-noise.js';
 import { STAGES, withDefaults, generatorModel, sharedService, zoneBox, zoneHas, zoneYRange, rangeRule, reversedRanges } from './worlds3d-lib-world.js';
 import { prefab, addStamp, clearFootprint, footprintsOverlap, KINDS, DEFAULT_SIZE, toWorld, toLocal, paletteShape, PART_SHAPE } from './worlds3d-lib-prefab.js';
-import { ID_PATTERN } from '../../kernel/sections.js';
+import { ID_PATTERN, NAME_PATTERN } from '../../kernel/sections.js';
 import { roadNet, nearestRoad } from './worlds3d-lib-roads.js';
 
 const card = {
@@ -46,7 +46,7 @@ const card = {
   data: {
     'content.structures': { type: 'list', of: { type: 'object', fields: {
       id: { type: 'string', pattern: ID_PATTERN, required: true, effect: 'a lowercase slug, unique in its section' },
-      name: { type: 'string', display: true, effect: 'the name a person reads' },
+      name: { type: 'string', display: true, pattern: NAME_PATTERN, effect: 'the name a person reads' },
       parts: { type: 'list', of: PART_SHAPE, min: 1, required: true, effect: 'the parts that replace the built-in prefab, in structure-local metres' },
       height: { type: 'number', min: 0, unit: 'm', effect: 'overall height (default: the highest part top)' },
       door: { type: 'list', of: { type: 'number' }, min: 3, max: 3, unit: 'm', effect: 'door position [x, y, z], structure-local' },

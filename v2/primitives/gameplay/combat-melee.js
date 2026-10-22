@@ -16,6 +16,7 @@
 // interceptors, so projectiles and contact damage respect them too.
 import { inputOf, controlDir, frames, msFrames, invulnFrames, v3, sub, norm, dot, posOf, facingOf, facingSign, spaceOf, distance, statOf, hostile, resolveWho, intercept, hooks, hitShape, overlapping, displace, combat, service, held, setFacing, like, err, archetypes } from './combat-lib.js';
 import { itemsData } from './items-lib.js';
+import { NAME_PATTERN } from '../../kernel/sections.js';
 import { compileFighter, compileWeapon, base, phaseOf, advantage, MOTION_ORDER, BUILD, SPECIAL_ARCHETYPES, SUPER_ARCHETYPES, BEHAVIORS, LEVELS, HEIGHT, AIR_SPECIAL_OK } from './combat-lib-moves.js';
 
 const KEY = 'gameplay.combat.melee';
@@ -31,7 +32,7 @@ const TECH_WINDOW = 9;
  */
 const FRAMES = { type: 'integer', min: 0, unit: 'frames' };
 const MOVE = {
-  name: { type: 'string', display: true, effect: 'the name a person reads' },
+  name: { type: 'string', display: true, pattern: NAME_PATTERN, effect: 'the name a person reads' },
   kind: { type: 'string', options: ['action', 'normal', 'special', 'super'], effect: 'action (weapon combos) or a fighting-game normal, special or super' },
   strength: { type: 'string', options: ['light', 'heavy', 'special', 'super'] },
   startup: FRAMES, active: FRAMES, recovery: FRAMES,
@@ -140,8 +141,8 @@ export default {
       fighter: { type: 'object', fields: {
         build: { type: 'string', options: Object.keys(BUILD), effect: 'body build: scale, width, damage and startup' },
         stats: { type: 'object', fields: { health: { type: 'number', min: 1 }, walkSpeed: { type: 'number', min: 0 }, jump: { type: 'number', min: 0 }, weight: { type: 'number', min: 0 } }, effect: 'fighter stats (kit scale: 5 is average)' },
-        specials: { type: 'list', of: { type: 'object', fields: { archetype: { type: 'string', options: SPECIAL_ARCHETYPES, required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' }, motion: { type: 'string', options: MOTION_ORDER, effect: 'its input motion (default qcf)' }, power: { type: 'number', min: 0, max: 10 }, speed: { type: 'number', min: 0, max: 10 } } }, effect: 'special moves from the 12 special presets' },
-        super: { type: 'object', fields: { archetype: { type: 'string', options: SUPER_ARCHETYPES, required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' } }, effect: 'the super move, from the 4 super presets' },
+        specials: { type: 'list', of: { type: 'object', fields: { archetype: { type: 'string', options: SPECIAL_ARCHETYPES, required: true }, name: { type: 'string', display: true, pattern: NAME_PATTERN, effect: 'the name a person reads' }, motion: { type: 'string', options: MOTION_ORDER, effect: 'its input motion (default qcf)' }, power: { type: 'number', min: 0, max: 10 }, speed: { type: 'number', min: 0, max: 10 } } }, effect: 'special moves from the 12 special presets' },
+        super: { type: 'object', fields: { archetype: { type: 'string', options: SUPER_ARCHETYPES, required: true }, name: { type: 'string', display: true, pattern: NAME_PATTERN, effect: 'the name a person reads' } }, effect: 'the super move, from the 4 super presets' },
       }, effect: 'a fighting-game preset fighter: normals, specials and a super' },
       moves: { type: 'object', values: { type: 'object', open: true, fields: OWN_MOVE }, effect: 'move id -> move record (w1.. combo, heavy, 5A...), or a library move by from' },
       bind: { type: 'object', values: { type: 'string' }, effect: 'press (light, heavy, special, super, throw; air_/crouch_ prefixed) -> move id' },

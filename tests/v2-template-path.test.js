@@ -312,6 +312,25 @@ test('content forms: one strict form per template of the composition (a slot per
   assert.deepEqual([...ids[0], ...ids[1]].sort(), textSections(chess.doc, registry).flatMap(s => s.entries.map(e => `${s.at}:${e.id}`)).sort(), 'every entry with display text is in one form');
 });
 
+// A themed name is the kernel's name rule (kernel/sections.js NAME_PATTERN): the base sections' entries declare it, and
+// every card declaring a document section or a component (whose display text the content forms theme) declares its
+// display names with the same rule, so a form slot and the check allow the same names everywhere.
+test('every display name a card declares in a document section or a component is the kernel\'s name rule', () => {
+  const names = (s, at, out = []) => {
+    if (!s || typeof s !== 'object') return out;
+    if (s.type === 'list') return names(s.of, `${at}[]`, out);
+    if (s.type === 'object') {
+      for (const [k, f] of Object.entries(s.fields || {})) { if (k === 'name' && f?.display) out.push([`${at}.name`, f.pattern]); names(f, `${at}.${k}`, out); }
+      if (s.values) names(s.values, `${at}.*`, out);
+    }
+    return out;
+  };
+  const found = registry.cards().flatMap(card => [...Object.entries(card.data || {}), ...Object.entries(card.components || {}).map(([k, s]) => [`components.${k}`, s])]
+    .flatMap(([at, s]) => names(s, at)).filter(([, pattern]) => pattern !== NAME_PATTERN).map(([at]) => `${card.id}: ${at}`));
+  assert.ok(registry.cards().length > 50, 'the catalogue is loaded');
+  assert.deepEqual(found, []);
+});
+
 test('content forms cover every display-text field of every template document, alone and in every declared nested composition', () => {
   const covered = (doc, parts) => {
     const forms = parts.map((p, i) => conceptForm(doc, p, i, registry)).filter(Boolean);

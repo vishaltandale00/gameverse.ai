@@ -11,7 +11,7 @@
 //   res.<pool>             per-second gain (+) or drain (-) of that pool
 // Runtime: rt.store(KEY)[entityId] = { active: {id: {left, stacks, tick, absorbed}}, mods };
 // components.status mirrors the frozen shape {statusId: secondsLeft}. Immunities: components.immune [ids|tags].
-import { ID_PATTERN } from '../../kernel/sections.js';
+import { ID_PATTERN, NAME_PATTERN } from '../../kernel/sections.js';
 import { frames, resolveWho, targetsOf, targetRefs, statOf, combat, service, intercept, round, err } from './combat-lib.js';
 
 const KEY = 'gameplay.combat.status';
@@ -34,7 +34,7 @@ export default {
     defines: [{ kind: 'status', at: 'content.statuses' }],
     // The section it owns, whole.
     data: { 'content.statuses': { type: 'list', of: { type: 'object', fields: {
-      id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, effect: 'the name a person reads' },
+      id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, pattern: NAME_PATTERN, effect: 'the name a person reads' },
       duration: { type: 'number', min: 0.01, max: 1e6, unit: 's', required: true, effect: 'seconds it lasts (apply_status sec overrides)' },
       stacks: { type: 'integer', min: 1, effect: 'most stacks it holds (default 1)' },
       refresh: { type: 'string', options: REFRESH, effect: 'reapplying: reset the time, extend it, keep it, or take the longer' },

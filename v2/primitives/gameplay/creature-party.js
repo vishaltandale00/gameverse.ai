@@ -5,19 +5,19 @@
 // species. Other primitives (battle, catch, encounter, shops, quests) use the
 // `creatures` service instead of reaching into this store.
 import { createCreature, healCreature, gainExp, evolutionOf, evolve, statsOf, speciesOf, moveOf, expBar, STATS, STAGE_STATS, STATUSES, EFFECT_KINDS } from './puzzle-lib-creature.js';
-import { ID_PATTERN } from '../../kernel/sections.js';
+import { ID_PATTERN, NAME_PATTERN } from '../../kernel/sections.js';
 
 const ID = 'gameplay.creature.party';
 
 /** The creature sections (species, moves, the type chart): owned here, read by gameplay.creature.battle, catch and encounter. */
 export const CREATURE_DATA = Object.freeze({
-  'content.species': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, required: true, effect: 'the name a person reads' },
+  'content.species': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, pattern: NAME_PATTERN, required: true, effect: 'the name a person reads' },
     types: { type: 'list', min: 1, of: { type: 'ref', to: 'creature_type' }, required: true, effect: 'its types (content.types)' },
     base: { type: 'object', required: true, fields: Object.fromEntries(STATS.map(k => [k, { type: 'integer', min: 1, max: 255, required: true }])), effect: 'base stats 1..255' },
     catchRate: { type: 'integer', min: 1, max: 255 }, expYield: { type: 'integer', min: 1, max: 400 }, growth: { type: 'string', options: ['fast', 'medium', 'slow'] },
     learnset: { type: 'list', of: { type: 'object', fields: { level: { type: 'integer', min: 1, max: 100, required: true }, move: { type: 'ref', to: 'move', required: true } } } },
     evolves: { type: 'object', fields: { level: { type: 'integer', min: 2, max: 100, required: true }, to: { type: 'ref', to: 'species', required: true } } } } } },
-  'content.moves': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, required: true, effect: 'the name a person reads' }, type: { type: 'ref', to: 'creature_type', required: true }, category: { type: 'string', options: ['physical', 'special', 'status'], required: true },
+  'content.moves': { type: 'list', min: 1, of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, pattern: NAME_PATTERN, required: true, effect: 'the name a person reads' }, type: { type: 'ref', to: 'creature_type', required: true }, category: { type: 'string', options: ['physical', 'special', 'status'], required: true },
     power: { type: 'integer', min: 0, max: 250, required: true, effect: '0 for status moves' }, accuracy: { type: 'integer', min: 1, max: 100 }, pp: { type: 'integer', min: 1, max: 64, required: true }, priority: { type: 'integer', min: -7, max: 5 },
     effect: { type: 'object', fields: { kind: { type: 'string', options: EFFECT_KINDS, required: true }, status: { type: 'string', options: STATUSES }, stat: { type: 'string', options: STAGE_STATS }, stages: { type: 'integer', min: -6, max: 6 }, chance: { type: 'number', min: 0, max: 100 }, target: { type: 'string', options: ['self', 'foe'] }, min: { type: 'integer', min: 1, effect: 'multihit: fewest hits' }, max: { type: 'integer', min: 1, effect: 'multihit: most hits' } } } } } },
   'content.types': { type: 'object', values: { type: 'object', values: { type: 'number', min: 0 }, effect: 'defending type -> damage multiplier (missing = 1)' }, effect: 'the type chart: attacking type -> { defending type -> multiplier }; species and move types are its keys' },

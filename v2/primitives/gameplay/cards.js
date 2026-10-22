@@ -10,7 +10,7 @@
 // Turn boundaries come from gameplay.turns (sides map to owners). Hit points
 // stay with gameplay.combat.health: unblocked damage runs its `damage` effect.
 import { compare } from '../../kernel/logic.js';
-import { ID_PATTERN } from '../../kernel/sections.js';
+import { ID_PATTERN, NAME_PATTERN } from '../../kernel/sections.js';
 import { allowInTurnModal } from './turns.js';
 import { pushModal, popModal, alive, sortedEntities, err, runBound, bindRoles, matchesAny } from './modes-lib-util.js';
 import { entityName } from '../engine/runtime-lib-names.js';
@@ -43,7 +43,7 @@ export default {
     pack: { 'content.cards': [{ id: 'strike', name: 'Strike', type: 'attack', cost: 1, target: 'enemy', effects: [{ do: 'card_damage', amount: 6, who: 'target' }] }, { id: 'strike_b', name: 'Strike', type: 'attack', cost: 1, target: 'enemy', effects: [{ do: 'card_damage', amount: 6, who: 'target' }] }, { id: 'guard', name: 'Guard', type: 'skill', cost: 1, target: 'self', effects: [{ do: 'card_block', amount: 5 }] }, { id: 'guard_b', name: 'Guard', type: 'skill', cost: 1, target: 'self', effects: [{ do: 'card_block', amount: 5 }] }, { id: 'heavy_blow', name: 'Heavy Blow', type: 'attack', cost: 2, target: 'enemy', effects: [{ do: 'card_damage', amount: 12, who: 'target' }] }, { id: 'quick_draw', name: 'Quick Draw', type: 'skill', cost: 0, target: 'self', effects: [{ do: 'draw_cards', count: 2 }] }, { id: 'focus', name: 'Focus', type: 'power', cost: 1, target: 'self', effects: [{ do: 'card_mod', mod: 'strength', amount: 2, who: 'owner' }] }, { id: 'spark', name: 'Spark', type: 'attack', cost: 1, target: 'all_enemies', effects: [{ do: 'card_damage', amount: 4, who: 'target' }] }] },
     // Section shapes this primitive reads (the planner's strict content form uses them).
     data: {
-      'content.cards': { type: 'list', min: 4, of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, effect: 'the name a person reads (default its id)' }, type: { type: 'string', options: TYPES },
+      'content.cards': { type: 'list', min: 4, of: { type: 'object', fields: { id: { type: 'string', pattern: ID_PATTERN, required: true }, name: { type: 'string', display: true, pattern: NAME_PATTERN, effect: 'the name a person reads (default its id)' }, type: { type: 'string', options: TYPES },
         cost: { type: 'integer', min: -1, max: 10, effect: '-1 = X: spends all energy (default 0)' }, target: { type: 'string', options: TARGETS, effect: 'default: enemy for attacks, else none' },
         effects: { type: 'effects', effect: 'what playing it does: card_damage {amount, who:"target"}, card_block {amount}, draw_cards {count}, gain_energy {amount}, card_mod {mod, amount, who}, add_card {card}' },
         power: { type: 'integer', min: 0, effect: 'minion attack' }, health: { type: 'integer', min: 1, effect: 'minion health' }, text: { type: 'string', display: true, effect: 'the rules text a person reads' },

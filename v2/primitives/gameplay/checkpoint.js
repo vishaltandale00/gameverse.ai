@@ -5,6 +5,7 @@
 // entity; activated points can be fast-travelled between.
 import { restoreAll, runIf, whoKey, pos, boxOf, boxesTouch, isVec, dist } from './items-lib.js';
 import { entityName } from '../engine/runtime-lib-names.js';
+import { NAME_PATTERN } from '../../kernel/sections.js';
 
 const KEY = 'gameplay.checkpoint';
 const AUTO_ID = /^e\d+$/;
@@ -53,7 +54,7 @@ export default {
     components: { checkpoint: { type: 'object', fields: {
       id: { type: 'string', effect: 'the checkpoint id (checkpoint_set:<id>, fast travel); default: the entity id, else its archetype' },
       touch: { type: 'boolean', effect: 'activates when the player overlaps it (overrides the touch param)' },
-      name: { type: 'string', display: true, effect: 'the name a person reads' },
+      name: { type: 'string', display: true, pattern: NAME_PATTERN, effect: 'the name a person reads' },
     }, effect: 'a respawn point the player activates by using or touching it' } },
   },
   logic(logic) {
