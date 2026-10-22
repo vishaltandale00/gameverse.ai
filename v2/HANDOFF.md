@@ -89,9 +89,20 @@ incomplete.
    unchanged; pick 1.6–3.6 s (one call, latency varies); content grew (themed text for every card-declared display
    field: story 1.6 → 8.9 s, runner 1.2 → 3.5 s, maze-chase 1.6 → 2.7 s). The 2 failures are the extension class
    below (race added `gameplay.minigame`, fighting `gameplay.combat.aim`; both `feature_inert` at the gate).
-   Next for speed: the content stage (story's form), and the extension class (a pick that cannot work in the world
-   should be dropped and re-asked at the extension step, not fail the build at the gate).
-4. Open classes: human-rate replay fails for ball-sport, falling-blocks, runner, slide-merge, match-board, story (bot
+   **After the pick and extension fixes** (68cdf8ea, seeds 1–3, load 1.7–3.2): 56/57 published, the other one a
+   reading question (designed: "Sonic" as the platformer or the character); every build 3 calls / 2 rounds; first
+   playable median 4.7 s, max 15.7 s. Fixed: pick mechanics are the idea's own words (`says`; code removes entries no
+   idea says, or a concept's words: `unnamedMechanics` in the report); readings no rule admits are removed
+   (`invalidReadings`); an extension the gate proves inert is dropped and its step re-asked, content kept.
+   **Open: story's content stage** is 8.3–13.7 s (themed text for every display field since tune-rules; story has the
+   most), the only build over 10.5 s. Next for speed: that form (split it, or ask its sections side by side).
+4. **Declared shapes left as `json`** (18 fields): positions (`at`/`spawnAt` on character, cutscene, objectives, boss,
+   collectible, portal, zones, spawner, adapters; their shape is the space's), values typed by another field
+   (stage-sequence `params`, adapt-skin `with`/`template`), recordings (replay inputs, kernel testing). Proposed: a
+   `position` param type whose shape each space card declares (grid integer cell, tilemap/physics2d point, mesh3d
+   3D point, graph zone ref), resolved from the instance's space; a `valueOf` type for values whose shape is the
+   param a key names; the kernel's step-input shape for recordings. Not started (the user's call).
+5. Open classes: human-rate replay fails for ball-sport, falling-blocks, runner, slide-merge, match-board, story (bot
    artifacts or genuinely superhuman: decide per template); the 3D object layer still sorts generator objects by
    words (noted in code on `polish`); the playtest explorer's archive cost; whatever the branches above leave open.
 
