@@ -139,6 +139,9 @@ const raceOf = (id, { example = true } = {}) => ({
     provides: { actions: ['stride'], events: ['strode', 'lap_done'] },
   },
   install(rt, config) {
+    // Its rivals are in the world at the start of play, as the real race's are (spawned when no entity stands for one):
+    // a race whose declared runners never appear is a hollow game the gate refuses (feature_participant_absent).
+    for (const r of config.runners) if (r !== 'player' && !rt.entity(r)) rt.spawn(null, { id: r });
     rt.action('stride', (v, r) => {
       if (!v) return;
       const s = r.store(id); s.n = (s.n || 0) + 1; r.emit('strode', {});
