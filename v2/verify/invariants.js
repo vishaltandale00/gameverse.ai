@@ -6,7 +6,7 @@
 // They play the document the host mounts through the controls a person has (v2/verify/controls.js): the random
 // script presses what a key presses and holds the axes that are bound, and takes only options a control can take, so
 // "no input changes anything" means no input a person has, and a crash found is one a person can cause.
-import { holdInput, inputMacros, applyOption } from './drive.js';
+import { holdInput, inputMacros, applyOption, optionInputs } from './drive.js';
 import { controlledMaker, hostPreflight } from './controls.js';
 import { problem, prng, stateHash, stableStringify, now } from './util.js';
 
@@ -64,7 +64,7 @@ function script(rt, rand, length) {
 }
 
 /** The options a control a person has can take (their actions issue through the controls; no macro-only option). */
-const takeable = rt => rt.availableOptions().filter(o => { const a = o.actions || {}; return Object.values(a).some(v => v !== undefined && v !== null && v !== false) && !rt.controls.missing({ actions: a }).length; });
+const takeable = rt => rt.availableOptions().filter(o => { const ins = optionInputs(o); return ins.some(i => Object.values({ ...i.actions, ...i.held, ...i.axes }).some(v => v !== undefined && v !== null && v !== false)) && ins.every(({ frames: _, ...i }) => !rt.controls.missing(i).length); });
 
 /** Drive an rt with a script, taking a seeded option instead of the scripted input half the time. */
 function drive(rt, steps, rand, onStep) {

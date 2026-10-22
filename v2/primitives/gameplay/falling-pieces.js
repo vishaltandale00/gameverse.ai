@@ -97,15 +97,13 @@ const kicksFor = (T, from, to) => T.kicks === 'O' ? [[0, 0]] : KICKS[T.kicks]?.[
 
 const DEFAULT_TOP_OUT = [{ do: 'end_game', outcome: 'lost' }];
 
-/** The player's verbs: every one moves or places the falling piece (what the lines cleared and the stack read). */
-const VERBS = ['shift_left', 'shift_right', 'soft_drop', 'hard_drop', 'rotate_cw', 'rotate_ccw', 'hold', 'place'];
+/** The player's verbs: every one moves, turns, drops or holds the falling piece (what the lines cleared and the stack read). */
+const VERBS = ['shift_left', 'shift_right', 'soft_drop', 'hard_drop', 'rotate_cw', 'rotate_ccw', 'hold'];
 
 export default {
   id: ID,
   card: {
     loop: { shows: ['cells'], verbs: VERBS, progress: ['piece_locked', 'lines_cleared'] },
-    // Verbs whose action takes a chosen value (card.actionSpace 'choice'): a UI control issues them (graphics.ui.*, card.controls).
-    actionSpace: { place: { type: 'choice', of: 'a placement of the falling piece (column, rotation)', from: 'options', emits: ['piece_locked'] } },
     // Falling-blocks mode: clear lines before the stack tops out (the line target wins through an ending or a stage goal).
     mode: { loop: 'falling-blocks', interaction: 'cursor-board', opponent: 'clock', space: ['engine.space.grid', ['editCells']], needs: { content: [], participants: null }, win: { when: { var: 'falling.lines', gte: '$target' }, says: 'Clear {target} lines', label: 'Lines', reads: { var: 'falling.lines', by: { actions: VERBS } } }, lose: { param: 'onTopOut', once: true, says: "Don't let the stack reach the top", reads: { event: 'top_out', by: { actions: VERBS } } }, bot: 'placement' },
     intent: 'Falling pieces over a board in any editCells space: Tetris-guideline wells (SRS, 7-bag, hold, ghost, T-spins, combos), puyo pairs and capsules handed to gameplay.match, or blocks dropping into a platformer level / rising into a breakout wall as cells or entities.',
@@ -150,7 +148,7 @@ export default {
     provides: {
       events: ['falling_garbage_request', 'piece_spawned', 'piece_spawned:*', 'piece_moved', 'piece_rotated', 'piece_held', 'piece_locked', 'piece_locked:*', 'piece_blocked', 'piece_fizzled', 'lines_cleared', 'lines_cleared:*', 'tspin', 'perfect_clear', 'garbage_added', 'top_out', 'falling_level', 'score', 'move', 'row_cleared_entity', 'row_cleared_entity:*'],
       vars: ['falling.lines', 'falling.level', 'falling.pieces', 'falling.combo', 'score'],
-      actions: ['shift_left', 'shift_right', 'soft_drop', 'hard_drop', 'rotate_cw', 'rotate_ccw', 'hold', 'place'],
+      actions: ['shift_left', 'shift_right', 'soft_drop', 'hard_drop', 'rotate_cw', 'rotate_ccw', 'hold'],
       services: ['board'],
       content: [...BOARD_CONTENT],
     },
@@ -444,20 +442,6 @@ export default {
     }
     /** Macro verb: rotate then shift through the real kick/collision code, then hard drop. */
     /** Values without an integer target (e.g. a generic `place: true`) are ignored; shifting is bounded by the board width. */
-    function place(s, v) {
-      if (!v || typeof v !== 'object') return false;
-      const b = B();
-      if (v.hold) { if (!doHold(s)) return false; if (!s.piece) return false; }
-      const p = s.piece; if (!p) return false;
-      const tx = v.x ?? p.x, tr = v.r ?? p.r;
-      if (!Number.isInteger(tx) || !Number.isInteger(tr)) return false;
-      const dir = v.ccw ? -1 : 1;
-      for (let i = 0; i < 4 && p.r !== ((tr % 4) + 4) % 4; i++) if (!rotate(b, s, dir)) return false;
-      for (let i = 0; i <= b.W && p.x !== tx; i++) if (!shift(b, s, Math.sign(tx - p.x))) return false;
-      if (p.x !== tx) return false;
-      hardDrop(b, s);
-      return true;
-    }
 
     const init = () => {
       const s = st();
@@ -472,7 +456,6 @@ export default {
     init();
 
     for (const verb of ['shift_left', 'shift_right', 'soft_drop', 'hard_drop', 'rotate_cw', 'rotate_ccw', 'hold']) rt.action(verb, () => { st().press[verb] = true; });
-    rt.action('place', v => { const s = st(); if (s.phase === 'play' && s.piece) place(s, v); });
     rt.on('board_busy', d => { if (d.board === config.board.name) st().waiting = true; });
     rt.on('board_idle', d => { if (d.board === config.board.name) { const s = st(); s.waiting = false; if (s.phase === 'wait') s.phase = 'play'; } });
     rt.on('falling_garbage_request', d => { if (d.board == null || d.board === config.board.name) { const s = st(); if (s.phase !== 'over') pushGarbage(s, d.rows); } });
@@ -533,11 +516,15 @@ export default {
       if (config.ghost && s.piece) s.ghost = dropY(b, p);
     }, ID);
 
-    // Solver options: one per distinct final (rotation, column) placement, plus hold variants.
+    // Solver options: one per distinct final (rotation, column) placement, each played as a person plays it: the turns,
+    // then the shifts, then the hard drop, every press on its own frame with an empty frame after it (turns and drops
+    // act on a fresh press; a shift held repeats after das). A shortcut for bots and solvers, never a person's control.
     rt.options(rt => {
       const s = st();
       if (config.steer !== 'player' || s.phase !== 'play' || !s.piece) return [];
-      return placements(s, B()).map(o => ({ label: `place ${types[s.piece.t].key} r${o.r} x${o.x}${o.ccw ? ' ccw' : ''}`, text: `Drop in column ${o.x + 1}${o.r ? `, turned ${o.r * 90}°` : ''}${o.ccw ? ' left' : ''}`, actions: { place: { r: o.r, x: o.x, ccw: o.ccw } } }));
+      const press = (/** @type {string} */ verb, /** @type {number} */ n) => Array.from({ length: n }, () => [{ actions: { [verb]: true } }, {}]).flat();
+      return placements(s, B()).map(o => ({ label: `place ${types[s.piece.t].key} r${o.r} x${o.x}${o.ccw ? ' ccw' : ''}`,
+        inputs: [...press(o.ccw ? 'rotate_ccw' : 'rotate_cw', o.turns), ...press(o.dx < 0 ? 'shift_left' : 'shift_right', Math.abs(o.dx)), { actions: { hard_drop: true } }] }));
     });
     function placements(s, b) {
       const out = [], seen = new Set(), p0 = s.piece;
@@ -549,7 +536,7 @@ export default {
           const q = { ...p };
           for (;;) {
             const y = config.passThrough ? restY(b, q) : dropY(b, q);
-            if (y !== null) { const k = cellsOf(q, q.r, q.x, y).map(c => c.join(',')).sort().join('|'); if (!seen.has(k)) { seen.add(k); out.push({ r: q.r, x: q.x, ccw }); } }
+            if (y !== null) { const k = cellsOf(q, q.r, q.x, y).map(c => c.join(',')).sort().join('|'); if (!seen.has(k)) { seen.add(k); out.push({ r: q.r, x: q.x, ccw, turns, dx: q.x - p.x }); } }
             if (!fits(b, q, q.r, q.x + dir, q.y)) break;
             q.x += dir;
           }

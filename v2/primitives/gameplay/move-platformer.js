@@ -14,7 +14,7 @@
 import {
   clamp, approach, round6, mv, bodyOf, state, spaceApi, frameOf, intent, motor, claim, ownedBy, registerBase, isBaseFor,
   driven, ownerKey, pool, canSpend, setFacing, settle, trackAir, verbs, ensureShared, withPreset, hasAbility, wallBeside,
-  ledgeAt, submersion, probe, boxOf, canProbe, COMMON_PARAMS, MACRO_PARAMS, travelAlong, grantableAbilities, travelZones, MOVE_COMPONENTS,
+  ledgeAt, submersion, probe, boxOf, canProbe, COMMON_PARAMS, RETIRED_PARAMS, travelAlong, grantableAbilities, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.platformer';
@@ -92,10 +92,10 @@ const num = (min, max, unit, effect) => ({ type: 'number', min, max, unit, effec
 export default {
   id: ID,
   card: {
-    loop: { verbs: ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'], // The verbs one instance offers (runtime-lib-controls.js instanceVerbs): an auto-runner is not steered; dash, glide,
+    loop: { verbs: ['move', 'jump', 'dash', 'grab', 'glide', 'crouch'], // The verbs one instance offers (runtime-lib-controls.js instanceVerbs): an auto-runner is not steered; dash, glide,
       // crouch and grab exist when their ability is on or the document can grant it (grantableAbilities).
       verbsOf: (config, doc) => { const c = platformerConfig(config), has = a => c.abilities[a] || grantableAbilities(doc).has(a);
-        return ['move', 'jump', 'dash', 'grab', 'glide', 'crouch', 'travel'].filter(v => (v === 'move' ? !(c.autoRun > 0) : v === 'jump' ? c.jump > 0 || c.flap.velocity > 0 || c.thrust.accel > 0 : v === 'dash' ? has('dash') : v === 'glide' ? has('glide') : v === 'crouch' ? has('crouch') : v === 'grab' ? has('ledgeGrab') || has('wallClimb') : v === 'travel' ? travelZones(doc) : true)); },
+        return ['move', 'jump', 'dash', 'grab', 'glide', 'crouch'].filter(v => (v === 'move' ? !(c.autoRun > 0) : v === 'jump' ? c.jump > 0 || c.flap.velocity > 0 || c.thrust.accel > 0 : v === 'dash' ? has('dash') : v === 'glide' ? has('glide') : v === 'crouch' ? has('crouch') : v === 'grab' ? has('ledgeGrab') || has('wallClimb') : true)); },
       progress: ['jumped', 'double_jumped', 'wall_jumped', 'dashed', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
@@ -103,7 +103,8 @@ export default {
     body: { size: [0.8, 1.4, 0.8] },
     intent: 'Side-view platforming for the player or NPCs: run, variable jump with jump cut, coyote time and buffer, plus ability-gated double jump, dash with i-frames, wall slide/jump/climb, glide, swim, crouch and ledge grab. Presets cover runners, Flappy-style flap, Doodle-style auto-bounce, jetpack thrust and precision platformers. Abilities turn on through unlock_ability grants.',
     views: ['side'],
-    actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach', from: 'options', emits: ['arrived', 'travelled'] }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    retired: RETIRED_PARAMS,
     params: {
       preset: { type: 'string', options: Object.keys(PLATFORMER_PRESETS), default: 'custom', effect: 'base tuning; explicit params override it' },
       feel: { type: 'string', options: Object.keys(FEEL), default: 'snappy', effect: 'runner feel: scales gravity and jump (floaty 0.82/1.04, heavy 1.18/0.97)' },
@@ -131,7 +132,7 @@ export default {
       flap: { type: 'object', effect: 'jump presses in the air flap (Flappy Bird)', fields: { velocity: num(0, 60, 'units/s') } },
       thrust: { type: 'object', effect: 'hold jump to thrust upward (needs the thrust ability or the jetpack preset)', fields: { accel: num(0, 400, 'units/s²'), up: num(0, 60, 'units/s'), down: num(0, 60, 'units/s') } },
       ledgeGrab: { type: 'object', effect: 'hang from ledges while falling past them, then climb up or drop', fields: { enabled: { type: 'boolean' }, climbSec: num(0, 2, 's'), hangSec: num(0.2, 60, 's'), dropCooldown: num(0, 5, 's') } },
-      ...COMMON_PARAMS, plane: { ...COMMON_PARAMS.plane, default: 'x' }, ...MACRO_PARAMS,
+      ...COMMON_PARAMS, plane: { ...COMMON_PARAMS.plane, default: 'x' }, 
     },
     rules: {
       platformer_no_lift: { fields: ['jump', 'flap.velocity', 'autoBounce.velocity', 'thrust.accel', 'preset'], message: 'at least one of jump, flap.velocity, autoBounce.velocity and thrust.accel is above 0 (after the preset): the body can leave the ground' },
@@ -159,7 +160,7 @@ export default {
   install(rt, config, instance) {
     const c = platformerConfig(config), owner = ownerKey(instance);
     registerBase(rt, owner, 'platformer', instance);
-    ensureShared(rt, { speed: Math.max(c.run, c.autoRun, 1), ...config.macro });
+    ensureShared(rt);
     verbs(rt, ['move', 'jump', 'dash', 'grab', 'glide', 'crouch']);
     rt.system('input', rt => { for (const e of driven(rt, c, instance)) if (isBaseFor(rt, e, owner, ID, 'platformer')) claim(rt, e, 'platformer', 0, owner); }, ID);
     // A stomp (gameplay.combat.health touch.stomp) bounces the stomper this controller drives on its next movement step.

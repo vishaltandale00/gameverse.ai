@@ -41,7 +41,6 @@ const AXES = ['x', 'y', 'z'];
 import { movementEnvelope } from './move-lib-envelope.js';
 import { intercept } from './combat-lib.js';
 import { entityName, zoneName, listed, cellText } from '../engine/runtime-lib-names.js';
-import { loopVerbs } from '../engine/runtime-lib-controls.js';
 
 // ---------------------------------------------------------------- vocabulary of other primitives
 
@@ -686,26 +685,13 @@ export function trackAir(rt, e, fr, wasGrounded, grounded, vBefore) {
 export function verbs(rt, names) { const have = new Set(rt.actions()); for (const n of names) if (!have.has(n)) rt.action(n, () => {}); }
 
 /**
- * Shared, once-per-runtime setup:
- * - a 'late' system that records which verbs were down (edge detection);
- * - the `travel` action and macro options: "travel to <zone>" sets the
- *   player's moveTo, and the real controller walks/flies/swims there through
- *   real steps. Each option carries `steps` (the solver repeats the action for
- *   that many frames) and `apply(rt)`, which steps until arrival and returns
- *   {ok, frames, mode}. When stepping fails and validated teleport is
- *   allowed, it falls back to teleporting along the space's path, checking
- *   each waypoint is free.
+ * Shared, once-per-runtime setup: movement i-frames in combat's hit-interceptor chain, and a 'late' system that
+ * records which verbs were down (edge detection). Travel to a zone is no movement card's verb: the verifier's travel
+ * macros play it as held input (verify/macros.js travelOptions).
  */
-export function ensureShared(rt, macro = {}) {
-  if (rt.caches.moveShared) {
-    const S = rt.caches.moveShared;
-    if (macro.speed) S.speed = Math.max(S.speed, macro.speed);
-    // A card that declares travel (its macro params) sets them whatever installed first.
-    for (const k of /** @type {const} */ (['seconds', 'teleport', 'max'])) if (macro[k] !== undefined) S[k] = macro[k];
-    travelVerb(rt);
-    return;
-  }
-  const S = rt.caches.moveShared = { speed: macro.speed || 3, seconds: macro.seconds ?? 60, teleport: macro.teleport ?? true, max: macro.max ?? 16 };
+export function ensureShared(rt) {
+  if (rt.caches.moveShared) return;
+  rt.caches.moveShared = true;
   // Movement i-frames (dodge rolls, dashes, ledge grabs, hyperspace) cancel hits through combat's
   // shared hit-interceptor chain, first in order. combat.health reads only its own health.invulnerable,
   // so move never writes that field; hits marked ignoreIframes still land.
@@ -716,51 +702,7 @@ export function ensureShared(rt, macro = {}) {
     if (t >= (m.invulnerableFrom ?? -Infinity) && t < m.invulnerableUntil) { rt.emit('evaded', { who: target.id, by: hit.by ?? null, type: hit.type ?? null }); return { cancel: true, reason: 'iframes' }; }
     return null;
   }, 'gameplay.move');
-  rt.system('late', rt => {
-    for (const e of Object.values(rt.state.entities)) {
-      const src = source(rt, e); if (!src) continue;
-      const a = src.actions || {}, h = src.held || {};
-      const down = [...new Set([...Object.keys(a).filter(k => a[k] && typeof a[k] !== 'object'), ...Object.keys(h).filter(k => h[k])])].sort();
-      if (down.length || e.components.move?.held?.length) mv(e).held = down;
-    }
-  }, 'gameplay.move');
-  travelVerb(rt);
-  rt.options(rt => {
-    // Offered exactly when a card of the document declares the verb (its loop's travel, which the host gives a control:
-    // ui-defaults mounts the choices UI for it), so every travel option is one a person can take.
-    if (!travelDeclared(rt)) return [];
-    const p = rt.player(); if (!p?.space || S.max <= 0) return [];
-    const api = spaceApi(rt, p); if (!api) return [];
-    // Listing is cheap: one reachable() set per step (memoised), membership tests, a distance
-    // heuristic for `steps`. The real path is planned only when the option is applied or stepped.
-    const listed = reachableZones(rt, p, api);
-    return listed.slice(0, S.max).map(({ id, dist }) => {
-      const steps = Math.min(Math.round(S.seconds / rt.dt), Math.max(30, Math.ceil(((dist + 2) / S.speed) * 1.6 / rt.dt)));
-      const name = zoneName(rt.doc, id);
-      return { label: `travel to ${id}`, ...(name ? { text: `Go to ${name}` } : {}), actions: { travel: id }, steps, macro: true, apply: rt => travel(rt, id, steps, S) };
-    });
-  });
 }
-
-/** Whether a card of the world's document declares `travel` among its loop verbs (memoised per document). @param {any} rt */
-function travelDeclared(rt) {
-  const c = rt.caches.moveTravel;
-  if (c?.doc === rt.doc) return c.on;
-  const on = loopVerbs(rt.doc, rt.registry).includes('travel');
-  rt.caches.moveTravel = { doc: rt.doc, on };
-  return on;
-}
-/** The `travel` verb (go to a zone, as the travel options name it), registered once a card declares it. @param {any} rt */
-function travelVerb(rt) {
-  if (!travelDeclared(rt) || new Set(rt.actions()).has('travel')) return;
-  rt.action('travel', (zone, rt) => {
-    const p = rt.player(); if (!p || typeof zone !== 'string') return;
-    if (p.components.moveTo?.zone !== zone) p.components.moveTo = { zone, at: null, run: true };
-  });
-}
-
-/** Whether a document gives `travel` anything to offer: the travel options list the zones of the spaces it declares. */
-export const travelZones = doc => (doc?.spaces || []).some(s => (s.zones || []).length > 0);
 
 /** Cheap point for a zone (no cell scans): at, spawn, rect/bounds centre, centre, polygon centroid. */
 function zoneCentre(z, e) {
@@ -784,65 +726,6 @@ export function playerEnvelope(rt, e) {
   const env = rt.registry ? movementEnvelope(rt.doc, rt.registry, [...names]) : {};
   c.moveEnvKey = key; c.moveEnvState = rt.state.prim; c.moveEnv = { env, names };
   return c.moveEnv;
-}
-
-/**
- * Zones of e's space it is not in and can reach, nearest first: [{id, dist}]. One
- * space.reachable() call per step and player cell (memoised in rt.caches), then membership:
- * zone ids (graph spaces) or the cell keys of a zone's cells (cellOf keys, else joined integer cells).
- * Spaces without reachable list every zone. dist is a straight-line heuristic, not a path length.
- */
-export function reachableZones(rt, e, api) {
-  const zones = rt.doc.spaces.find(s => s.id === e.space)?.zones || [];
-  if (!zones.length) return []; // nothing to travel to: no reachable() flood over the whole space
-  const cellKey = at => (typeof api.cellOf === 'function' ? api.cellOf({ ...e, at }) : Array.isArray(at) ? at.map(v => Math.floor(v)).join(',') : at);
-  const here = typeof api.cellOf === 'function' ? api.cellOf(e) : cellKey(e.at);
-  const c = rt.caches, key = `${rt.state.frame}|${e.space}|${JSON.stringify(here)}`;
-  if (c.moveZonesKey === key && c.moveZonesState === rt.state.prim) return c.moveZones;
-  let set = null;
-  if (typeof api.reachable === 'function') {
-    const { env, names } = playerEnvelope(rt, e), size = e.components.body?.size;
-    const opts = { envelope: env, abilities: Object.fromEntries([...names].map(n => [n, true])), who: e.id, ...(size ? { width: size[0], height: size[1] } : {}) };
-    set = api.reachable(typeof api.cellOf === 'function' ? here : e.at, rt, opts);
-  }
-  const reached = z => {
-    if (!set) return true;
-    if (set.has(z.id)) return true;
-    const cells = [];
-    if (Array.isArray(z.cells)) cells.push(...z.cells);
-    else if (Array.isArray(z.rect)) { let n = 0; for (let x = Math.floor(z.rect[0]); x < z.rect[2] && n < 4096; x++) for (let y = Math.floor(z.rect[1]); y < z.rect[3] && n < 4096; y++, n++) cells.push([x, y]); }
-    const off = api.anchor === 'center' ? 0.5 : 0, h = e.components.body?.size?.[1] ?? 1;
-    for (const [x, y] of cells) {
-      const at = e.at.slice(); at[0] = x + off; at[1] = y + (api.anchor === 'center' ? h / 2 : 0);
-      if (set.has(cellKey(at))) return true;
-    }
-    return false;
-  };
-  const out = [];
-  for (const z of zones) {
-    if (api.inZone?.(e, z.id, rt) || !reached(z)) continue;
-    const to = dimsOf(e) ? zoneCentre(z, e) : z.id;
-    out.push({ id: z.id, dist: dimsOf(e) && to ? len(sub(v3(to), v3(e.at))) : 1 });
-  }
-  out.sort((a, b) => a.dist - b.dist || (a.id < b.id ? -1 : 1));
-  c.moveZonesKey = key; c.moveZonesState = rt.state.prim; c.moveZones = out;
-  return out;
-}
-
-function travel(rt, zone, steps, S) {
-  const p = rt.player(); if (!p) return { ok: false, frames: 0, mode: 'none' };
-  p.components.moveTo = { zone, at: null, run: true };
-  let frames = 0;
-  while (frames < steps && rt.state.status === 'playing' && p.components.moveTo) { rt.step({}); frames++; }
-  const api = spaceApi(rt, p);
-  if (api?.inZone?.(p, zone, rt)) return { ok: true, frames, mode: 'steps' };
-  delete p.components.moveTo;
-  if (!S.teleport || !dimsOf(p) || typeof api?.path !== 'function') return { ok: false, frames, mode: 'steps' };
-  const to = zoneAnchor(rt, p, zone), path = api.path(p.at, to, {});
-  if (!path) return { ok: false, frames, mode: 'path' };
-  for (const wp of path) { if (canProbe(api) && boxHits(rt, api, p, wp)) return { ok: false, frames, mode: 'path' }; api.setPos(p, wp, rt); }
-  rt.emit('travelled', { who: p.id, zone, mode: 'path' });
-  return { ok: Boolean(api.inZone?.(p, zone, rt)), frames, mode: 'path' };
 }
 
 // ---------------------------------------------------------------- presets
@@ -871,14 +754,8 @@ export const MOVE_COMPONENTS = {
     abilities: { type: 'object', values: { type: 'boolean' }, effect: 'movement abilities by name (doubleJump, dash, glide...): true gives one, false denies it' },
   } },
 };
-/** The travel options' settings, on the cards that declare the `travel` verb (walk, grid, platformer). */
-export const MACRO_PARAMS = {
-  macro: { type: 'object', default: {}, effect: 'travel to zones (the travel verb\'s options)', fields: {
-    max: { type: 'integer', min: 0, max: 64, default: 16, effect: 'travel options offered at once (0 disables)' },
-    seconds: { type: 'number', min: 1, max: 600, default: 60, unit: 's', effect: 'step budget per travel' },
-    teleport: { type: 'boolean', default: true, effect: 'fall back to validated teleport along space.path when stepping fails' },
-  } },
-};
+/** The params movement cards retired (card.retired), dropped from documents written before. */
+export const RETIRED_PARAMS = Object.freeze({ macro: "travel options are the verifier's macros, played as held input (verify/macros.js travelOptions): no movement card offers travel" });
 
 // ---------------------------------------------------------------- overlay modes (climb, swim, glide, dodge, grapple, fly)
 

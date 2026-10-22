@@ -57,7 +57,7 @@ export default {
   },
   install(rt, c, instance) {
     verbs(rt, ['climb', 'grab', 'jump']);
-    ensureShared(rt, { speed: c.speed });
+    ensureShared(rt);
     const steepEnough = n => { const up = Math.abs(n?.[1] ?? 0); return (Math.acos(Math.min(1, up)) * 180) / Math.PI >= c.slipMin - 1e-6; };
     const climbable = (tags, solid) => c.surfaces === 'any' ? solid : c.surfaces === 'tagged' ? tags.some(t => c.tags.includes(t)) : tags.some(t => c.ladderTags.includes(t));
     // A ladder (non-solid climbable cell) overlapping the body, or a climbable wall beside it.

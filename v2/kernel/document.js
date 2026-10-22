@@ -236,7 +236,11 @@ export function preflight(input, registry, logic) {
     if (family && !p.id.startsWith(family)) errors.push({ code: 'primitive_slot', path: `${path}.use`, message: `'${p.id}' cannot be used here; expected ${family}.*` });
     if (!family && (p.id.startsWith('engine.space.') || p.id.startsWith('engine.generate.') || p.family === 'graphics')) errors.push({ code: 'primitive_slot', path: `${path}.use`, message: `'${p.id}' belongs in ${p.family === 'graphics' ? 'graphics' : 'spaces'}` });
     const before = errors.length;
-    const config = checkFields(p.card.params || {}, inst.with || {}, `${path}.with`, errors, ctx);
+    // A param its card retired (card.retired: param -> why) is dropped from a document written before, with a warning:
+    // preflight writes every declared param into a document, so a stored game carries params later versions retire.
+    const retired = p.card.retired || {}, given = inst.with || {};
+    for (const k of Object.keys(given)) if (Object.hasOwn(retired, k) && !Object.hasOwn(p.card.params || {}, k)) warnings.push({ code: 'param_retired', path: `${path}.with.${k}`, message: `'${k}' is retired: ${retired[k]}` });
+    const config = checkFields(p.card.params || {}, Object.fromEntries(Object.entries(given).filter(([k]) => !Object.hasOwn(retired, k) || Object.hasOwn(p.card.params || {}, k))), `${path}.with`, errors, ctx);
     const paramErrors = errors.length - before;
     if (space !== undefined && space !== null && !indexes.space.has(space)) errors.push({ code: 'ref_unknown', path: `${path}.space`, message: `unknown space '${space}'` });
     if (p.id.startsWith('engine.space.')) spaceCaps.set(inst.id, new Set(p.capabilities ? p.capabilities(config) : p.card.provides.capabilities || []));

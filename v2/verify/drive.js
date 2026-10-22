@@ -43,7 +43,19 @@ export function holdInput(rt, input, n = 1) {
  * are sent once) and its `apply` macro is never run; an option whose only content is a macro is not something a
  * person can do (ControlsMissing).
  */
+/**
+ * The inputs a person gives to take an option, in order: its `inputs` (a shortcut a person plays as a sequence of key
+ * presses, held verbs and axes, each for its `frames`: a placement as rotations, shifts and a drop), else its actions
+ * held for its steps. Every reader of what an option asks a person to do reads it here.
+ * @param {any} option @returns {Array<{ actions?: Record<string, unknown>, held?: Record<string, unknown>, axes?: Record<string, unknown>, frames?: number }>}
+ */
+export const optionInputs = option => (Array.isArray(option?.inputs) ? option.inputs : [{ actions: option?.actions || {}, ...(option?.steps ? { frames: option.steps } : {}) }]);
+/** Every verb an option's inputs issue. @param {any} option @returns {string[]} */
+export const optionVerbs = option => [...new Set(optionInputs(option).flatMap(i => [...Object.keys(i.actions || {}), ...Object.keys(i.held || {}), ...Object.keys(i.axes || {})]))];
+
 export function applyOption(rt, option) {
+  // A shortcut's inputs, each exactly as given for its frames (a press on one frame, the empty frame after it releases).
+  if (Array.isArray(option.inputs)) { for (const { frames = 1, ...input } of option.inputs) { if (!playing(rt)) break; hold(rt, input, frames); } return; }
   if (rt.controls) {
     const actions = option.actions || {}, verbs = Object.keys(actions).filter(v => actions[v] !== undefined && actions[v] !== null && actions[v] !== false);
     if (!verbs.length && typeof option.apply === 'function') throw new ControlsMissing([{ verb: option.label ?? 'option', why: 'the option is a macro (apply) and issues no action' }]);

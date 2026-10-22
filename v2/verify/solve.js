@@ -59,11 +59,14 @@ const pathOf = node => { const out = []; for (let n = node; n?.label !== undefin
 export function solve(doc, registry, logic, opts = {}) {
   const { search = 'bfs', maxStates = 20000, maxDepth = Infinity, settleSteps = 2, waitSteps = 600, seed } = opts;
   const b = makeBudget({ states: maxStates, steps: opts.maxSteps ?? Infinity });
-  // Spaces without options of their own get travel macros (warp along the space's path, or steer the real controls).
+  // The player's space with zones and paths gets travel macros (warp along the space's path, or steer the real controls).
   let make = maker(doc, registry, logic), travel = null;
   if (opts.travel !== false) {
     const probe = make(seed), p = probe.player();
-    const wanted = opts.travel ?? (!probe.availableOptions().length && p?.space && typeof probe.space(p.space).path === 'function' ? 'auto' : null);
+    // Travel to a zone is no game's own option (a person walks there): where the player's space has zones and paths,
+    // the solver gets travel macros (warp along the path, or steer the real controls).
+    const zoned = (doc.spaces || []).some(s => s.id === p?.space && (s.zones || []).length > 0);
+    const wanted = opts.travel ?? (zoned && typeof probe.space(p.space).path === 'function' ? 'auto' : null);
     if (wanted) travel = withTravel(make, registry, { mode: wanted });
     if (travel) make = travel.make;
   }

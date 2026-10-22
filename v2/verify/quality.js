@@ -10,7 +10,7 @@
 //   variety      cells, zones, event names and choice labels per simulated minute
 // A value that was not measured is null, never 0 (AGENTS.md); `unmeasured` says why. Findings carry a
 // stable code, a document path and severity 'info'.
-import { hold, holdInput, optionLabels, inputMacros } from './drive.js';
+import { hold, holdInput, optionLabels, inputMacros, optionVerbs } from './drive.js';
 import { takeOption } from './macros.js';
 import { playtest as runPlaytest, explorerWorlds } from './playtest.js';
 import { INPUT } from './controls.js';
@@ -77,7 +77,7 @@ function measureAgency(make, sample, { b, maxChoices, macroFrames, registry }) {
         if (c.kind === 'options') {
           const options = rt.availableOptions(), j = optionLabels(options).indexOf(c.label);
           if (j < 0) continue;
-          acts = Object.keys(options[j].actions || {}); takeOption(rt, options[j], registry);
+          acts = optionVerbs(options[j]); takeOption(rt, options[j], registry);
         } else { acts = Object.keys(c.m.input.actions || {}); if (!acts.length) acts = Object.keys(c.m.input.axes || {}); holdInput(rt, c.m.input, macroFrames); hold(rt, {}, 1); }
       } catch { errors++; continue; } // crashes are the publish gate's business; here the choice is just not measured
       const h = choiceHash(rt.state), changed = h !== idle(rt.state.frame - f0);

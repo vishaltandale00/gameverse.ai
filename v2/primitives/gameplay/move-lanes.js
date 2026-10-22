@@ -9,7 +9,7 @@
 // space.slide; without gravity the jump height is virtual (body.lift).
 import {
   round6, mv, bodyOf, state, spaceApi, frameOf, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, controls, verbs,
-  ensureShared, motor, settle, boxHits, canProbe, v3, setFacing, COMMON_PARAMS, MOVE_COMPONENTS,
+  ensureShared, motor, settle, boxHits, canProbe, v3, setFacing, COMMON_PARAMS, RETIRED_PARAMS, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.lanes';
@@ -45,6 +45,7 @@ export default {
     intent: 'Endless-runner lanes: auto-run forward with a speed ramp, switch lanes, jump low barriers, slide under high ones, dive from the air into a slide, and stumble on trips with a chaser that catches you on a second stumble.',
     views: ['3p', 'td'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    retired: RETIRED_PARAMS,
     params: {
       lanes: { type: 'integer', min: 2, max: 9, default: 3, effect: 'number of lanes' },
       laneWidth: num(0.2, 20, 1, 'units', 'distance between lane centres'),
@@ -105,7 +106,7 @@ export default {
   install(rt, c, instance) {
     const owner = ownerKey(instance);
     registerBase(rt, owner, 'lanes', instance);
-    ensureShared(rt, { speed: c.speed });
+    ensureShared(rt);
     verbs(rt, ['left', 'right', 'jump', 'slide', 'crouch', 'move']);
     rt.caches.moveLanes = c;
     const g = (8 * c.jumpHeight) / (c.airTime ** 2), v0 = (4 * c.jumpHeight) / c.airTime, mid = (c.lanes - 1) / 2;

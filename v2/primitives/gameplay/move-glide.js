@@ -46,7 +46,7 @@ export default {
       const b = boxOf(api, e), mid = b.min.map((m, i) => m + b.size[i] / 2);
       return (canProbe(api) && probe(rt, api, mid).tags.some(t => c.updraftTags.includes(t))) || zoneTags(rt, e, mid).some(t => c.updraftTags.includes(t));
     };
-    ensureShared(rt, { speed: c.speed });
+    ensureShared(rt);
     installOverlay(rt, c, instance, {
       id: ID, mode: 'glide', pri: 20,
       wants(e, api, fr, s, active) {

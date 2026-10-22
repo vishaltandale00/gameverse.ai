@@ -11,7 +11,7 @@
 // far idling and play moved it toward the win). Every macro is checked against the runtime invariants; any win is
 // replayed from a fresh world to prove it. The search is bounded by rounds and simulated frames, never wall time: the
 // same document and seed always give the same report.
-import { hold, holdInput, optionLabels, inputMacros, posOf } from './drive.js';
+import { hold, holdInput, optionLabels, inputMacros, posOf, optionInputs } from './drive.js';
 import { objective, plotZones, PROGRESS_EVENTS, winMeasure, WIN_WEIGHT, loopShown } from './objective.js';
 import { stepChecker } from './invariants.js';
 import { withTravel, takeOption, steerable } from './macros.js';
@@ -130,7 +130,10 @@ export function explorerWorlds(doc, registry, logic, { seed, travel: wanted = tr
   let make = controlledMaker(host.doc, registry, logic), travel = null;
   if (wanted !== false) {
     const probe = make(seed), p = probe.player();
-    if (!probe.availableOptions().length && p?.space && typeof probe.space(p.space).path === 'function' && steerable(probe)) { travel = withTravel(make, registry, { mode: 'steer' }); make = travel.make; }
+    // Travel to a zone is no game's own option: where the player's space has zones and paths and the move axis is a
+    // control, the explorer gets travel macros played as held input (macros.js takeOption).
+    const zoned = (host.doc.spaces || []).some(s => s.id === p?.space && (s.zones || []).length > 0);
+    if (zoned && typeof probe.space(p.space).path === 'function' && steerable(probe)) { travel = withTravel(make, registry, { mode: 'steer' }); make = travel.make; }
   }
   return { ok: true, doc: host.doc, make, travel };
 }
@@ -224,8 +227,8 @@ export function playtest(doc, registry, logic, opts = {}) {
   const uncontrolled = new Map();
   const takeable = (options, labels) => options.map((o, i) => ({ o, label: labels[i] })).filter(({ o, label }) => {
     if (o.zone !== undefined && typeof o.apply === 'function') return true; // a travel macro: held input (takeOption)
-    const acts = o.actions || {}, issues = Object.keys(acts).some(v => acts[v] !== undefined && acts[v] !== null && acts[v] !== false);
-    const missing = !issues && typeof o.apply === 'function' ? [{ verb: label, why: 'the option is a macro (apply) and issues no action' }] : rt.controls.missing({ actions: acts });
+    const acts = o.actions || {}, issues = Array.isArray(o.inputs) || Object.keys(acts).some(v => acts[v] !== undefined && acts[v] !== null && acts[v] !== false);
+    const missing = !issues && typeof o.apply === 'function' ? [{ verb: label, why: 'the option is a macro (apply) and issues no action' }] : optionInputs(o).flatMap(({ frames: _, ...i }) => rt.controls.missing(i));
     if (missing.length && !uncontrolled.has(label)) uncontrolled.set(label, missing);
     return !missing.length;
   });
@@ -250,7 +253,7 @@ export function playtest(doc, registry, logic, opts = {}) {
       const f0 = rt.state.frame, c0 = { ...rt.state.counts };
       const token = wm?.track(rt);
       try {
-        if (options.length && (opts.optionsOnly || rand() < 0.75)) { const j = rand.int(options.length); rec = { o: options[j].label }; used(options[j].o.actions); takeOption(rt, options[j].o, registry); }
+        if (options.length && (opts.optionsOnly || rand() < 0.75)) { const j = rand.int(options.length); rec = { o: options[j].label }; used(Object.assign({}, ...optionInputs(options[j].o).map(i => i.actions || {}))); takeOption(rt, options[j].o, registry); }
         else { const macros = opts.macros || inputMacros(rt); const m = macros[rand.int(macros.length)], len = 4 + rand.int(32); rec = { i: m.input, n: len, label: m.label }; used(m.input.actions); playRecord(rt, rec, registry); }
       } catch (error) {
         // A macro asking for a control a person does not have is the explorer's own request, not the game crashing.

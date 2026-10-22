@@ -134,6 +134,8 @@ export interface CardInput {
   intent: string;
   views?: string[];
   params?: Params;
+  /** Params a later version removed, each with why: preflight drops them from documents written before (param_retired). */
+  retired?: Record<string, string>;
   provides?: Provides;
   requires?: Requires;
   conflicts?: string[];

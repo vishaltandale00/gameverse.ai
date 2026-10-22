@@ -9,7 +9,7 @@
 // Runtime fields kept on the mount component: rider, gait, st (stamina), called.
 // The rider gets components.move.riding = <mount id>, body.state = 'ride' and body.riding.
 import {
-  round6, mv, bodyOf, spaceApi, frameOf, intent, claim, ownedBy, ownerKey, verbs, ensureShared, len, sub, v3, boxHits, canProbe, settle, COMMON_PARAMS, travelAlong, MOVE_COMPONENTS,
+  round6, mv, bodyOf, spaceApi, frameOf, intent, claim, ownedBy, ownerKey, verbs, ensureShared, len, sub, v3, boxHits, canProbe, settle, COMMON_PARAMS, RETIRED_PARAMS, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 import { stepWalk, walkConfig } from './move-walk.js';
 
@@ -30,6 +30,7 @@ export default {
     intent: 'Mounts: ride creatures with walk/trot/gallop gaits and a stamina meter, build bond while riding (untamed mounts buck until bonded), jump while mounted, and call your mount to you from within range. Any entity with a `mount` component can be ridden.',
     views: ['3p', 'td', 'iso', 'side'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    retired: RETIRED_PARAMS,
     params: {
       walk: num(0.5, 20, 3, 'units/s', 'walk gait speed'), trot: num(0.5, 40, 7, 'units/s', 'trot gait speed'), gallop: num(0.5, 80, 14, 'units/s', 'gallop gait speed (sprint)'),
       accel: num(0.5, 200, 10, 'units/s²', 'how quickly gaits change speed'),
@@ -91,7 +92,7 @@ export default {
   install(rt, c, instance) {
     const owner = ownerKey(instance);
     rt.caches.mountCfg = c;
-    ensureShared(rt, { speed: c.trot });
+    ensureShared(rt);
     verbs(rt, ['mount', 'call', 'sprint']);
     const mounts = () => Object.values(rt.state.entities).filter(e => e.components.mount && typeof e.components.mount === 'object');
     rt.system('input', rt => {

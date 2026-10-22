@@ -5,7 +5,7 @@
 // from a resource pool or an internal tank that refills on the ground.
 import {
   round6, mv, bodyOf, state, spaceApi, frameOf, intent, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, pool, canSpend,
-  hasAbility, verbs, ensureShared, steerPlane, integrate, setFacing, settle, installOverlay, COMMON_PARAMS, len, travelAlong, MOVE_COMPONENTS,
+  hasAbility, verbs, ensureShared, steerPlane, integrate, setFacing, settle, installOverlay, COMMON_PARAMS, RETIRED_PARAMS, len, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.fly';
@@ -29,6 +29,7 @@ export default {
     intent: 'Flight: free 3D/side flight with ascend and descend, or jetpack thrust against gravity, always on or toggled by a verb or a double jump, optionally burning fuel. Use it for creative-mode flying, wings, jetpacks, flying NPCs and drones.',
     views: ['1p', '3p', 'side', 'td', 'iso'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    retired: RETIRED_PARAMS,
     params: {
       style: { type: 'string', options: ['free', 'thrust'], default: 'free', effect: 'free: no gravity while flying; thrust: hold jump/ascend to push against gravity' },
       toggle: { type: 'string', options: ['verb', 'double_jump', 'always'], default: 'verb', effect: 'how flight starts: the fly verb, a double tap of jump in the air, or always flying' },
@@ -53,7 +54,7 @@ export default {
   travel: (rt, path, config, instance) => travelAlong(rt, path, {}),
   install(rt, c, instance) {
     verbs(rt, ['fly', 'ascend', 'descend', 'jump', 'sprint']);
-    ensureShared(rt, { speed: c.speed });
+    ensureShared(rt);
     const tank = e => (c.fuelPool ? pool(rt, e, c.fuelPool) : c.fuel > 0 ? pool(rt, e, 'fly_fuel', { max: c.fuel, regen: c.fuel * c.fuelRegen }) : null);
     const fly = (e, api, fr, s) => {
       const b = bodyOf(e), dt = rt.dt, it = intent(rt, e, api, fr, { free3d: true, jumpIsUp: true, crouchIsDown: true }), ctl = it.ctl;

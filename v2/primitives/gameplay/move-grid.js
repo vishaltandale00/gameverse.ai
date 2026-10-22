@@ -20,7 +20,7 @@
 // (fright mode, eating pauses).
 import {
   clamp, round6, mv, bodyOf, state, spaceApi, frameOf, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey, controls, verbs,
-  ensureShared, probe, spaceWraps, setFacing, settle, discreteNext, zoneAnchor, dimsOf, COMMON_PARAMS, MACRO_PARAMS, travelAlong, travelZones, MOVE_COMPONENTS,
+  ensureShared, probe, spaceWraps, setFacing, settle, discreteNext, zoneAnchor, dimsOf, COMMON_PARAMS, RETIRED_PARAMS, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.grid';
@@ -40,14 +40,15 @@ export default {
   id: ID,
   card: {
     // Lane movement (Pac-Man) has one speed: running is a step-mode verb (runtime-lib-controls.js instanceVerbs).
-    loop: { verbs: ['up', 'down', 'left', 'right', 'move', 'run', 'travel'], verbsOf: (config, doc) => ['up', 'down', 'left', 'right', 'move', ...(config.mode === 'lane' ? [] : ['run']), ...(travelZones(doc) ? ['travel'] : [])], progress: ['stepped', 'arrived'] },
+    loop: { verbs: ['up', 'down', 'left', 'right', 'move', 'run'], verbsOf: (config, doc) => ['up', 'down', 'left', 'right', 'move', ...(config.mode === 'lane' ? [] : ['run'])], progress: ['stepped', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
     // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).
     body: { size: [1, 1, 1] },
     intent: 'Grid-locked movement. lane mode: Pac-Man style continuous movement along cell lanes, with buffered turns, a cornering window, instant reversal and stopping at walls. step mode: one-cell hops with walk/run timing, turn-in-place, queued hops and one-way ledges (Pokémon overworld, Crossy Road). Cell tags add ledges, one-way cells, class-only doors and speed zones.',
     views: ['td', 'board', 'iso'],
-    actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach', from: 'options', emits: ['arrived'] }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    retired: RETIRED_PARAMS,
     params: {
       mode: { type: 'string', options: ['lane', 'step'], default: 'step', effect: 'lane: continuous along lanes; step: discrete hops' },
       speed: { type: 'number', min: 0.5, max: 60, default: round6(BASE_SPEED * 0.8), unit: 'cells/s', effect: 'lane speed (classic level 1: 0.8 × 9.47)' },
@@ -61,7 +62,7 @@ export default {
       wrap: { type: 'boolean', default: false, effect: 'wrap around the space bounds (tunnels) when the space does not wrap itself' },
       cellSpeed: { type: 'object', default: {}, values: { type: 'number', min: 0, effect: 'speed multiplier' }, effect: 'lane speed multiplier per cell tag, e.g. {"tunnel": 0.5}' },
       offset: { type: 'number', min: -1, max: 1, effect: 'lane centre offset within a cell; default 0.5 for centre-anchored spaces, else 0' },
-      ...COMMON_PARAMS, ...MACRO_PARAMS,
+      ...COMMON_PARAMS, 
     },
     // Events it emits when it refuses a player's verb, with a reason (graphics.ui.hud says why).
     denials: ['move_failed'],
@@ -77,7 +78,7 @@ export default {
   install(rt, c, instance) {
     const owner = ownerKey(instance);
     registerBase(rt, owner, 'grid', instance);
-    ensureShared(rt, { speed: c.mode === 'lane' ? c.speed : 60 / c.walkFrames, ...c.macro });
+    ensureShared(rt);
     verbs(rt, ['up', 'down', 'left', 'right', 'move', 'run']);
     rt.system('input', rt => { for (const e of driven(rt, c, instance)) if (isBaseFor(rt, e, owner, ID, 'grid')) claim(rt, e, 'grid', 0, owner); }, ID);
     rt.system('movement', rt => {

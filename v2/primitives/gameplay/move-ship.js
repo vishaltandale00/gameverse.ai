@@ -9,7 +9,7 @@
 // which combat.projectile can read for twin-stick fire.
 import {
   clamp, round6, mv, bodyOf, state, spaceApi, frameOf, intent, claim, ownedBy, registerBase, isBaseFor, driven, ownerKey,
-  controls, verbs, ensureShared, motor, settle, v3, setFacing, spaceWraps, COMMON_PARAMS, MACRO_PARAMS, travelAlong, MOVE_COMPONENTS,
+  controls, verbs, ensureShared, motor, settle, v3, setFacing, spaceWraps, COMMON_PARAMS, RETIRED_PARAMS, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 
 const ID = 'gameplay.move.ship';
@@ -30,6 +30,7 @@ export default {
     intent: 'Ship controls for shmups and arena shooters: rail (side to side), eight-way, twin-stick (separate aim with auto-aim) or inertial Asteroids flight (rotate, thrust, drag, wraparound), with a slow focus mode and hyperspace jumps, clamped to or wrapping around the play bounds.',
     views: ['td', 'side'],
     actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, aim: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    retired: RETIRED_PARAMS,
     params: {
       mode: { type: 'string', options: ['rail', 'eightway', 'twinstick', 'inertial'], default: 'eightway', effect: 'control scheme' },
       speed: num(1, 2000, 190, 'units/s', 'top speed (kit: 140-240 px/s)'),
@@ -49,7 +50,7 @@ export default {
       aimRange: num(1, 5000, SHIP.aimRange, 'units', 'auto-aim range'),
       aimTargets: { type: 'list', of: { type: 'string' }, default: ['enemy', 'boss'], effect: 'archetype ids or kinds auto-aim considers' },
       collide: { type: 'boolean', default: false, effect: 'collide with solid cells through space.slide instead of flying over them' },
-      ...COMMON_PARAMS, ...MACRO_PARAMS,
+      ...COMMON_PARAMS, 
     },
     provides: { events: ['evaded', 'hyperspace', 'thrust_start', 'thrust_end'], actions: ['move', 'thrust', 'focus', 'hyperspace', 'aim'] },
     requires: { capabilities: ['position'] },
@@ -64,7 +65,7 @@ export default {
     const owner = ownerKey(instance), wrap = c.wrap ?? c.mode === 'inertial';
     const hyper = { enabled: false, cooldown: SHIP.hyperCooldown, invuln: SHIP.hyperInvuln, keep: SHIP.hyperKeep, margin: SHIP.hyperMargin, ...c.hyperspace };
     registerBase(rt, owner, 'ship', instance);
-    ensureShared(rt, { speed: c.speed, ...c.macro });
+    ensureShared(rt);
     verbs(rt, ['move', 'thrust', 'focus', 'hyperspace']);
     const kinds = new Map((rt.doc.content?.archetypes || []).map(a => [a.id, a.kind]));
     const boundsOf = api => {

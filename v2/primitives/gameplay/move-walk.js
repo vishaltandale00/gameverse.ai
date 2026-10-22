@@ -8,7 +8,7 @@
 import {
   clamp, len, norm, round6, mv, bodyOf, state, spaceApi, dimsOf, isContinuous, frameOf, intent, motor, claim, ownedBy,
   registerBase, isBaseFor, driven, ownerKey, pool, canSpend, setFacing, settle, trackAir, verbs, ensureShared, withPreset,
-  discreteNext, planeVector, controls, COMMON_PARAMS, MACRO_PARAMS, travelAlong, travelZones, MOVE_COMPONENTS,
+  discreteNext, planeVector, controls, COMMON_PARAMS, RETIRED_PARAMS, travelAlong, MOVE_COMPONENTS,
 } from './move-lib-core.js';
 import { compare } from '../../kernel/logic.js';
 
@@ -34,15 +34,15 @@ export default {
   id: ID,
   card: {
     // Running is the pace the move axis gives (walk slows it, sprint speeds it): there is no run press to declare.
-    // travel (the choices panel) exists when the document declares zones to travel to (move-lib-core.js travelZones).
-    loop: { verbs: ['move', 'jump', 'sprint', 'crouch', 'walk', 'travel'], verbsOf: (config, doc) => ['move', 'jump', 'sprint', 'crouch', 'walk', ...(travelZones(doc) ? ['travel'] : [])], progress: ['jumped', 'travelled', 'arrived'] },
+    loop: { verbs: ['move', 'jump', 'sprint', 'crouch', 'walk'], progress: ['jumped', 'travelled', 'arrived'] },
     locomotion: 'base', medium: 'ground', // base: moves the player on its own; modifier: adds a move on top of base locomotion
     // The body this controller is tuned for, [width, height, depth] in space units (a side view reads [w, h], a top-down
     // one [w, d]): traversal conformance proves generated worlds for a player of this size (v2-p-generate2d-traversal).
     body: { size: [0.6, 1.8, 0.6] },
     intent: 'Ground locomotion for the player and NPCs: walk, run, sprint (drains a stamina pool), crouch and jump, with acceleration, air control, coyote time, jump buffer and feel presets. Works in 3D, side and top-down continuous spaces and steps cell by cell on grid or graph spaces.',
     views: ['1p', '3p', 'td', 'iso', 'side'],
-    actionSpace: { travel: { type: 'choice', of: 'a zone the player can reach', from: 'options', emits: ['arrived', 'travelled'] }, move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, look: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    actionSpace: { move: { type: 'vector', min: -1, max: 1, kind: 'continuous' }, look: { type: 'vector', min: -1, max: 1, kind: 'continuous' } },
+    retired: RETIRED_PARAMS,
     params: {
       walk: { type: 'number', min: 0.5, max: 8, default: 3, unit: 'units/s', effect: 'speed with a light stick or the walk verb' },
       run: { type: 'number', min: 0.5, max: 20, default: 6, unit: 'units/s', effect: 'default moving speed' },
@@ -65,7 +65,7 @@ export default {
       steer: { type: 'string', options: ['auto', 'look'], default: 'auto', effect: 'look: axes.look turns body.look (yaw, pitch) and move axes follow it; auto: follow body.look or axes.camera if present' },
       lookRate: { type: 'number', min: 0.1, max: 20, default: 3, unit: 'rad/s', effect: 'turn speed per unit of axes.look when steer=look' },
       hopGravity: { type: 'number', min: 1, max: 200, default: 30, unit: 'units/s²', effect: 'gravity of the virtual hop in spaces without gravity' },
-      ...COMMON_PARAMS, ...MACRO_PARAMS,
+      ...COMMON_PARAMS, 
     },
     rules: {
       walk_speed_order: { fields: ['walk', 'run', 'sprint', 'crouch'], message: 'walk ≤ run ≤ sprint and crouch ≤ run (after the preset)' },
@@ -103,7 +103,7 @@ export default {
   install(rt, config, instance) {
     const c = walkConfig(config), owner = ownerKey(instance);
     registerBase(rt, owner, 'walk', instance);
-    ensureShared(rt, { speed: c.run, ...c.macro });
+    ensureShared(rt);
     verbs(rt, ['move', 'jump', 'sprint', 'run', 'crouch', 'walk']);
     rt.system('input', rt => { for (const e of driven(rt, c, instance)) if (isBaseFor(rt, e, owner, ID, 'walk')) claim(rt, e, 'walk', 0, owner); }, ID);
     rt.system('movement', rt => { for (const e of driven(rt, c, instance)) if (ownedBy(rt, e, owner)) stepWalk(rt, e, c); }, ID);

@@ -1,6 +1,6 @@
 // Helpers shared by the strategy library: decision points, board reading,
 // simulation of a choice on a snapshot, multi-seed runs and result records.
-import { applyOption, hold, optionLabels, hpOf, foes, vitality } from '../drive.js';
+import { applyOption, hold, optionLabels, hpOf, foes, vitality, optionVerbs } from '../drive.js';
 import { seedFrom } from '../../kernel/rng.js';
 import { instancesOf, problem, budget as makeBudget, now } from '../util.js';
 
@@ -106,7 +106,7 @@ export function pathOf(doc, prefixes, fallback = 'systems') {
  */
 export function ownerPath(ctx, rt, hints = []) {
   const xs = instancesOf(ctx.doc).map(x => ({ x, p: ctx.registry.get(x.inst?.use) })).filter(e => e.p);
-  const verbs = new Set((rt?.availableOptions() || []).flatMap(o => Object.keys(o.actions || {})));
+  const verbs = new Set((rt?.availableOptions() || []).flatMap(o => optionVerbs(o)));
   const byVerb = xs.find(({ p }) => (p.card.provides?.actions || []).some(a => verbs.has(a)));
   if (byVerb) return byVerb.x.path;
   const byBoard = xs.find(({ p }) => (p.card.provides?.services || []).some(s => s === 'board' || s.startsWith('board:')));
