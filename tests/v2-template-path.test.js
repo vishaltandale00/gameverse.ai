@@ -186,6 +186,8 @@ test('checkPick: the form\'s schema (pick_form) and the catalogue rules, each wi
   assert.deepEqual(said('launcher', [m('slide on ice', 'on an ice shelf')]), ['pick_mechanic_is_concept@mechanics[0].says']);
   assert.deepEqual(said('fighting', [m('use kitchen utensils as weapons', 'with kitchen utensils')]), ['pick_mechanic_is_concept@mechanics[0].says']);
   assert.deepEqual(said('falling-blocks', [m('arrange books', 'books')]), ['pick_mechanic_is_concept@mechanics[0].says']);
+  // The concept's own name, when the idea does not write it as such ('soccer' for 'Soccer on the moon' read as a game).
+  assert.deepEqual(checkPick({ ...pickOf('ball-sport'), primary: { name: 'soccer game', kind: 'game', template: 'ball-sport' }, mechanics: [m('low gravity', 'Soccer')] }, { templates: TEMPLATES, registry, prompt: IDEAS['ball-sport'].idea }).problems.map(p => p.code), ['pick_mechanic_is_concept']);
   assert.deepEqual(said('race', [m('has a gun', 'has a GUN', 'fire')], 'Mario Kart with shopping carts where you  has a gun'), [], 'the idea\'s own words, case and spaces aside');
   for (const id of Object.keys(IDEAS)) assert.deepEqual(said(id, []), [], `${id}: an idea naming no mechanic has none`);
   for (const id of Object.keys(IDEAS)) assert.deepEqual(codes(pickOf(id)), []);

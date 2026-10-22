@@ -282,12 +282,13 @@ const spanOf = (text, part) => { const p = plain(part), i = p ? plain(text).inde
 export function mechanicProblems(pick, prompt) {
   /** @type {FormProblem[]} */
   const out = [];
-  const concepts = [pick.primary, ...pick.games, ...pick.themes].map(c => ({ name: c.name, span: spanOf(prompt, c.name) })).filter(c => c.span);
+  const concepts = [pick.primary, ...pick.games, ...pick.themes].map(c => ({ name: c.name, span: spanOf(prompt, c.name) }));
   pick.mechanics.forEach((m, i) => {
     const at = spanOf(prompt, m.says ?? '');
-    if (!at) { out.push({ code: 'pick_mechanic_unsaid', field: `mechanics[${i}].says`, message: `the idea does not say "${m.says ?? ''}": a mechanic is one the idea names, its words copied exactly (or none: the idea names no mechanic the templates do not give)` }); return; }
-    const c = concepts.find(x => /** @type {number[]} */ (x.span)[0] < at[1] && at[0] < /** @type {number[]} */ (x.span)[1]);
-    if (c) out.push({ code: 'pick_mechanic_is_concept', field: `mechanics[${i}].says`, message: `"${m.says}" is words of '${c.name}', a concept the pick names: a theme, setting or character restyles the game and is never a mechanic` });
+    if (!at) { out.push({ code: 'pick_mechanic_unsaid', field: `mechanics[${i}].says`, message: `the idea does not say "${m.says ?? ''}": a mechanic is one the idea names, its words copied exactly; remove it from mechanics when the idea does not name it (mechanics: [] when the idea names none)` }); return; }
+    // A concept's words: where the idea writes its name, or (a name not written as such) the name itself.
+    const c = concepts.find(x => (x.span ? x.span[0] < at[1] && at[0] < x.span[1] : false) || (plain(x.name) !== '' && (plain(x.name).includes(plain(m.says ?? '')) || plain(m.says ?? '').includes(plain(x.name)))));
+    if (c) out.push({ code: 'pick_mechanic_is_concept', field: `mechanics[${i}].says`, message: `"${m.says}" is words of '${c.name}', a concept the pick names: a game is played by its template and a theme, setting or character restyles it, neither is a mechanic; remove it from mechanics when the idea names no other` });
   });
   return out;
 }
