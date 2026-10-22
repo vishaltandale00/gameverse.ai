@@ -15,6 +15,7 @@ import { controlledMaker, hostPreflight } from '../v2/verify/controls.js';
 import { applyOption, optionLabels, hold } from '../v2/verify/drive.js';
 import { prng } from '../v2/verify/util.js';
 import { catalogueDocuments } from './v2-catalogue-documents.js';
+import { loopVerbs } from '../v2/primitives/engine/runtime-lib-controls.js';
 import { FIXTURES } from './v2-choice-fixtures.js';
 
 const { registry, logic } = buildCatalogue();
@@ -59,4 +60,22 @@ test('every option offered in the catalogue\'s worlds is one a person can take t
   assert.ok(offered > 500, `${offered} options checked`);
   for (const c of crashed) t.diagnostic(`crash: ${c}`);
   t.diagnostic(`${all.length} worlds, ${offered} options, ${Math.round(performance.now() - t0)} ms`);
+});
+
+test('travel options are offered only where a card declares the travel verb (the host then gives it a control), and are offered there', () => {
+  let declaring = 0;
+  for (const { label, doc, prepare } of cases()) {
+    const pre = preflight(structuredClone(doc), registry, logic), host = hostPreflight(pre.doc, registry, logic);
+    const rt = controlledMaker(host.doc, registry, logic)(host.doc.seed ?? 1);
+    prepare?.(rt);
+    hold(rt, {}, 30);
+    const declared = loopVerbs(host.doc, registry).includes('travel'), travel = rt.availableOptions().filter(o => o.actions?.travel !== undefined);
+    if (!declared) assert.deepEqual(travel.map(o => o.label), [], `${label}: no card declares travel, so none is offered`);
+    else if (travel.length) {
+      declaring++;
+      assert.ok(travel.every(o => !rt.controls.missing({ actions: o.actions }).length), `${label}: a control issues travel`);
+    }
+  }
+  // Not silenced: worlds whose cards declare travel offer it (a world with no reachable zone offers none).
+  assert.ok(declaring > 0, 'worlds whose cards declare travel offer travel options');
 });
