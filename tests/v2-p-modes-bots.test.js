@@ -110,7 +110,7 @@ const DOCS = {
         { use: 'gameplay.collectible', with: { counters: [{ id: 'pellet', total: pellets.length, clearsLevel: true, onComplete: won }] } },
         { use: 'engine.spawner', with: { intervalSec: 0, rules: [{ id: 'pellets', archetype: 'pellet', at: pellets, count: [pellets.length, pellets.length], activation: 'always', respawnSec: 0 }, { id: 'ghost', archetype: 'ghost', at: [8, 6], unique: true, activation: 'always', respawnSec: 0 }] } }],
       { archetypes: [{ id: 'hero', components: { health: { max: 1 } } }, { id: 'pellet', components: { collectible: { counter: 'pellet' } } },
-        { id: 'ghost', components: { ai: { brain: [{ do: 'patrol', route: [[8, 6], [8, 0]] }], speed: 1, perception: { sight: 40, fov: 360, memory: 5 } }, touch: { damage: 1 } } }] },
+        { id: 'ghost', components: { ai: { brain: [{ do: 'patrol', route: [{ at: [8, 6] }, { at: [8, 0] }] }], speed: 1, perception: { sight: 40, fov: 360, memory: 5 } }, touch: { damage: 1 } } }] },
       { player: { archetype: 'hero', at: [0, 0] } });
   },
   story: () => withExitGate(manor()),
@@ -131,7 +131,7 @@ const DOCS = {
     generators: [{ use: 'engine.generate.tilemap.rooms', with: { rooms: [{ id: 'near', zone: 'near', rect: [0, 0, 20, 10], platforms: 0, exits: [{ side: 'r' }] },
       { id: 'far', zone: 'far', rect: [20, 0, 40, 10], gaps: 1, hazards: ['spikes'], platforms: 1, exits: [{ side: 'l' }], features: [{ kind: 'spawn', ref: 'flag', at: [37, 3] }] }] } }] }],
     [{ use: 'gameplay.move.platformer' }, { use: 'gameplay.combat.health' }, { use: 'gameplay.hazard', with: { types: [{ id: 'spikes', damage: 1 }] } }, { use: 'gameplay.goal', with: { onReach: won } }],
-    { archetypes: [{ id: 'hero', components: { health: { max: 3 }, body: { size: [0.8, 1.4] } } }, { id: 'flag', components: { goal: true, body: { size: [1, 2] } } }],
+    { archetypes: [{ id: 'hero', components: { health: { max: 3 }, body: { size: [0.8, 1.4] } } }, { id: 'flag', components: { goal: {}, body: { size: [1, 2] } } }],
       blocks: [{ id: 'stone', solid: true }, { id: 'plank', solid: true }, { id: 'spikes', solid: false, tags: ['hazard'], hazard: 'spikes' }] }, { player: { archetype: 'hero', at: [2, 3] } }),
   runner: () => base('runner', [{ id: 'run', use: 'engine.space.tilemap', with: { size: [256, 8], mode: 'side' },
     generators: [{ use: 'engine.generate.chunks', with: { chunks: [{ id: 'hop', rows: ['..o...', '......', '..#..^'] }], along: 'columns', axis: 'x', cross: 'y', origin: [0, 0], firstAt: 8,
