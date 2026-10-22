@@ -28,7 +28,8 @@
 //                person's can win
 //   bounds       every value the frame_tune form allows keeps the game playable: at each bound of each tune entry (the
 //                min and max of a number, each value of a boolean or a closed set; the other params at the template's
-//                values) the document preflights and every named bot wins on every world seed in SEEDS
+//                values) the document preflights and every named bot wins on every world seed in SEEDS; a look (a
+//                param its card declares cosmetic) is proven by the presentation stage, drawn and never played
 //
 // Static stages stop the check when one fails (nothing simulates a document that is malformed or fails its
 // declarations); the dynamic stages (gate, bots) both run once the static ones pass.
@@ -37,7 +38,7 @@ import { preflight } from '../kernel/document.js';
 import { checkComposition } from '../planner/compose-check.js';
 import { loopProblems } from '../planner/loop-check.js';
 import { verifyDocument } from '../planner/verify-adapter.js';
-import { tuneTarget, tuneRanges, tunedSpec, instancesWithPaths } from '../planner/templates.js';
+import { tuneTarget, tuneRanges, tunePaths, tunedSpec, instancesWithPaths } from '../planner/templates.js';
 import { controlledMaker, hostPreflight } from '../verify/controls.js';
 import { usedPrimitives } from '../verify/util.js';
 import { strategies, select, modeBots } from '../verify/strategies/index.js';
@@ -170,7 +171,7 @@ export function tuneProblems(t, registry) {
  * leaves the same state as the template's own value (look_not_cosmetic). One frame per value: a look is shown, not played.
  */
 export function lookProblems(t, registry, logic) {
-  const out = [], tuned = new Set(t.tune);
+  const out = [], tuned = new Set(tunePaths(t));
   const firstFrame = doc => { const h = hostPreflight(doc, registry, logic); if (!h.ok) return { errors: h.errors }; const rt = controlledMaker(h.doc, registry, logic)(SEEDS[0]); rt.step({}); return { state: rt.snapshot() }; };
   let base = null;
   for (const { inst, path } of instancesWithPaths(t.doc)) {
@@ -238,8 +239,8 @@ function botProblems(checked, registry, logic, evidence) {
 }
 
 /**
- * The bounds stage: every bound of every tune entry (boundValues of its playable spec) other than the template's own
- * value, set alone on the document: it preflights as a person plays it, and every bot its loops name wins on every world
+ * The bounds stage: every bound of every tune entry (boundValues of its playable spec) but a look's, other than the
+ * template's own value, set alone on the document: it preflights as a person plays it, and every bot its loops name wins on every world
  * seed in SEEDS through the real controls (the bots stage proved replay at the template's values; a bound plays once).
  * Per-bound evidence goes into `evidence.bounds`.
  */
@@ -247,6 +248,9 @@ export function boundsProblems(t, registry, logic, evidence) {
   const out = [];
   for (const range of tuneRanges(t)) {
     const target = /** @type {NonNullable<ReturnType<typeof tuneTarget>>} */ (tuneTarget(t.doc, range.path, registry));
+    // A look leaves play unchanged (the presentation stage proves each of its values draws the same first frame): it is
+    // shown, never played.
+    if (target.spec.cosmetic) continue;
     const own = target.instances[0].with?.[target.param] ?? target.spec.default;
     for (const value of boundValues(tunedSpec(target.spec, range)) ?? []) {
       if (isDeepStrictEqual(value, own)) continue;
@@ -259,7 +263,7 @@ export function boundsProblems(t, registry, logic, evidence) {
       for (const id of modeBots(ctx).map(x => x.s.id)) {
         const t0 = performance.now();
         let r;
-        try { r = strategies.get(id).run(ctx, { budgetMs: BOT_BUDGET_MS, seeds: [...SEEDS], ...BOT_OPTS[id] }); } catch (error) { out.push(problem('bound_bot_failed', `${range.path} = ${JSON.stringify(value)}: ${id}: ${String(error?.message || error).slice(0, 300)}`, { ...at, bot: id })); row.ok = false; continue; }
+        try { r = strategies.get(id).run(ctx, { maxSteps: BOT_STEPS, seeds: [...SEEDS], ...BOT_OPTS[id] }); } catch (error) { out.push(problem('bound_bot_failed', `${range.path} = ${JSON.stringify(value)}: ${id}: ${String(error?.message || error).slice(0, 300)}`, { ...at, bot: id })); row.ok = false; continue; }
         const runs = runsOf(r);
         row.bots.push({ id, runs: runs.map(x => ({ seed: x.seed ?? null, status: x.status ?? null, frames: x.frames ?? null })), ms: Math.round(performance.now() - t0) });
         for (const seed of SEEDS) {
