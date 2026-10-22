@@ -121,11 +121,20 @@ function templateGame(id, seed = 3) {
 }
 const opsWriter = ops => fakeWriter([() => JSON.stringify({ ops, unsupported: [], summary: 'done' })]);
 
-test('a revision that makes the named bot lose is refused: race rivals ten times faster', async () => {
+// The race template tunes its rivals' speed within the range its bot is proven to win at both bounds (8-16): rivals ten
+// times faster is a value outside what the template tunes, refused at the tune stage before anything plays. A change
+// the template does not tune (a race clock that lets laps run, so the game still plays, but too short for three of
+// them) is what the bots stage alone can refuse.
+test('a revision that makes the named bot lose is refused: rivals ten times faster at tune, a twenty-second race clock at bots', async () => {
+  const fast = templateGame('race');
+  const speed = fast.versions[0].doc.systems.find(s => s.use === 'gameplay.ai.seek').with.speed;
+  const rivals = createKernelPipeline({ catalogue: async () => cat, writers: { spec: opsWriter([{ op: 'set', path: 'systems[gameplay.ai.seek].with.speed', value: speed * 10 }]) } });
+  await assert.rejects(rivals({ gameId: 'g', kind: 'revise', change: 'rivals 10x faster' }, fast.ctx), e => e.status === 422 && e.code === 'tune_out_of_range' && e.report.stage === 'tune');
+  assert.equal(fast.versions.length, 1, 'nothing published');
+  assert.equal(fast.checkpoints.versionGate.stage, 'tune');
   const g = templateGame('race');
-  const speed = g.versions[0].doc.systems.find(s => s.use === 'gameplay.ai.seek').with.speed;
-  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: opsWriter([{ op: 'set', path: 'systems[gameplay.ai.seek].with.speed', value: speed * 10 }]) } });
-  await assert.rejects(pipeline({ gameId: 'g', kind: 'revise', change: 'rivals 10x faster' }, g.ctx), e => e.status === 422 && e.code === 'bot_regressed' && e.report.stage === 'bots');
+  const pipeline = createKernelPipeline({ catalogue: async () => cat, writers: { spec: opsWriter([{ op: 'set', path: 'systems[gameplay.race].with.timeLimit', value: 20 }]) } });
+  await assert.rejects(pipeline({ gameId: 'g', kind: 'revise', change: 'a twenty second race clock' }, g.ctx), e => e.status === 422 && e.code === 'bot_regressed' && e.report.stage === 'bots');
   assert.equal(g.versions.length, 1, 'nothing published');
   assert.equal(g.checkpoints.versionGate.stage, 'bots');
 });
