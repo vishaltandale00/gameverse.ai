@@ -85,6 +85,12 @@ incomplete.
      `feature_inert`. The extension step does not run the feature check on what it adds, so the bad pick fails the
      build instead of being dropped and re-asked.
    Script: run each idea through `POST /api/v2/games {prompt, seed}` and read `latest.report.timings`.
+   **After the tune-rules merge** (34ac0873, seed 1, load ~2): 17/19 published, first playable 3.5–11.1 s; gate
+   unchanged; pick 1.6–3.6 s (one call, latency varies); content grew (themed text for every card-declared display
+   field: story 1.6 → 8.9 s, runner 1.2 → 3.5 s, maze-chase 1.6 → 2.7 s). The 2 failures are the extension class
+   below (race added `gameplay.minigame`, fighting `gameplay.combat.aim`; both `feature_inert` at the gate).
+   Next for speed: the content stage (story's form), and the extension class (a pick that cannot work in the world
+   should be dropped and re-asked at the extension step, not fail the build at the gate).
 4. Open classes: human-rate replay fails for ball-sport, falling-blocks, runner, slide-merge, match-board, story (bot
    artifacts or genuinely superhuman: decide per template); the 3D object layer still sorts generator objects by
    words (noted in code on `polish`); the playtest explorer's archive cost; whatever the branches above leave open.
