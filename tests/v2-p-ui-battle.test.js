@@ -42,7 +42,8 @@ test('battle helpers: categories, targets and the action shape for either source
 test('battle: screen opens with the fight, menus navigate, targets are picked, the action reaches the game', () => {
   const m = mount(doc(), { primitives: P });
   m.frame(1, { actions: { start_fight: true } }); m.frame(2);
-  assert.equal(m.view.modal, 'battle');
+  assert.ok(!m.q('.gv-battle').classList.contains('gv-hide'));
+  assert.equal(m.view.modal, null, 'the turn screen takes UI keys; keys the game binds still reach it (not a modal layer)');
   assert.equal(m.qa('.gv-bunit').length, 3);
   assert.match(m.text('.gv-bmsg'), /Wild bats appeared!/);
   assert.deepEqual([...m.qa('.gv-bmenu .gv-btn')].map(b => b.textContent), ['Fight', 'Bag', 'Run']);
@@ -80,7 +81,7 @@ test('cards helpers: fan layout is symmetric; targets only for targeted cards; a
 test('cards: hand renders, unplayable cards refuse, targeted cards pick an enemy, end turn', () => {
   const m = mount(doc(), { primitives: P });
   m.frame(1, { actions: { start_fight: 'cards' } }); m.frame(1);
-  assert.equal(m.view.modal, 'cards');
+  assert.equal(m.view.modal, null, 'the card screen takes UI keys; keys the game binds still reach it (not a modal layer)');
   assert.equal(m.qa('.gv-card').length, 3);
   assert.equal(m.text('.gv-energy'), '2/3');
   assert.match(m.text('.gv-intent'), /6/);
