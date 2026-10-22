@@ -195,7 +195,7 @@ test('creature: preflight rejects bad data and configs with stable codes', () =>
   const registry = new Registry(PRIMS), logic = buildLogic(registry, Logic);
   const codes = d => preflight(d, registry, logic).errors.map(e => e.code);
   // Species, moves and creature items are the declared sections (card.data): their values are checked at their paths
-  // (warnings until kernel/document.js DECLARATIONS_ENFORCED) where species_invalid, move_invalid, battle_item_invalid
+  // where species_invalid, move_invalid, battle_item_invalid
   // and the validator's ref_unknown were.
   const found = d => { const r = preflight(d, registry, logic); return [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`); };
   const bad = doc(); bad.content.species[0].base.hp = 0; bad.content.species[0].learnset.push({ level: 5, move: 'nope' });

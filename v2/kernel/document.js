@@ -23,12 +23,6 @@ import { declaresCode, kindDeclares } from './rules.js';
 /** @typedef {Instance & { with: Record<string, any>, _p?: RegisteredPrimitive, _path: string, _space?: string, _paramErrors: number }} Normalized (an unknown primitive's instance is kept as written, without _p) */
 
 export const DOC_SCHEMA = 'gameverse.v2.game/0.2';
-/**
- * Whether the declaration checks fail a document: the data sections against their declared shapes (kernel/sections.js)
- * and every emitted code against card.rules (kernel/rules.js). While the catalogue's declarations are completed they
- * are reported as warnings with the same codes.
- */
-export const DECLARATIONS_ENFORCED = false;
 const SLUG = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
 /** @type {Array<{ kind: string, at: string }>} */
@@ -299,7 +293,7 @@ export function preflight(input, registry, logic) {
     if (section === 'zones') (doc.spaces || []).forEach((s, i) => { if (s.zones !== undefined) checkParam(shape, s.zones, `spaces[${i}].zones`, shaped, ctx); });
     else { const v = get(doc, section); if (v !== undefined && v !== null) checkParam(shape, v, section, shaped, ctx); }
   }
-  (DECLARATIONS_ENFORCED ? errors : warnings).push(...shaped);
+  errors.push(...shaped);
 
   // Vocabulary in the document must be owned by the kernel or by a primitive the document uses.
   const reported = new Set();
@@ -324,7 +318,7 @@ export function preflight(input, registry, logic) {
   for (const [id, path] of refs.event.read) if (typeof id !== 'string') errors.push({ code: 'event_ref_type', path, message: `an event name must be a string, got ${JSON.stringify(id)?.slice(0, 60)}`, hint: "write the event's name, e.g. 'defeated:boss'" });
   for (const [id, path] of refs.event.read) if (typeof id === 'string' && !provided(ctx.provides.events, id)) warnings.push({ code: 'event_never_emitted', path, message: `no primitive emits '${id}'` });
 
-  (DECLARATIONS_ENFORCED ? errors : warnings).push(...undeclared);
+  errors.push(...undeclared);
   const ok = !errors.length;
   const out = !ok ? null : /** @type {Doc} */ ( { ...doc, spaces: doc.spaces.map((s, i) => ({ ...s, with: normalized.find(n => n._path === `spaces[${i}]`)?.with ?? s.with,
       ...(s.generators ? { generators: s.generators.map((g, j) => ({ ...g, with: normalized.find(n => n._path === `spaces[${i}].generators[${j}]`)?.with ?? g.with })) } : {}) })),

@@ -112,7 +112,7 @@ test('cards: preflight rejects bad configs with stable codes', () => {
   const codes = new Set(preflight(bad, registry, logic).errors.map(e => e.code));
   for (const c of ['ref_unknown', 'card_invalid', 'intent_invalid', 'cards_owners']) assert.ok(codes.has(c), c);
   // A card's cost, type, target and effects and an intent's kind and mod are the declared shapes of content.cards and
-  // the cards component, reported at their paths (warnings until kernel/document.js DECLARATIONS_ENFORCED).
+  // the cards component, reported at their paths.
   const r = preflight(bad, registry, logic), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`), card = `content.cards[${bad.content.cards.length - 2}]`, odd = `content.archetypes[${bad.content.archetypes.length - 1}].components.cards.intents`;
   for (const x of [`param_type@${card}.cost`, `param_option@${card}.type`, `param_option@${card}.target`, `effect_unknown@${card}.effects[0]`, `param_option@${odd}[0].kind`, `param_option@${odd}[1].mod`]) assert.ok(at.includes(x), `${x} in ${at}`);
   const noTurns = rogue(); noTurns.systems = noTurns.systems.filter(s => s.use !== 'gameplay.turns');

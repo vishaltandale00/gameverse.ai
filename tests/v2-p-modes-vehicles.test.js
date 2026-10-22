@@ -228,7 +228,7 @@ test('vehicles: preflight rejects bad configs with stable codes', () => {
   const r = preflight(bad, registry, logic), codes = new Set(r.errors.map(e => e.code));
   for (const c of ['param_option', 'car_no_vehicle', 'boat_no_vehicle', 'aircraft_invalid', 'param_range']) assert.ok(codes.has(c), c);
   // The components' single-field rules are their declared shapes (card.components), checked by preflight's section
-  // shapes: reported as warnings until the catalogue's declarations are enforced (document.js DECLARATIONS_ENFORCED).
+  // shapes.
   const shaped = new Set([...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`)), at = id => `content.archetypes[${bad.content.archetypes.findIndex(a => a.id === id)}].components`;
   for (const c of [`param_range@${at('junk')}.vehicle.seats`, `param_range@${at('junk')}.vehicle.health`, `param_range@${at('junk')}.car.grip`, `param_option@${at('junk')}.car.preset`, `param_range@${at('bad_boat')}.boat.maxSpeed`]) assert.ok(shaped.has(c), c);
   const nodeps = doc({ systems: [{ use: 'gameplay.vehicle.car' }] });

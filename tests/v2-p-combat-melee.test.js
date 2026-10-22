@@ -130,7 +130,7 @@ test('melee: deterministic replay and bad configs', () => {
   for (const code of ['melee_move_unknown', 'melee_weapon_unknown', 'melee_projectile_needs_projectile']) assert.ok(c.includes(code), `${code} in ${c}`);
   // Frame counts, behaviours, levels and fighter presets are the move and component shapes' closed sets and ranges
   // (card.params moves, card.components melee): param_type / param_option where melee_move_invalid and
-  // melee_preset_invalid were (component shapes report as warnings until kernel/document.js DECLARATIONS_ENFORCED).
+  // melee_preset_invalid were.
   const r = preflight(bad, reg, lg), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`), lib = 'systems[' + bad.systems.findIndex(s => s.use === 'gameplay.combat.melee') + '].with.moves[0]', oops = 'content.archetypes[' + (bad.content.archetypes.length - 1) + '].components.melee.fighter';
   for (const x of [`param_type@${lib}.startup`, `param_option@${lib}.behavior`, `param_option@${lib}.level`, `param_option@${oops}.build`, `param_option@${oops}.specials[0].archetype`, `param_option@${oops}.super.archetype`]) assert.ok(at.includes(x), `${x} in ${at}`);
   assert.ok(codes(actionDoc({ hitStopMs: -1 })).includes('param_range'));

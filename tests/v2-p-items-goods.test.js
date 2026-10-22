@@ -51,7 +51,7 @@ test('inventory: stacks, slot limits, per-entity bags, typed events and transfer
   const c = codes(checkWith(bad));
   for (const code of ['param_range', 'ref_unknown']) assert.ok(c.includes(code), code);
   // An item's stack and a component's start items are content.items' and the inventory component's declared shapes,
-  // reported at their paths (warnings until kernel/document.js DECLARATIONS_ENFORCED) where item_invalid and the
+  // reported at their paths where item_invalid and the
   // validator's ref_unknown were.
   const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
   for (const x of ['param_range@content.items[0].stack', 'ref_unknown@content.archetypes[1].components.inventory.start[0].item']) assert.ok(at.includes(x), `${x} in ${at}`);
@@ -84,7 +84,7 @@ test('item.use: effects, cooldowns, consumption and denial reasons', () => {
   const c = codes(checkWith(bad));
   assert.ok(c.includes('param_type'));
   // An item's use block is content.items' declared shape (items-lib ITEM.use): cooldown and fx are checked at their paths
-  // (warnings until kernel/document.js DECLARATIONS_ENFORCED) where item_invalid and the validator's effect check were.
+  // where item_invalid and the validator's effect check were.
   const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
   for (const x of ['param_range@content.items[0].use.cooldown', `effect_unknown@content.items[2].use.fx[${bad.content.items[2].use.fx.length - 1}]`]) assert.ok(at.includes(x), `${x} in ${at}`);
   for (const x of gameInstances('gameplay.item.use')) assert.deepEqual(x.paramErrors, [], x.game);
@@ -141,7 +141,7 @@ test('equipment: replay, bad config codes and game instances', () => {
   for (const code of ['id_duplicate', 'param_range', 'ref_unknown']) assert.ok(c.includes(code), code);
   // Slots are a declared kind (card.defines equip_slot): duplicate ids are the kernel's id_duplicate, and budget.slots and
   // components.equipment.slots are references to it (ref_unknown where equipment_invalid was; the component's at its
-  // path, a warning until kernel/document.js DECLARATIONS_ENFORCED).
+  // path).
   const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
   assert.ok(at.some(x => x.startsWith('ref_unknown@content.archetypes[0].components.equipment.slots[')), at);
   for (const x of gameInstances('gameplay.equipment')) assert.deepEqual(x.paramErrors, [], x.game);
@@ -206,8 +206,7 @@ test('crafting: replay, bad config codes and game instances', () => {
   bad.systems[2].with.discover = 'osmosis';
   const c = codes(checkWith(bad));
   for (const code of ['recipe_invalid', 'param_option']) assert.ok(c.includes(code), code);
-  // Input and output items are content.recipes' declared references (card.data): ref_unknown at their paths (warnings
-  // until kernel/document.js DECLARATIONS_ENFORCED) where the validator's were.
+  // Input and output items are content.recipes' declared references (card.data): ref_unknown at their paths, where the validator's were.
   const at = [...checkWith(bad).errors, ...checkWith(bad).warnings].map(e => `${e.code}@${e.path}`);
   for (const x of [`ref_unknown@content.recipes[1].inputs[${bad.content.recipes[1].inputs.length - 2}].item`, 'ref_unknown@content.recipes[2].output.item']) assert.ok(at.includes(x), `${x} in ${at}`);
   for (const x of gameInstances('gameplay.crafting')) assert.deepEqual(x.paramErrors, [], x.game);
@@ -297,7 +296,7 @@ test('loot/container: replay, bad config codes and game instances', () => {
   const c = codes(checkWith(bad));
   for (const code of ['table_invalid', 'param_option']) assert.ok(c.includes(code), code);
   // The tables, loot, container and lock values are content.tables' and the components' declared shapes (card.data,
-  // card.components), reported at their paths (warnings until kernel/document.js DECLARATIONS_ENFORCED) where
+  // card.components), reported at their paths where
   // table_invalid, container_invalid and the validators' ref_unknown were.
   const r = checkWith(bad), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`);
   for (const x of ['param_range@content.tables[0].chance', 'param_range@content.tables[0].pity', 'ref_unknown@content.tables[1].entries[3].item', 'param_range@content.tables[1].entries[3].weight', 'ref_unknown@content.tables[1].entries[4].table',

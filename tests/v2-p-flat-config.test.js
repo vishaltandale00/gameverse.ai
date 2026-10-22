@@ -60,7 +60,7 @@ test('bad configs are rejected with stable codes', () => {
   const bad = docFor('tilemap', { graphics: [{ use: 'graphics.render.tilemap' }, { use: 'graphics.sprite.pixel' }], content: { models: { hero: { kind: 'pixel', size: [16], parts: [{ rect: [0, 0], c: 'z' }] } } } });
   const r = pf(bad);
   for (const c of ['flat_pixel_size', 'flat_pixel_color']) assert.ok(r.errors.some(e => e.code === c), c);
-  // rect's [x, y, w, h] shape is declared on content.models (a warning until kernel/document.js DECLARATIONS_ENFORCED);
+  // rect's [x, y, w, h] shape is declared on content.models;
   // a pixel part without a rect is the rule.
   assert.ok([...r.errors, ...r.warnings].some(e => e.code === 'param_range' && e.path === 'content.models.hero.parts[0].rect'));
   const noRect = docFor('tilemap', { graphics: [{ use: 'graphics.render.tilemap' }, { use: 'graphics.sprite.pixel' }], content: { models: { hero: { kind: 'pixel', size: [16, 16], parts: [{ c: '#202030' }] } } } });

@@ -166,8 +166,7 @@ export function sampleCard(id, { corpus, registry, logic, limit = 12 }) {
     write(d);
     samples++;
     const r = preflight(d, registry, logic);
-    // The declaration checks report as warnings until the catalogue's declarations are complete (document.js DECLARATIONS_ENFORCED).
-    for (const e of [...r.errors, ...r.warnings.filter(w => w.code === 'rule_undeclared' || KERNEL.has(w.code))]) {
+    for (const e of r.errors) {
       if (before.has(`${e.code}|${e.path}`)) continue;
       const mine = e.path === at || e.path.startsWith(`${at}.`) || e.path.startsWith(`${at}[`);
       const finding = (/** @type {string} */ code) => findings.push({ code, use: id, form, field, value: shown(value), path: e.path, message: `${e.code}: ${e.message}`.slice(0, 240) });

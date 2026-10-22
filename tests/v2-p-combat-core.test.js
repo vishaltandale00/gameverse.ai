@@ -164,7 +164,7 @@ test('health: deterministic replay and bad configs', () => {
   const c = codes(bad);
   for (const code of ['health_types_invalid', 'health_type_unknown']) assert.ok(c.includes(code), `${code} in ${c}`);
   // max, respawn and splitOnDeath.into are checked by the health component's declared shape (card.components), reported
-  // as section-shape findings (warnings until kernel/document.js DECLARATIONS_ENFORCED).
+  // as section-shape findings.
   const r = preflight(bad, reg, lg), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`), blob = 'content.archetypes[' + (bad.content.archetypes.length - 1) + '].components.health';
   for (const x of [`param_range@${blob}.max`, `param_type@${blob}.respawn`, `ref_unknown@${blob}.splitOnDeath.into`]) assert.ok(at.includes(x), `${x} in ${at}`);
   assert.ok(codes(healthDoc({ iframes: 99 })).includes('param_range'));
@@ -243,7 +243,7 @@ test('status: deterministic replay and bad configs', () => {
   const c = codes(bad);
   assert.ok(c.includes('status_type_unknown'), `status_type_unknown in ${c}`);
   // duration, stacks, refresh, tick.dps and mods are content.statuses' declared shape (card.data), reported at their
-  // paths (warnings until kernel/document.js DECLARATIONS_ENFORCED) where status_*_invalid were.
+  // paths where status_*_invalid were.
   const r = preflight(bad, reg, lg), at = [...r.errors, ...r.warnings].map(e => `${e.code}@${e.path}`), st = `content.statuses[${bad.content.statuses.length - 1}]`;
   for (const x of [`param_range@${st}.duration`, `param_type@${st}.stacks`, `param_option@${st}.refresh`, `param_type@${st}.tick.dps`, `param_type@${st}.mods.stat.x`]) assert.ok(at.includes(x), `${x} in ${at}`);
   const ref = statusDoc(); ref.systems.push({ use: 'gameplay.combat.melee', with: { moves: [] } });

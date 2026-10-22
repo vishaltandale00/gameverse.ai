@@ -133,7 +133,7 @@ test('preflight rejects bad configs with stable codes', () => {
   }
   const bad = voxelDoc(); bad.content.models.broken = { kind: 'voxel', size: [4, 4, 4], palette: { a: '#fff' }, parts: [{ box: [0, 0, 0], c: 'a' }] };
   // A voxel part's box length and a lowpoly part's shape are declared on content.models (model-lib.js): the section shape
-  // check reports them (a warning until kernel/document.js DECLARATIONS_ENFORCED); what a kind requires stays a rule.
+  // check reports them; what a kind requires stays a rule.
   const found = r => [...r.errors, ...r.warnings];
   assert.ok(found(preflight(bad, registry, logic)).some(e => e.code === 'param_range' && e.path === 'content.models.broken.parts[0].box'));
   const bad1 = voxelDoc(); bad1.content.models.broken = { kind: 'voxel', size: [4, 4, 4], parts: [{ c: '#fff' }] };
