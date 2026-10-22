@@ -45,8 +45,8 @@ export default {
       guardsPerRoom: { type: 'integer', min: 0, max: 8, default: 1 },
       roomSize: { type: 'list', of: { type: 'integer', min: 3 }, min: 2, max: 2, default: [5, 9], effect: 'room side range in cells' },
       corridor: { type: 'integer', min: 1, max: 4, default: 1, effect: 'corridor width in cells' },
-      palette: { type: 'object', default: {}, fields: { wall: { type: 'ref', to: 'block', default: 'stone', effect: 'dungeon walls' }, door: { type: 'ref', to: 'block', default: 'locked_door', effect: 'locked doors' } } },
-      archetypes: { type: 'object', default: {}, fields: { key: { type: 'ref', to: 'archetype', default: 'key', effect: 'spawned for each key' }, lock: { type: 'ref', to: 'archetype', default: 'locked_door', effect: 'spawned at each lock' }, chest: { type: 'ref', to: 'archetype', default: 'chest', effect: 'spawned in dead ends' } } },
+      palette: { type: 'object', default: {}, fields: { wall: { type: 'ref', to: 'block', effect: 'dungeon walls (named on a space that edits cells)' }, door: { type: 'ref', to: 'block', effect: 'locked doors (named there with keys)' } }, effect: 'spaces that edit cells (grid, tilemap): the blocks it carves' },
+      archetypes: { type: 'object', default: {}, fields: { key: { type: 'ref', to: 'archetype', effect: 'spawned for each key (named with keys)' }, lock: { type: 'ref', to: 'archetype', effect: 'spawned at each lock (named with keys)' }, chest: { type: 'ref', to: 'archetype', effect: 'spawned in dead ends (unset: no chests)' } } },
       autoPickup: { type: 'boolean', default: true, effect: 'the player picks up a key by stepping on it (give_item if the inventory exists, else flag has:<item>)' },
       autoUnlock: { type: 'boolean', default: true, effect: 'a lock opens when the player reaches it holding its key' },
       placePlayer: { type: 'boolean', default: true },
@@ -63,12 +63,16 @@ export default {
     rules: {
       dungeon_area_small: { fields: ['rooms', 'roomSize', 'area'], message: 'rooms is at most the room slots the area holds (each slot is roomSize[1] + 3 cells a side)' },
       dungeon_keys_many: { fields: ['rooms', 'keys'], message: 'rooms is at least the number of keys + 2 (a lock per key needs a room before it and the boss room after it)' },
+      dungeon_wall_missing: { fields: ['palette.wall'], message: 'a dungeon on a space that edits cells (grid, tilemap) names the wall block it carves' },
+      dungeon_door_missing: { fields: ['keys', 'palette.door'], message: 'a dungeon with keys on a space that edits cells (grid, tilemap) names the door block of its locks' },
+      dungeon_key_archetypes_missing: { fields: ['keys', 'archetypes.key', 'archetypes.lock'], message: 'a dungeon with keys names the key and lock archetypes it spawns' },
     },
   },
   /**
    * Planner hook (v2/planner/world.js), grid and top-down tilemap spaces: as many rooms as the space's slot grid
    * holds (3..12, room sides shrunk until at least three fit), walls of the document's first plain solid block
-   * (else a declared 'stone'), chests declared when the document has none. null on a side-view tilemap.
+   * (else a declared 'stone'), chests (and on mesh3d keys and locks) named and declared when the document has none.
+   * null on a side-view tilemap.
    */
   scaffold(space, doc, { registry = null } = {}) {
     if (!this.card.spaces.includes(space.use)) return null;
@@ -87,7 +91,7 @@ export default {
       const keys = rooms >= 9 ? ['dungeon_key_1', 'dungeon_key_2'] : [];
       for (const [i, id] of keys.entries()) if (!(doc.content?.items || []).some(x => x?.id === id)) add.items.push({ id, name: `Dungeon key ${i + 1}` });
       if (keys.length) { need('key', 'Key'); need('locked_door', 'Locked door'); }
-      return finish({ with: { plane: 'xz', rooms, roomSize: [5, 9], cell, wallHeight: +Math.max(4, Math.min(40, cell * 0.4)).toFixed(2), keys, ...(foe ? { guards: foe, guardsPerRoom: 1, boss: foe } : {}) } });
+      return finish({ with: { plane: 'xz', rooms, roomSize: [5, 9], cell, wallHeight: +Math.max(4, Math.min(40, cell * 0.4)).toFixed(2), keys, archetypes: { chest: 'chest', ...(keys.length ? { key: 'key', lock: 'locked_door' } : {}) }, ...(foe ? { guards: foe, guardsPerRoom: 1, boss: foe } : {}) } });
     }
     const [W, H] = Array.isArray(config.size) ? config.size : [0, 0];
     let pick = null;
@@ -95,7 +99,7 @@ export default {
     if (!pick) return null;
     const blocks = doc.content?.blocks || [];
     const wall = blocks.find(b => b?.id && b.solid !== false && !(b.tags || []).some(t => ['hazard', 'liquid', 'one_way', 'oneway'].includes(t)))?.id ?? (add.blocks.push({ id: 'stone', name: 'Stone', solid: true }), 'stone');
-    return finish({ with: { ...pick, palette: { wall } } });
+    return finish({ with: { ...pick, palette: { wall }, archetypes: { chest: 'chest' } } });
   },
   /** The area the dungeon fills on its plane: area, else its zone's rect, else the whole space (provides.extent: 'own'). */
   extentOf(raw, space) {
@@ -119,6 +123,12 @@ export default {
     const area = metres && mesh ? metres.map(v => v / config.cell) : metres;
     if (area) { const slot = config.roomSize[1] + 3, cap = Math.floor((area[2] - area[0]) / slot) * Math.floor((area[3] - area[1]) / slot); if (cap < config.rooms && !config.zone) errors.push(problem('dungeon_area_small', 'rooms', `the area fits ${cap} room slots; ${config.rooms} rooms requested`, { hint: 'enlarge the area or shrink roomSize' })); }
     if (config.keys.length > config.rooms - 2) errors.push(problem('dungeon_keys_many', 'keys', `${config.keys.length} keys need at least ${config.keys.length + 2} rooms`));
+    // A space that edits cells (no 3D world model) is carved: walls, and doors at the locks, are blocks it names.
+    const host = sp ? ctx.registry.get(sp.use) : null, caps = (typeof host?.capabilities === 'function' ? host.capabilities(spc) : host?.card.provides?.capabilities) || [];
+    const carves = !mesh && caps.includes('editCells');
+    if (carves && config.palette.wall == null) errors.push(problem('dungeon_wall_missing', 'palette.wall', 'a carved dungeon names no wall block'));
+    if (carves && config.keys.length && config.palette.door == null) errors.push(problem('dungeon_door_missing', 'palette.door', `${config.keys.length} locks name no door block`));
+    if (config.keys.length && (config.archetypes.key == null || config.archetypes.lock == null)) errors.push(problem('dungeon_key_archetypes_missing', config.archetypes.key == null ? 'archetypes.key' : 'archetypes.lock', `${config.keys.length} keys name no key and lock archetypes`));
     return errors;
   },
   install(rt, raw, instance) {
@@ -136,7 +146,7 @@ export default {
     if (carve) { const w = cellWriter(rt, space); for (const c of d.cells) w.set(at(c[0], c[1]), c[2]); w.flush(); }
     const doorIds = new Map();
     if (model3d) {
-      const wall = new Set(d.cells.filter(c => c[2] === config.palette.wall).map(c => `${c[0]},${c[1]}`)), objs = [], key = instance.key.replace(/[^a-z0-9]+/gi, '_');
+      const wall = new Set(d.cells.filter(c => c[3] === 'wall').map(c => `${c[0]},${c[1]}`)), objs = [], key = instance.key.replace(/[^a-z0-9]+/gi, '_');
       const box = (id, kind, u0, v0, nu, nv) => ({ id, kind, group: key, role: kind, shape: 'box', at: [(u0 + nu / 2) * C, 0, (v0 + nv / 2) * C], size: [nu * C, config.wallHeight, nv * C], rot: 0 });
       // Horizontal runs of two or more wall cells, then the single cells left merged into vertical runs.
       const rows = new Map(); for (const k of wall) { const [u, v] = k.split(',').map(Number); (rows.get(v) || rows.set(v, []).get(v)).push(u); }
@@ -153,7 +163,7 @@ export default {
     const center = r => at(Math.floor((r.rect[0] + r.rect[2]) / 2), Math.floor((r.rect[1] + r.rect[3]) / 2));
     for (const k of d.keys) spawnAt(rt, space, config.archetypes.key, at(...k.at), { pickup: { item: k.item, count: 1, dungeon: instance.key } }, `${instance.key.replace(/[^a-z0-9]+/gi, '_')}_key_${k.lock}`.toLowerCase());
     for (const l of d.locks) spawnAt(rt, space, config.archetypes.lock, at(...l.at), { lock: { key: l.key, id: l.id, open: false } }, l.id);
-    for (const c of d.chests) spawnAt(rt, space, config.archetypes.chest, at(...c.at), { loot: { table: config.loot ?? null }, chest: { room: c.room } });
+    if (config.archetypes.chest != null) for (const c of d.chests) spawnAt(rt, space, config.archetypes.chest, at(...c.at), { loot: { table: config.loot ?? null }, chest: { room: c.room } });
     if (config.boss) spawnAt(rt, space, config.boss, center(d.rooms[d.boss]), { boss: { dungeon: instance.key } });
     if (config.guards && config.guardsPerRoom) {
       const g = stream(seed, 'guards');
@@ -309,14 +319,15 @@ function build(config, area, r, chain, carve, body = [1, 1]) {
     const lost = rooms.filter(rm => !seenC.has(cellKey(cx(rm), cy(rm))));
     if (lost.length) problems.push(problem('cells_unreachable', 'rooms', `${lost.length} room centres cannot be walked to (rooms ${lost.map(x => x.id).join(', ')})`));
   }
-  // Cells: walls ring every open cell; doors as door blocks; everything else untouched.
+  // Cells [x, y, block, role]: walls ring every open cell; doors as door blocks; everything else untouched. The role
+  // ('wall', 'door', null) is what a 3D world model builds from (it names no blocks).
   const cells = [];
   if (carve) {
     const doors = new Map(); lockList.forEach(l => l.cells.forEach(([x, y]) => doors.set(cellKey(x, y), l)));
     const walls = new Set();
     for (const k of open) { const [x, y] = k.split(',').map(Number); for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const n2 = cellKey(x + i, y + j); if (!open.has(n2)) walls.add(n2); } }
-    for (const k of walls) { const [x, y] = k.split(',').map(Number); cells.push([x, y, config.palette.wall]); }
-    for (const k of open) { const [x, y] = k.split(',').map(Number); cells.push([x, y, doors.has(k) ? config.palette.door : null]); }
+    for (const k of walls) { const [x, y] = k.split(',').map(Number); cells.push([x, y, config.palette.wall ?? null, 'wall']); }
+    for (const k of open) { const [x, y] = k.split(',').map(Number); cells.push([x, y, doors.has(k) ? config.palette.door ?? null : null, doors.has(k) ? 'door' : null]); }
   }
   const chests = rooms.filter(rm => rm.kind === 'dead_end').map(rm => ({ room: rm.id, at: [cx(rm), cy(rm)] }));
   return { rooms, edges: edges.map(e => ({ a: e.a, b: e.b, lock: e.lock === null ? null : `lock_${e.lock + 1}`, loop: Boolean(e.loop) })), start: 0, boss, path,

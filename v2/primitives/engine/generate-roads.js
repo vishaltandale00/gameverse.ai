@@ -6,7 +6,7 @@
 // snap to a district's street grid when engine.generate.city laid one out.
 // Provides `roadgraph` (nodes, edges with lanes, routing) for traffic and crowds.
 import { fbm2, subSeed } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, astar, simplify, chaikin, zoneCenter } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, astar, simplify, chaikin, zoneCenter, fillsVoxel } from './worlds3d-lib-world.js';
 import { roadNet, addNode, addEdge, ensureRoadLayer, provideRoadgraph, finalize } from './worlds3d-lib-roads.js';
 import { addBridgeObjects } from './worlds3d-lib-prefab.js';
 
@@ -30,13 +30,19 @@ const card = {
     grid: { type: 'number', min: 1, max: 256, unit: 'm', scale: 'world', effect: 'routing grid cell (default: world extent / 192)' },
     drive: { type: 'string', options: ['right', 'left'], default: 'right', effect: 'which side traffic drives on (lane placement)' },
     clearance: { type: 'number', min: 0.5, max: 30, default: 2.5, unit: 'm', effect: 'bridge deck height above water' },
-    lineBlock: { type: 'ref', to: 'block', default: 'road_line', effect: 'voxel: dashed centre-line block (skipped if absent)' },
-    sidewalkBlock: { type: 'ref', to: 'block', default: 'concrete', effect: 'voxel: sidewalk block' },
-    deckBlock: { type: 'ref', to: 'block', default: 'planks', effect: 'voxel: bridge deck block' },
+    lineBlock: { type: 'ref', to: 'block', effect: 'voxel: dashed centre-line block (unset: no centre line)' },
+    sidewalkBlock: { type: 'ref', to: 'block', effect: 'voxel: sidewalk paving block (unset: sidewalks keep the ground)' },
+    deckBlock: { type: 'ref', to: 'block', effect: 'voxel: bridge deck block (named on a voxel space when a link may bridge)' },
   },
   provides: { content: ['road-network'], extent: 'overlay', services: ['roadgraph'], events: [] },
   reads: [],
-  rules: { road_link_self: { fields: ['links[].from', 'links[].to'], message: 'a link joins two different zones (to differs from from)' } },
+  rules: {
+    road_link_self: { fields: ['links[].from', 'links[].to'], message: 'a link joins two different zones (to differs from from)' },
+    road_deck_missing: { fields: ['deckBlock', 'links[].bridge'], message: 'roads on a voxel space whose links may bridge water name the deckBlock of their bridges', example: { at: 'spaces[0].generators[0].with.deckBlock', doc: {
+      spaces: [{ id: 'world', use: 'engine.space.voxel', zones: [{ id: 'west', bounds: { min: [-40, 0, -8], max: [-24, 64, 8] } }, { id: 'east', bounds: { min: [24, 0, -8], max: [40, 64, 8] } }],
+        generators: [{ use: 'engine.generate.roads', with: { links: [{ from: 'west', to: 'east' }] } }] }], systems: [],
+    } } },
+  },
 };
 
 const ROAD_BLOCKS = [['asphalt', '#3a3a3a'], ['road_line', '#e8e2c8'], ['concrete', '#a9a9a9'], ['planks', '#a0763f']];
@@ -69,12 +75,15 @@ export default {
       const c = zoneCenter(z), near = route.reduce((b, id) => (Math.hypot(at(id)[0] - c[0], at(id)[1] - c[1]) < Math.hypot(at(b)[0] - c[0], at(b)[1] - c[1]) ? id : b));
       links.push({ from: near, to: z.id, width: 6 });
     }
-    const out = { with: { links } }, known = new Set((doc.content?.blocks || []).map(b => b?.id));
-    if (space.use === 'engine.space.voxel' && known.size) { const add = ROAD_BLOCKS.filter(([id]) => !known.has(id)).map(([id, color]) => ({ id, name: id.replace('_', ' '), solid: true, color })); if (add.length) out.content = { blocks: add }; }
+    const voxel = space.use === 'engine.space.voxel', known = new Set((doc.content?.blocks || []).map(b => b?.id));
+    const out = { with: { links, ...(voxel ? { lineBlock: 'road_line', sidewalkBlock: 'concrete', deckBlock: 'planks' } : {}) } };
+    if (voxel) { const add = ROAD_BLOCKS.filter(([id]) => !known.has(id)).map(([id, color]) => ({ id, name: id.replace('_', ' '), solid: true, color })); if (add.length) out.content = { blocks: add }; }
     return out;
   },
-  validate(config) {
-    return (Array.isArray(config.links) ? config.links : []).flatMap((l, i) => (l.from === l.to ? [{ code: 'road_link_self', path: `with.links[${i}]`, message: `link from '${l.from}' to itself` }] : []));
+  validate(config, doc, ctx, inst) {
+    const links = Array.isArray(config.links) ? config.links : [];
+    const deck = fillsVoxel(doc, inst) && config.deckBlock == null && links.some(l => l?.bridge !== false) ? [{ code: 'road_deck_missing', path: 'with.deckBlock', message: 'bridged roads on a voxel space name no deckBlock' }] : [];
+    return [...links.flatMap((l, i) => (l?.from === l?.to ? [{ code: 'road_link_self', path: `with.links[${i}]`, message: `link from '${l?.from}' to itself` }] : [])), ...deck];
   },
   install(rt, raw, instance) {
     const config = withDefaults(card, raw), model = generatorModel(rt, instance);
@@ -150,7 +159,7 @@ export default {
         built++;
       });
       m.info.summary = { ...(m.info.summary || {}), roads: built, roadNodes: net.nodes.length };
-      ensureRoadLayer(m, rt, { lineBlock: config.lineBlock, sidewalkBlock: config.sidewalkBlock, deckBlock: config.deckBlock });
+      ensureRoadLayer(m, rt, { blocks: { line: config.lineBlock, sidewalk: config.sidewalkBlock, deck: config.deckBlock } });
       if (m.kind === 'mesh3d') m.data.bridgesPending = true;
       m.data.finalizeRoads = () => finalize(net, { drive: config.drive });
     });

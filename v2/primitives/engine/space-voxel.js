@@ -35,7 +35,7 @@ export default {
       gravity: { type: 'number', min: -100, max: 0, default: -9.8, unit: 'm/s²', effect: 'gravity vector y returned by gravityAt' },
       body: { type: 'list', of: { type: 'number', min: 0.05, max: 32 }, min: 3, max: 3, default: [0.6, 1.8, 0.6], unit: 'm', effect: 'default body size [w, h, d] for entities without components.body.size' },
       ground: { type: 'integer', min: 0, max: 512, default: 0, unit: 'cells', effect: 'when no terrain generator is present, cells below this y are groundBlock' },
-      groundBlock: { type: 'ref', to: 'block', default: 'stone', effect: 'block used for the fallback flat ground' },
+      groundBlock: { type: 'ref', to: 'block', effect: 'block the flat ground below `ground` is made of (named with ground > 0)' },
       cacheChunks: { type: 'integer', min: 16, max: 65536, default: 1024, effect: 'generated chunks kept in memory (evicted chunks regenerate identically)' },
       logMax: { type: 'integer', min: 16, max: 1000000, default: 4096, effect: 'edit-log entries kept (the edit map itself is never truncated)' },
       maxFill: { type: 'integer', min: 1, max: 4194304, default: 65536, unit: 'cells', effect: 'largest volume fill() or cellsIn() will touch' },
@@ -58,6 +58,7 @@ export default {
       voxel_height_chunk: { fields: ['height', 'chunk'], message: 'height is a multiple of the chunk height (chunk[1])' },
       voxel_level_range: { fields: ['seaLevel', 'ground', 'height'], message: 'seaLevel and ground are below height' },
       voxel_chunk_size: { fields: ['chunk'], message: 'a chunk holds at most 1,048,576 cells (chunk[0] × chunk[1] × chunk[2])', example: { chunk: [128, 128, 128] } },
+      voxel_ground_block_missing: { fields: ['ground', 'groundBlock'], message: 'flat ground (ground above 0) names the groundBlock it is made of' },
     },
   },
   validate(config) {
@@ -67,6 +68,7 @@ export default {
     if (config.seaLevel >= config.height) errors.push({ code: 'voxel_level_range', path: 'with.seaLevel', message: 'seaLevel must be below height' });
     if (config.ground >= config.height) errors.push({ code: 'voxel_level_range', path: 'with.ground', message: 'ground must be below height' });
     if (sx * sy * sz > 1 << 20) errors.push({ code: 'voxel_chunk_size', path: 'with.chunk', message: 'chunks larger than 1M cells' });
+    if (config.ground > 0 && config.groundBlock == null) errors.push({ code: 'voxel_ground_block_missing', path: 'with.groundBlock', message: `flat ground below ${config.ground} names no groundBlock` });
     return errors;
   },
   install(rt, config, instance) {
@@ -123,7 +125,7 @@ export default {
         height(lx, lz) { const j = lx + SX * lz; let h = heights[j]; if (Number.isNaN(h)) { h = model.at('height', (x0 + lx + 0.5) * C, (z0 + lz + 0.5) * C, config.ground * C - C) / C; heights[j] = h; } return h; },
         biome: (lx, lz) => model.at('biome', (x0 + lx + 0.5) * C, (z0 + lz + 0.5) * C, null),
       };
-      if (!model.layers.length || !model.has('height')) { // fallback flat ground
+      if (config.groundBlock != null && (!model.layers.length || !model.has('height'))) { // flat ground
         const g = idx(config.groundBlock);
         for (let ly = 0; ly < SY && y0 + ly < config.ground; ly++) for (let j = 0; j < SX * SZ; j++) cells[j + SX * SZ * ly] = g;
       }

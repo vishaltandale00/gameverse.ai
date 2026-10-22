@@ -284,6 +284,8 @@ export const spaceOf = (doc, inst) => (doc.spaces || []).find(s => s.id === (ins
 export const rangeRule = fields => ({ fields, message: 'each [low, high] pair has low ≤ high' });
 /** Problems for reversed [low, high] pairs: entries [path, pair]. */
 export const reversedRanges = entries => entries.filter(([, v]) => Array.isArray(v) && v.length === 2 && v[0] > v[1]).map(([path, v]) => ({ code: 'range_reversed', path, message: `[${v[0]}, ${v[1]}] is not [low, high]` }));
+/** True when a generator instance (validate's `inst`: the id of the space it fills) fills a voxel space, whose cells are block ids. */
+export const fillsVoxel = (doc, inst) => (Array.isArray(doc?.spaces) ? doc.spaces : []).find(s => s?.id === inst?.space)?.use === 'engine.space.voxel';
 /** Block definitions from content.blocks: unknown ids are solid and opaque. */
 export function blockTable(doc) {
   const defs = new Map();

@@ -5,7 +5,7 @@
 // also adds the cell layer that fills columns with bedrock/stone/sub/surface
 // blocks (biome-aware when engine.generate.biomes is present).
 import { fbm2, ridged2, warp2, smoothstep, clamp, subSeed, Rng } from './worlds3d-lib-noise.js';
-import { STAGES, withDefaults, generatorModel, chaikin, segDist2, zoneBox, zoneInnerDistance } from './worlds3d-lib-world.js';
+import { STAGES, withDefaults, generatorModel, chaikin, segDist2, zoneBox, zoneInnerDistance, fillsVoxel } from './worlds3d-lib-world.js';
 
 const card = {
   intent: 'Fractal terrain heightfield: rolling hills to ridged mountains, optional island or radial falloff, domain warp, hydraulic/thermal erosion and downhill rivers. Fills voxel columns with stone, subsoil and surface blocks.',
@@ -32,16 +32,21 @@ const card = {
     riverDepth: { type: 'number', min: 0.5, max: 50, default: 3, unit: 'm', effect: 'channel depth below the water surface' },
     subDepth: { type: 'integer', min: 0, max: 16, default: 3, unit: 'cells', effect: 'voxel: depth of the sub-surface layer (dirt under grass)' },
     blocks: {
-      type: 'object', default: { surface: 'grass', sub: 'dirt', stone: 'stone', bedrock: 'bedrock', shore: 'sand', underwater: 'gravel' }, effect: 'voxel block ids (biomes override surface/sub)',
+      type: 'object', effect: 'voxel: the block ids of the column layers (named on a voxel space; biomes override surface/sub)',
       fields: {
-        surface: { type: 'ref', to: 'block', default: 'grass' }, sub: { type: 'ref', to: 'block', default: 'dirt' }, stone: { type: 'ref', to: 'block', default: 'stone' },
-        bedrock: { type: 'ref', to: 'block', default: 'bedrock' }, shore: { type: 'ref', to: 'block', default: 'sand' }, underwater: { type: 'ref', to: 'block', default: 'gravel' },
+        surface: { type: 'ref', to: 'block', required: true }, sub: { type: 'ref', to: 'block', required: true }, stone: { type: 'ref', to: 'block', required: true },
+        bedrock: { type: 'ref', to: 'block', required: true }, shore: { type: 'ref', to: 'block', required: true }, underwater: { type: 'ref', to: 'block', required: true },
       },
     },
   },
   provides: { content: ['terrain'], extent: 'space', events: ['generated'], services: ['surface'] },
   reads: [],
-  rules: { terrain_extent_invalid: { fields: ['extent'], message: 'extent is [x0, z0, x1, z1] with x1 > x0 and z1 > z0' } },
+  rules: {
+    terrain_extent_invalid: { fields: ['extent'], message: 'extent is [x0, z0, x1, z1] with x1 > x0 and z1 > z0' },
+    terrain_blocks_missing: { fields: ['blocks'], message: 'terrain on a voxel space names the blocks of its column layers', example: { at: 'spaces[0].generators[0].with.blocks', doc: {
+      spaces: [{ id: 'world', use: 'engine.space.voxel', generators: [{ use: 'engine.generate.terrain.noise' }] }], systems: [],
+    } } },
+  },
 };
 
 /** Droplet hydraulic erosion + one thermal relaxation, in place on a coarse grid. */
@@ -76,6 +81,8 @@ function erode(hm, N, cellM, passes, seed, amplitude) {
   }
 }
 
+/** The scaffold's column layers on a voxel space, each a block of TERRAIN_BLOCKS. */
+const TERRAIN_LAYERS = { surface: 'grass', sub: 'dirt', stone: 'stone', bedrock: 'bedrock', shore: 'sand', underwater: 'gravel' };
 const TERRAIN_BLOCKS = [['bedrock', '#2b2b2b'], ['stone', '#7d7d7d'], ['dirt', '#7a5532'], ['grass', '#5f9e3a'], ['sand', '#d8c78a'], ['gravel', '#8a8580']];
 
 export default {
@@ -83,18 +90,19 @@ export default {
   card,
   /**
    * Planner hook (v2/planner/world.js): rolling ground for a mesh3d or voxel space, every zone kept dry land, gentle
-   * enough for roads and vehicles. On a voxel document that lists its blocks, the terrain blocks it lacks are declared.
+   * enough for roads and vehicles. On a voxel space it names its column blocks, declaring those the document lacks.
    */
   scaffold(space, doc) {
     if (!card.spaces.includes(space.use)) return null;
     const voxel = space.use === 'engine.space.voxel', land = (space.zones || []).filter(z => zoneBox(z)).map(z => z.id);
-    const out = { with: { amplitude: voxel ? 10 : 12, scale: voxel ? 96 : 256, landBias: 0.6, ...(land.length ? { land } : {}) } };
+    const out = { with: { amplitude: voxel ? 10 : 12, scale: voxel ? 96 : 256, landBias: 0.6, ...(land.length ? { land } : {}), ...(voxel ? { blocks: { ...TERRAIN_LAYERS } } : {}) } };
     const known = new Set((doc.content?.blocks || []).map(b => b?.id));
-    if (voxel && known.size) { const add = TERRAIN_BLOCKS.filter(([id]) => !known.has(id)).map(([id, color]) => ({ id, name: id[0].toUpperCase() + id.slice(1), solid: true, color })); if (add.length) out.content = { blocks: add }; }
+    if (voxel) { const add = TERRAIN_BLOCKS.filter(([id]) => !known.has(id)).map(([id, color]) => ({ id, name: id[0].toUpperCase() + id.slice(1), solid: true, color })); if (add.length) out.content = { blocks: add }; }
     return out;
   },
-  validate(config) {
+  validate(config, doc, ctx, inst) {
     const errors = [];
+    if (fillsVoxel(doc, inst) && config?.blocks == null) errors.push({ code: 'terrain_blocks_missing', path: 'with.blocks', message: 'terrain on a voxel space names no column blocks' });
     if (config.extent && !(config.extent[2] > config.extent[0] && config.extent[3] > config.extent[1])) errors.push({ code: 'terrain_extent_invalid', path: 'with.extent', message: 'extent must be [x0, z0, x1, z1] with x1 > x0 and z1 > z0' });
     return errors;
   },
@@ -196,7 +204,7 @@ export default {
       }
       m.info.summary = { ...(m.info.summary || {}), rivers: rivers.length, erosionPasses: config.erosion };
 
-      if (m.kind === 'voxel') {
+      if (m.kind === 'voxel' && config.blocks) { // without blocks (terrain_blocks_missing) the height field stands alone
         const known = new Set((rt.doc.content?.blocks || []).map(b => b.id));
         if (known.size) for (const [k, id] of Object.entries(config.blocks)) if (!known.has(id)) m.problem('block_unknown', `terrain block '${id}' (${k}) is not in content.blocks`, { generator: instance.use });
         const B = config.blocks, seaC = sea;

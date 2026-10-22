@@ -14,7 +14,7 @@ const ALL = [...PRIMITIVES, testSpace];
 const KEY = 'spaces.d.generators[0]';
 const doc = ({ space = 'engine.space.test', size = [80, 80, 1], w = {}, seed = 6, systems = [] } = {}) => ({
   schema: 'gameverse.v2.game/0.2', id: 'dungeon', title: 'Dungeon', seed,
-  spaces: [{ id: 'd', use: space, with: { size }, zones: [], generators: [{ use: 'engine.generate.dungeon.rooms', with: { rooms: 14, keys: ['bronze_key', 'iron_key'], branching: 0.4, boss: 'warden', loot: 'chest_common', ...w } }] }],
+  spaces: [{ id: 'd', use: space, with: { size }, zones: [], generators: [{ use: 'engine.generate.dungeon.rooms', with: { rooms: 14, keys: ['bronze_key', 'iron_key'], branching: 0.4, boss: 'warden', loot: 'chest_common', palette: { wall: 'stone', door: 'locked_door' }, archetypes: { key: 'key', lock: 'locked_door', chest: 'chest' }, ...w } }] }],
   systems,
   content: { items: [{ id: 'bronze_key', name: 'Bronze key' }, { id: 'iron_key', name: 'Iron key' }], archetypes: [{ id: 'hero', components: {} }, { id: 'warden', components: {} }, { id: 'key', components: {} }, { id: 'locked_door', components: {} }, { id: 'chest', components: {} }], blocks: [{ id: 'stone', solid: true }, { id: 'locked_door', solid: true }], tables: [{ id: 'chest_common', name: 'Common chest' }] },
   player: { archetype: 'hero' },
@@ -93,4 +93,8 @@ test('dungeon.rooms: preflight rejects bad configs with stable codes', () => {
   const b = doc({ w: { rooms: 3, keys: ['bronze_key', 'iron_key'] } }); assert.ok(codes(b).includes('dungeon_keys_many'));
   const c = doc({ w: { keys: ['silver_key'] } }); assert.ok(codes(c).includes('ref_unknown'));
   const d = doc({ w: { rooms: 200 } }); assert.ok(codes(d).includes('param_range'));
+  // The blocks it carves and the archetypes it spawns for its keys are named, never assumed.
+  assert.ok(codes(doc({ space: 'engine.space.grid', size: [80, 80], w: { palette: {} } })).includes('dungeon_wall_missing'));
+  assert.ok(codes(doc({ space: 'engine.space.grid', size: [80, 80], w: { palette: { wall: 'stone' } } })).includes('dungeon_door_missing'));
+  assert.ok(codes(doc({ w: { archetypes: { chest: 'chest' } } })).includes('dungeon_key_archetypes_missing'));
 });

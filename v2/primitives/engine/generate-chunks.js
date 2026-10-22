@@ -20,7 +20,6 @@ import { withDefaults, spaceOf, cellWriter, addZones, publish, spawnAt, problem,
 
 const ID = 'engine.generate.chunks';
 const AX = { x: 0, y: 1, z: 2 };
-const DEFAULT_LEGEND = { '.': {}, '#': { block: 'ground', blocks: true }, 'o': { archetype: 'coin' }, '*': { archetype: 'power_box' } };
 
 /** Speed at time t along the curve; tier (1-3) by thirds of the ramp (or by distance thresholds). */
 export const speedAt = (speed, t) => speed.start + (speed.max - speed.start) * Math.min(1, Math.max(0, t / speed.rampSeconds));
@@ -75,7 +74,7 @@ export default {
         spacing: { type: 'number', min: 0.1, max: 50, default: 1, effect: 'progress units per picture step' },
         rows: { type: 'list', of: { type: 'string' }, min: 1, required: true, effect: 'picture of the chunk, top row first' },
       } } },
-      legend: { type: 'object', default: DEFAULT_LEGEND, values: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', effect: 'spawned at the char' }, block: { type: 'ref', to: 'block', effect: 'written at the char' }, blocks: { type: 'boolean', effect: 'the char blocks the way (the passability proof avoids it)' }, hazard: { type: 'boolean', effect: 'the char hurts (the passability proof avoids it)' }, components: { type: 'object', open: true, effect: 'components added to the spawned entity, by owner' } } }, effect: 'char → {archetype?, block?, blocks?, hazard?, components?}; "." is empty' },
+      legend: { type: 'object', default: {}, values: { type: 'object', fields: { archetype: { type: 'ref', to: 'archetype', effect: 'spawned at the char' }, block: { type: 'ref', to: 'block', effect: 'written at the char' }, blocks: { type: 'boolean', effect: 'the char blocks the way (the passability proof avoids it)' }, hazard: { type: 'boolean', effect: 'the char hurts (the passability proof avoids it)' }, components: { type: 'object', open: true, effect: 'components added to the spawned entity, by owner' } } }, effect: 'char → {archetype?, block?, blocks?, hazard?, components?}; "." is empty (unset: only ".")' },
       along: { type: 'string', options: ['rows', 'columns'], default: 'rows', effect: 'rows: the bottom row is met first (lanes, climb); columns: left to right (side view)' },
       axis: { type: 'string', options: ['x', 'y', 'z'], default: 'x', effect: 'progress axis in the space' },
       cross: { type: 'string', options: ['x', 'y', 'z'], default: 'y', effect: 'axis of the other picture dimension' },

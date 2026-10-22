@@ -24,7 +24,7 @@ const card = {
         slopeMax: { type: 'number', min: 0, max: 90, default: 90, unit: 'deg' }, clump: { type: 'number', min: 0, max: 1, default: 0, effect: '0 even, 1 tight clumps' },
         minSpacing: { type: 'number', min: 0, max: 2000, default: 1, unit: 'm' }, scale: { type: 'list', of: { type: 'number', min: 0.05, max: 20 }, min: 2, max: 2, default: [1, 1] },
         shape: { type: 'string', options: ['cell', 'column', 'tree', 'bush', 'boulder'], default: 'cell', effect: 'voxel: how a block prop is built' },
-        crown: { type: 'ref', to: 'block', default: 'leaves', effect: 'voxel: crown block for trees and bushes' },
+        crown: { type: 'ref', to: 'block', effect: 'voxel: crown block of a tree or bush block prop (named with those shapes)' },
         collide: { type: 'boolean', default: false, effect: 'mesh3d: props are cylinder colliders' },
         water: { type: 'boolean', default: false, effect: 'allow props under water' },
       } },
@@ -34,14 +34,23 @@ const card = {
   },
   provides: { content: ['props'], extent: 'overlay', events: [] },
   reads: [],
-  rules: { scatter_prop_kind: { fields: ['props[].model', 'props[].block'], message: 'each prop names exactly one of model (mesh3d) or block (voxel)' } },
+  rules: {
+    scatter_prop_kind: { fields: ['props[].model', 'props[].block'], message: 'each prop names exactly one of model (mesh3d) or block (voxel)' },
+    scatter_crown_missing: { fields: ['props[].shape', 'props[].block', 'props[].crown'], message: 'a block prop shaped tree or bush names the crown block it is topped with', example: { at: 'spaces[0].generators[0].with.props[0].crown', doc: {
+      spaces: [{ id: 'world', use: 'engine.space.voxel', generators: [{ use: 'engine.generate.scatter', with: { props: [{ block: 'log', shape: 'tree' }] } }] }], systems: [],
+      content: { blocks: [{ id: 'log', name: 'Log' }], archetypes: [{ id: 'hero', name: 'Hero' }] }, player: { archetype: 'hero', space: 'world' },
+    } } },
+  },
 };
 
 export default {
   id: 'engine.generate.scatter',
   card,
   validate(config) {
-    return (Array.isArray(config.props) ? config.props : []).flatMap((p, i) => (!p?.model === !p?.block ? [{ code: 'scatter_prop_kind', path: `with.props[${i}]`, message: 'each prop needs exactly one of model or block' }] : []));
+    return (Array.isArray(config.props) ? config.props : []).flatMap((p, i) => [
+      ...(!p?.model === !p?.block ? [{ code: 'scatter_prop_kind', path: `with.props[${i}]`, message: 'each prop needs exactly one of model or block' }] : []),
+      ...(p?.block && (p.shape === 'tree' || p.shape === 'bush') && p.crown == null ? [{ code: 'scatter_crown_missing', path: `with.props[${i}].crown`, message: `a ${p.shape} of '${p.block}' names no crown block` }] : []),
+    ]);
   },
   install(rt, raw, instance) {
     const config = withDefaults(card, raw), model = generatorModel(rt, instance);

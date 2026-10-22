@@ -7,17 +7,18 @@ import { preflight, mergePatch } from '../v2/kernel/document.js';
 
 const BLOCKS = ['bedrock', 'stone', 'dirt', 'grass', 'sand', 'gravel', 'snow', 'water', 'lava', 'coal_ore'].map(id => ({ id, solid: !['water', 'lava'].includes(id) }));
 const BIOMES = { biomes: [{ id: 'plains', temp: [0.3, 0.7], moist: [0, 0.6], surface: 'grass', sub: 'dirt' }, { id: 'tundra', temp: [0, 0.3], moist: [0, 1], surface: 'snow', sub: 'dirt' }, { id: 'desert', temp: [0.7, 1], moist: [0, 0.4], surface: 'sand', sub: 'sand' }], regions: [{ zone: 'meadow', biome: 'plains', blend: 8 }], blendWidth: 8 };
+const TERRAIN = { surface: 'grass', sub: 'dirt', stone: 'stone', bedrock: 'bedrock', shore: 'sand', underwater: 'gravel' };
 const isle = (gens = {}, seed = 5) => ({
   schema: 'gameverse.v2.game/0.2', id: 'isle', title: 'Isle', seed,
   spaces: [{
     id: 'isle', use: 'engine.space.voxel', with: { chunk: [16, 64, 16], height: 128, seaLevel: 40 },
     zones: [{ id: 'world', bounds: { min: [-160, 0, -160], max: [160, 128, 160] } }, { id: 'meadow', bounds: { min: [-30, 0, -30], max: [30, 128, 30] }, tags: ['start'] }, { id: 'deep', bounds: { min: [-60, 0, 40], max: [-20, 30, 80] } }],
     generators: [
-      { use: 'engine.generate.terrain.noise', with: { octaves: 4, scale: 96, amplitude: 24, falloff: 'island', rivers: 2, erosion: 1, warp: 0.2, grid: 64, land: ['meadow'], ...gens.terrain } },
+      { use: 'engine.generate.terrain.noise', with: { octaves: 4, scale: 96, amplitude: 24, falloff: 'island', rivers: 2, erosion: 1, warp: 0.2, grid: 64, land: ['meadow'], blocks: TERRAIN, ...gens.terrain } },
       { use: 'engine.generate.biomes', with: { ...BIOMES, ...gens.biomes } },
-      { use: 'engine.generate.water', with: { lakes: 1, lakeRadius: [8, 12], flow: true, ...gens.water } },
-      { use: 'engine.generate.caves', with: { density: 0.5, minY: 4, maxY: 36, worms: 12, caverns: 2, lavaLevel: 8, rooms: [{ zone: 'deep', at: [-40, 14, 60], size: [14, 8] }], ...gens.caves } },
-      { use: 'engine.generate.ores', with: { veins: [{ block: 'coal_ore', minY: 4, maxY: 30, size: 8, perChunk: 6 }], ...gens.ores } },
+      { use: 'engine.generate.water', with: { lakes: 1, lakeRadius: [8, 12], flow: true, block: 'water', ...gens.water } },
+      { use: 'engine.generate.caves', with: { density: 0.5, minY: 4, maxY: 36, worms: 12, caverns: 2, lavaLevel: 8, lavaBlock: 'lava', rooms: [{ zone: 'deep', at: [-40, 14, 60], size: [14, 8] }], ...gens.caves } },
+      { use: 'engine.generate.ores', with: { veins: [{ block: 'coal_ore', minY: 4, maxY: 30, size: 8, perChunk: 6, replace: ['stone'] }], ...gens.ores } },
     ],
   }],
   systems: [], content: { blocks: BLOCKS, archetypes: [{ id: 'hero', components: {} }] },

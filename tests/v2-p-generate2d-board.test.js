@@ -13,6 +13,9 @@ const ALL = [...PRIMITIVES, testSpace];
 const KEY = 'spaces.b.generators[0]';
 const BLOCKS = [{ id: 'rock', solid: true }, { id: 'forest', solid: false }, { id: 'jungle', solid: true }, { id: 'ocean', solid: true }, { id: 'mountain', solid: true },
   ...['coast', 'desert', 'plains', 'hills'].map(id => ({ id, solid: false })), ...['red', 'blue', 'green', 'yellow', 'purple'].map(id => ({ id, solid: false }))];
+// The blocks each kind writes, named by the board (a board never falls back on ids its document may not declare).
+const TERRAIN = [{ block: 'rock', weight: 1, blocks: true }, { block: 'forest', weight: 2 }];
+const BIOMES = [{ block: 'coast', elevation: [0, 0.15] }, { block: 'desert', elevation: [0.15, 0.7], moisture: [0, 0.3] }, { block: 'plains', elevation: [0.15, 0.7], moisture: [0.3, 0.65] }, { block: 'forest', elevation: [0.15, 0.7], moisture: [0.65, 1] }, { block: 'hills', elevation: [0.7, 0.9] }, { block: 'mountain', elevation: [0.9, 1], blocks: true }];
 const doc = (w, size, { seed = 3, grid = {} } = {}) => ({
   schema: 'gameverse.v2.game/0.2', id: 'board', title: 'Board', seed,
   spaces: [{ id: 'b', use: 'engine.space.grid', with: { size, ...grid }, generators: [{ use: 'engine.generate.grid.board', with: w }] }],
@@ -34,7 +37,7 @@ test('grid.board match: no run on the fill, a move always exists, across seeds',
 });
 
 test('grid.board tactics: symmetric terrain, every open cell joined, deploy strips reachable through the grid', () => {
-  const rt = make({ kind: 'tactics', size: [16, 12], symmetry: 'rotate', density: 0.3 }, [16, 12]);
+  const rt = make({ kind: 'tactics', size: [16, 12], terrain: TERRAIN, symmetry: 'rotate', density: 0.3 }, [16, 12]);
   const api = rt.space('b'), st = rt.store(KEY);
   assert.deepEqual(st.problems, []);
   for (let y = 0; y < 12; y++) for (let x = 0; x < 16; x++) {
@@ -63,7 +66,7 @@ test('grid.board tactics ground: every open cell is the ground block, all joined
 });
 
 test('grid.board lanes: each lane alone joins the bases', () => {
-  const rt = make({ kind: 'lanes', size: [30, 30], lanes: 3 }, [30, 30]);
+  const rt = make({ kind: 'lanes', size: [30, 30], lanes: 3, wall: 'jungle' }, [30, 30]);
   const st = rt.store(KEY);
   assert.deepEqual(st.problems, []);
   assert.equal(st.lanes.length, 3);
@@ -71,7 +74,7 @@ test('grid.board lanes: each lane alone joins the bases', () => {
 });
 
 test('grid.board hex-continent: starts on land, spaced, each with room to grow; hex neighbours match the grid', () => {
-  const rt = make({ kind: 'hex-continent', size: [40, 30], continents: 3, starts: 4, minStartDistance: 6, landPerStart: 15 }, [40, 30], { grid: { topology: 'hex' } });
+  const rt = make({ kind: 'hex-continent', size: [40, 30], water: 'ocean', biomes: BIOMES, continents: 3, starts: 4, minStartDistance: 6, landPerStart: 15 }, [40, 30], { grid: { topology: 'hex' } });
   const st = rt.store(KEY), api = rt.space('b');
   assert.deepEqual(st.problems, []);
   assert.equal(st.starts.length, 4);
@@ -80,14 +83,14 @@ test('grid.board hex-continent: starts on land, spaced, each with room to grow; 
 });
 
 test('grid.board: the proof fails honestly when the data cannot satisfy it', () => {
-  const rt = make({ kind: 'hex-continent', size: [16, 12], continents: 1, land: 0.1, starts: 6, minStartDistance: 9, attempts: 1 }, [16, 12], { grid: { topology: 'hex' } });
+  const rt = make({ kind: 'hex-continent', size: [16, 12], water: 'ocean', biomes: BIOMES, continents: 1, land: 0.1, starts: 6, minStartDistance: 9, attempts: 1 }, [16, 12], { grid: { topology: 'hex' } });
   const codes = rt.store(KEY).problems.map(p => p.code);
   assert.ok(codes.includes('board_fallback') && codes.includes('start_crowded'), codes.join());
   assert.equal(rt.state.counts.generate_problem, codes.length);
 });
 
 test('grid.board: same seed replays exactly; another seed differs (test space too)', () => {
-  const docT = seed => ({ ...doc({ kind: 'tactics', size: [12, 12] }, [12, 12], { seed }), spaces: [{ id: 'b', use: 'engine.space.test', with: { size: [12, 12, 1] }, generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', size: [12, 12] } }] }] });
+  const docT = seed => ({ ...doc({ kind: 'tactics', size: [12, 12], terrain: TERRAIN }, [12, 12], { seed }), spaces: [{ id: 'b', use: 'engine.space.test', with: { size: [12, 12, 1] }, generators: [{ use: 'engine.generate.grid.board', with: { kind: 'tactics', size: [12, 12], terrain: TERRAIN } }] }] });
   const a = compile(docT(1), { primitives: ALL }).rt, b = compile(docT(1), { primitives: ALL }).rt, c = compile(docT(2), { primitives: ALL }).rt;
   run(a, 5); run(b, 5); run(c, 5);
   assert.deepEqual(a.snapshot(), b.snapshot());
@@ -100,4 +103,9 @@ test('grid.board: preflight rejects bad configs with stable codes', () => {
   assert.ok(codes(doc({ kind: 'tactics', terrain: [] }, [8, 8])).includes('board_terrain_open'));
   assert.ok(codes(doc({ kind: 'tactics', terrain: [{ block: 'rock', blocks: true }], ground: 'rock' }, [8, 8])).includes('board_ground_blocks'));
   assert.ok(codes(doc({ kind: 'chess' }, [8, 8])).includes('param_option'));
+  // Each kind names the blocks it writes.
+  assert.ok(codes(doc({ kind: 'match' }, [8, 8])).includes('board_fill_missing'));
+  assert.ok(codes(doc({ kind: 'tactics' }, [8, 8])).includes('board_terrain_open'));
+  assert.ok(codes(doc({ kind: 'lanes' }, [8, 8])).includes('board_wall_missing'));
+  assert.ok(codes(doc({ kind: 'hex-continent', water: 'ocean' }, [8, 8])).includes('board_hex_blocks_missing'));
 });
